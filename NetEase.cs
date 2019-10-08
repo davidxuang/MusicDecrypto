@@ -11,7 +11,7 @@ namespace MusicDecrypto
     {
         private static readonly byte[] rootKey = { 0x68, 0x7A, 0x48, 0x52, 0x41, 0x6D, 0x73, 0x6F, 0x35, 0x6B, 0x49, 0x6E, 0x62, 0x61, 0x78, 0x57 };
         private static readonly byte[] jsonKey = { 0x23, 0x31, 0x34, 0x6C, 0x6A, 0x6B, 0x5F, 0x21, 0x5C, 0x5D, 0x26, 0x30, 0x55, 0x3C, 0x27, 0x28 };
-        private byte[] MainKey { get; } = new byte[256];
+        private byte[] MainKey { get; set; } = new byte[256];
         private NetEaseMetadata PropMetadata { get; set; }
 
         internal NetEaseDecrypto(string path) : base(path) { Load(); FixMetadata(); Save(); }
@@ -117,23 +117,23 @@ namespace MusicDecrypto
             // Read music
             for (int chunkSize = 0x8000; chunkSize > 1;)
             {
-                byte[] musicChunk = ReadFixedChunk(ref chunkSize);
+                byte[] mainChunk = ReadFixedChunk(ref chunkSize);
 
                 for (int i = 0; i < chunkSize; i += 1)
                 {
                     int j = (i + 1) & 0xff;
-                    musicChunk[i] ^= MainKey[(MainKey[j] + MainKey[(MainKey[j] + j) & 0xff]) & 0xff];
+                    mainChunk[i] ^= MainKey[(MainKey[j] + MainKey[(MainKey[j] + j) & 0xff]) & 0xff];
                 }
 
-                Buffer.Write(musicChunk);
+                MainBuffer.Write(mainChunk);
             }
-            MusicMime = MediaType.GetStreamMime(Buffer);
+            MusicMime = MediaType.GetStreamMime(MainBuffer);
         }
 
         protected override void FixMetadata()
         {
-            Buffer.Position = 0;
-            using TagLib.File file = TagLib.File.Create(new MemoryFileAbstraction($"buffer.{MediaType.MimeToExt(MusicMime)}", Buffer));
+            MainBuffer.Position = 0;
+            using TagLib.File file = TagLib.File.Create(new MemoryFileAbstraction($"buffer.{MediaType.MimeToExt(MusicMime)}", MainBuffer));
             TagLib.Tag tag = MusicMime switch
             {
                 "audio/flac" => file.Tag,

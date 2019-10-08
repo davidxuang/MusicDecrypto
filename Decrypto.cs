@@ -10,7 +10,7 @@ namespace MusicDecrypto
         public static long SaveCount { get; private set; } = 0;
         public string SrcPath { get; protected set; }
         protected BinaryReader SrcFile { get; set; } = null;
-        protected MemoryStream Buffer { get; set; } = new MemoryStream();
+        protected MemoryStream MainBuffer { get; set; } = new MemoryStream();
         protected MemoryStream CoverBuffer { get; set; } = new MemoryStream();
         protected string CoverMime { get; set; }
         protected string MusicMime { get; set; }
@@ -26,7 +26,7 @@ namespace MusicDecrypto
         ~Decrypto()
         {
             SrcFile.Dispose();
-            Buffer.Dispose();
+            MainBuffer.Dispose();
             CoverBuffer.Dispose();
         }
 
@@ -51,7 +51,7 @@ namespace MusicDecrypto
             }
 
             using FileStream file = new FileStream(path, FileMode.OpenOrCreate);
-            Buffer.WriteTo(file);
+            MainBuffer.WriteTo(file);
             SaveCount += 1;
             Console.WriteLine($"[INFO] File was decrypted successfully at {path}.");
         }
