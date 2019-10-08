@@ -94,7 +94,7 @@ namespace MusicDecrypto
                 try
                 {
                     string coverUri = PropMetadata.AlbumPic;
-                    if (coverUri == null)
+                    if (!Uri.IsWellFormedUriString(coverUri, UriKind.Absolute))
                     {
                         Console.WriteLine($"[Warning] No cover URI defined in {SrcPath}.");
                         throw;
