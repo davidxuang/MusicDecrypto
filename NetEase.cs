@@ -102,7 +102,7 @@ namespace MusicDecrypto
                     using WebClient webClient = new WebClient();
                     CoverBuffer.Write(webClient.DownloadData(coverUri));
                 }
-                finally
+                catch (WebException)
                 {
                     Console.WriteLine($"[Warning] Failed to download cover image for {SrcPath}.");
                 }
