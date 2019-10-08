@@ -108,6 +108,11 @@ namespace MusicDecrypto
                 }
             }
             CoverMime = MediaType.GetStreamMime(CoverBuffer);
+            if (CoverMime.Take(5).ToString() == "image")
+            {
+                CoverBuffer.SetLength(0);
+                CoverMime = null;
+            }
 
             // Read music
             for (int chunkSize = 0x8000; chunkSize > 1;)
