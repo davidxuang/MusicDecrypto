@@ -39,39 +39,41 @@ namespace MusicDecrypto
                     }
                 }
 
-                _ = Parallel.ForEach(paths, path =>
+                if (paths.Count > 0)
                 {
-                    try
+                    _ = Parallel.ForEach(paths, path =>
                     {
-                        Decrypto decrypto = null;
-                        switch (Path.GetExtension(path))
+                        try
                         {
-                            case ".ncm":
-                                decrypto = new NetEaseDecrypto(path);
-                                break;
-                            case ".qmc0":
-                            case ".qmc3":
-                                decrypto = new TencentDecrypto(path, "audio/mpeg");
-                                break;
-                            case ".qmcflac":
-                                decrypto = new TencentDecrypto(path, "audio/flac");
-                                break;
-                            default:
-                                break;
+                            Decrypto decrypto = null;
+                            switch (Path.GetExtension(path))
+                            {
+                                case ".ncm":
+                                    decrypto = new NetEaseDecrypto(path);
+                                    break;
+                                case ".qmc0":
+                                case ".qmc3":
+                                    decrypto = new TencentDecrypto(path, "audio/mpeg");
+                                    break;
+                                case ".qmcflac":
+                                    decrypto = new TencentDecrypto(path, "audio/flac");
+                                    break;
+                                default:
+                                    break;
+                            }
                         }
-                    }
-                    catch (IOException e)
-                    {
-                        Console.WriteLine(e.ToString());
-                    }
-                });
+                        catch (IOException e)
+                        {
+                            Console.WriteLine(e.ToString());
+                        }
+                    });
 
-                Console.WriteLine($"Program finished with {paths.Count} files requested and {Decrypto.SaveCount} files saved successfully.");
+                    Console.WriteLine($"Program finished with {paths.Count} files requested and {Decrypto.SaveCount} files saved successfully.");
+                    return;
+                }
             }
-            else
-            {
-                Console.WriteLine("Usage: MusicDecrypto [-a|--avoid-overwrite] <path> ...");
-            }
+
+            Console.WriteLine("Usage: MusicDecrypto [-a|--avoid-overwrite] path...");
         }
     }
 }
