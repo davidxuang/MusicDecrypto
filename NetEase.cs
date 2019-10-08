@@ -74,7 +74,7 @@ namespace MusicDecrypto
             }
             catch (NullFileChunkException)
             {
-                Console.WriteLine($"[Warning] Missing metadata in {SrcPath}.");
+                Console.WriteLine($"[WARN] Missing metadata in {SrcPath}.");
             }
 
             // Skip ahead
@@ -88,7 +88,7 @@ namespace MusicDecrypto
             }
             catch (NullFileChunkException)
             {
-                Console.WriteLine($"[Warning] Missing cover image in {SrcPath}.");
+                Console.WriteLine($"[WARN] Missing cover image in {SrcPath}.");
 
                 // Plan B: get image from server
                 try
@@ -96,7 +96,7 @@ namespace MusicDecrypto
                     string coverUri = PropMetadata.AlbumPic;
                     if (!Uri.IsWellFormedUriString(coverUri, UriKind.Absolute))
                     {
-                        Console.WriteLine($"[Warning] No cover URI defined in {SrcPath}.");
+                        Console.WriteLine($"[WARN] No cover URI defined in {SrcPath}.");
                         throw;
                     }
                     using WebClient webClient = new WebClient();
@@ -104,7 +104,7 @@ namespace MusicDecrypto
                 }
                 catch (WebException)
                 {
-                    Console.WriteLine($"[Warning] Failed to download cover image for {SrcPath}.");
+                    Console.WriteLine($"[WARN] Failed to download cover image for {SrcPath}.");
                 }
             }
             CoverMime = MediaType.GetStreamMime(CoverBuffer);
