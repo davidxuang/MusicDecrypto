@@ -49,7 +49,7 @@ namespace MusicDecrypto
             }
             catch (NullFileChunkException e)
             {
-                throw new FileLoadException(e.ToString());
+                throw new FileLoadException(e.Message);
             }
 
             try
@@ -65,11 +65,14 @@ namespace MusicDecrypto
                         break;
                     }
                 }
-                string jsonMeta = Encoding.UTF8.GetString(AesCrypto.EcbDecrypt(
-                    Convert.FromBase64String(Encoding.UTF8.GetString(metaChunk.Skip(skipCount).ToArray())), jsonKey).Skip(6).ToArray());
 
                 // Resolve metadata
-                PropMetadata = JsonConvert.DeserializeObject<NetEaseMetadata>(jsonMeta);
+                PropMetadata = JsonConvert.DeserializeObject<NetEaseMetadata>(
+                    Encoding.UTF8.GetString(AesCrypto.EcbDecrypt(
+                        Convert.FromBase64String(Encoding.UTF8.GetString(metaChunk.Skip(skipCount).ToArray())),
+                        jsonKey)
+                    .Skip(6).ToArray())
+                );
                 StdMetadata = new Metadata(PropMetadata);
             }
             catch (NullFileChunkException)
@@ -108,9 +111,9 @@ namespace MusicDecrypto
                 }
             }
             CoverMime = MediaType.GetStreamMime(CoverBuffer);
-            if (CoverMime.Take(5).ToString() == "image")
+            if (CoverMime.Substring(0, 5) != "image")
             {
-                CoverBuffer.SetLength(0);
+                CoverBuffer.Dispose();
                 CoverMime = null;
             }
 
@@ -141,25 +144,25 @@ namespace MusicDecrypto
                 _ => throw new FileLoadException($"Failed to get file type while processing {SrcPath}."),
             };
 
-            if (CoverBuffer.Length > 0)
+            if (CoverMime != null)
             {
-                TagLib.Picture picture;
-                TagLib.ByteVector vector = new TagLib.ByteVector(CoverBuffer.ToArray(), (int)CoverBuffer.Length);
-                picture = new TagLib.Picture(vector)
-                {
-                    MimeType = CoverMime,
-                    Type = TagLib.PictureType.FrontCover
+                tag.Pictures = new TagLib.IPicture[1] {
+                    new TagLib.Picture(new TagLib.ByteVector(CoverBuffer.ToArray(), (int)CoverBuffer.Length))
+                    {
+                        MimeType = CoverMime,
+                        Type = TagLib.PictureType.FrontCover
+                    }
                 };
-                TagLib.IPicture[] pictures = new TagLib.IPicture[1] { picture };
-                tag.Pictures = pictures;
             }
 
             if (StdMetadata.Title != null)
                 tag.Title = StdMetadata.Title;
-            if (StdMetadata.Artist != null)
-                tag.Performers = StdMetadata.Artist;
+            if (StdMetadata.Artists != null)
+                tag.Performers = StdMetadata.Artists;
             if (StdMetadata.Album != null)
                 tag.Album = StdMetadata.Album;
+            if (StdMetadata.AlbumArtist != null && tag.AlbumArtists.Length == 0)
+                tag.AlbumArtists = new string[] { StdMetadata.AlbumArtist };
 
             file.Save();
         }

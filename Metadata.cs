@@ -38,15 +38,8 @@ namespace MusicDecrypto
         private static bool HeaderMatch(byte[] target, MemoryStream stream)
         {
             if (target.Length > stream.Length) return false;
-            for (int i = 0; i < target.Length; i += 1)
-            {
-                byte[] match = stream.ToArray().Take(target.Length).ToArray();
-                if (target[i] != match[i])
-                {
-                    return false;
-                }
-            }
-            return true;
+            byte[] match = stream.ToArray().Take(target.Length).ToArray();
+            return Enumerable.SequenceEqual(match, target);
         }
 
         public static string MimeToExt(string mime) => mime switch
@@ -60,7 +53,7 @@ namespace MusicDecrypto
     internal class Metadata
     {
         public string Title { get; set; }
-        public string[] Artist { get; set; }
+        public string[] Artists { get; set; }
         public string Album { get; set; }
         public uint? Year { get; set; }
         public uint? Track { get; set; }
@@ -73,13 +66,13 @@ namespace MusicDecrypto
         internal Metadata(NetEaseMetadata src)
         {
             Title = src.MusicName;
-            Artist = new string[src.Artist.Count];
+            Artists = new string[src.Artist.Count];
             for (int i = 0; i < src.Artist.Count; i += 1)
             {
-                Artist[i] = src.Artist[i][0];
+                Artists[i] = src.Artist[i][0];
             }
             Album = src.Album;
-            AlbumArtist = Artist[0];
+            AlbumArtist = Artists[0];
         }
     }
 

@@ -7,7 +7,7 @@ namespace MusicDecrypto
     internal abstract class Decrypto
     {
         public static bool AvoidOverwrite { get; set; } = false;
-        public static long SaveCount { get; private set; } = 0;
+        public static ulong SaveCount { get; private set; } = 0;
         public string SrcPath { get; protected set; }
         protected BinaryReader SrcFile { get; set; } = null;
         protected MemoryStream MainBuffer { get; set; } = new MemoryStream();
@@ -46,7 +46,7 @@ namespace MusicDecrypto
 
             if (File.Exists(path) && AvoidOverwrite)
             {
-                Console.WriteLine($"[INFO] Skipping");
+                Console.WriteLine($"[INFO] Skipping {path}");
                 return;
             }
 
