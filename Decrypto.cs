@@ -83,17 +83,8 @@ namespace MusicDecrypto
                 throw new NullFileChunkException("Failed to load file chunk.");
             }
         }
-    }
 
-    internal class NullFileChunkException : IOException
-    {
-        internal NullFileChunkException(string message)
-            : base(message) { }
-    }
-
-    internal class AesCrypto
-    {
-        public static byte[] EcbDecrypt(byte[] cipher, byte[] key)
+        public static byte[] AesEcbDecrypt(byte[] cipher, byte[] key)
         {
             using RijndaelManaged rijndael = new RijndaelManaged
             {
@@ -105,5 +96,11 @@ namespace MusicDecrypto
             byte[] plain = cryptoTransform.TransformFinalBlock(cipher, 0, cipher.Length);
             return plain;
         }
+    }
+
+    internal class NullFileChunkException : IOException
+    {
+        internal NullFileChunkException(string message)
+            : base(message) { }
     }
 }

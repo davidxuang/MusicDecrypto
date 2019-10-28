@@ -29,7 +29,7 @@ namespace MusicDecrypto
             {
                 // Read key
                 byte[] keyChunk = ReadIndexedChunk(0x64);
-                byte[] key = AesCrypto.EcbDecrypt(keyChunk, rootKey);
+                byte[] key = AesEcbDecrypt(keyChunk, rootKey);
 
                 // Build main key
                 for (uint i = 0; i < MainKey.Length; i += 1)
@@ -67,8 +67,8 @@ namespace MusicDecrypto
                 }
 
                 // Resolve metadata
-                PropMetadata = JsonConvert.DeserializeObject<NetEaseMetadata>(
-                    Encoding.UTF8.GetString(AesCrypto.EcbDecrypt(
+                PropMetadata = JsonConvert.DeserializeObject<NetEaseMetadata>(Encoding.UTF8.GetString(
+                    AesEcbDecrypt(
                         Convert.FromBase64String(Encoding.UTF8.GetString(metaChunk.Skip(skipCount).ToArray())),
                         jsonKey)
                     .Skip(6).ToArray())

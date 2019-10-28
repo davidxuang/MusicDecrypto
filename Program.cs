@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace MusicDecrypto
@@ -11,7 +12,7 @@ namespace MusicDecrypto
         {
             if (args.Length > 0)
             {
-                List<string> paths = new List<string>();
+                List<string> found = new List<string>();
 
                 if (Array.Exists(args, element => element.Equals("-a") || element.Equals("--avoid-overwrite")))
                 {
@@ -23,14 +24,17 @@ namespace MusicDecrypto
                     {
                         if (Directory.Exists(arg))
                         {
-                            paths.AddRange(Directory.GetFiles(arg, "*.ncm", SearchOption.AllDirectories));
-                            paths.AddRange(Directory.GetFiles(arg, "*.qmc0", SearchOption.AllDirectories));
-                            paths.AddRange(Directory.GetFiles(arg, "*.qmc3", SearchOption.AllDirectories));
-                            paths.AddRange(Directory.GetFiles(arg, "*.qmcflac", SearchOption.AllDirectories));
+                            found.AddRange(Directory.EnumerateFiles(arg, "*", SearchOption.AllDirectories)
+                                                    .Where(file =>
+                                                        file.ToLower().EndsWith("ncm") ||
+                                                        file.ToLower().EndsWith("qmc0") ||
+                                                        file.ToLower().EndsWith("qmc3") ||
+                                                        file.ToLower().EndsWith("qmcflac"))
+                                                    .ToList());
                         }
                         else if (File.Exists(arg))
                         {
-                            paths.Add(arg);
+                            found.Add(arg);
                         }
                     }
                     catch (IOException e)
@@ -39,9 +43,11 @@ namespace MusicDecrypto
                     }
                 }
 
-                if (paths.Count > 0)
+                string[] trimmed = found.Where((x, i) => found.FindIndex(y => y == x) == i).ToArray();
+
+                if (trimmed.Length > 0)
                 {
-                    _ = Parallel.ForEach(paths, path =>
+                    _ = Parallel.ForEach(trimmed, path =>
                     {
                         try
                         {
@@ -68,7 +74,7 @@ namespace MusicDecrypto
                         }
                     });
 
-                    Console.WriteLine($"Program finished with {paths.Count} files requested and {Decrypto.SaveCount} files saved successfully.");
+                    Console.WriteLine($"Program finished with {trimmed.Length} files requested and {Decrypto.SaveCount} files saved successfully.");
                     return;
                 }
             }

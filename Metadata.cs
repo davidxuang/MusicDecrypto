@@ -38,8 +38,7 @@ namespace MusicDecrypto
         private static bool HeaderMatch(byte[] target, MemoryStream stream)
         {
             if (target.Length > stream.Length) return false;
-            byte[] match = stream.ToArray().Take(target.Length).ToArray();
-            return Enumerable.SequenceEqual(match, target);
+            return Enumerable.SequenceEqual(stream.ToArray().Take(target.Length).ToArray(), target);
         }
 
         public static string MimeToExt(string mime) => mime switch
