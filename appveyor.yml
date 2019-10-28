@@ -1,4 +1,4 @@
-version: '1.0.1.{build}'
+version: '1.0.2.{build}'
 image: Visual Studio 2019
 shallow_clone: true
 pull_requests:
