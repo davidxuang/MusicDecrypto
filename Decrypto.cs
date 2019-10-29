@@ -61,7 +61,7 @@ namespace MusicDecrypto
                 return;
             }
 
-            using FileStream file = new FileStream(path, FileMode.OpenOrCreate);
+            using FileStream file = new FileStream(path, FileMode.Create);
             MainBuffer.WriteTo(file);
             SuccessCount += 1;
             Console.WriteLine($"[INFO] File was decrypted successfully at {path}.");
