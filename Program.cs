@@ -1,4 +1,5 @@
-﻿using System;
+﻿using CommandLine;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -10,31 +11,46 @@ namespace MusicDecrypto
     {
         static void Main(string[] args)
         {
-            if (args.Length > 0)
-            {
-                List<string> found = new List<string>();
+            string[] inputPaths = null;
 
-                if (Array.Exists(args, element => element.Equals("-a") || element.Equals("--avoid-overwrite")))
+            CommandLine.Parser.Default.ParseArguments<Options>(args)
+                .WithParsed<Options>(opts =>
                 {
-                    Decrypto.AvoidOverwrite = true;
-                }
-                foreach (string arg in args)
+                    if (opts.OutputDir != null)
+                    {
+                        if (Directory.Exists(opts.OutputDir)) Decrypto.OutputDir = opts.OutputDir;
+                        else Console.WriteLine($"[WARN] Specified output directory {opts.OutputDir} does not exist.");
+                    }
+                    Decrypto.AvoidOverwrite = opts.AvoidOverwrite;
+                    inputPaths = opts.InputPaths.ToArray();
+                })
+                .WithNotParsed<Options>(errs => { });
+
+            if (inputPaths != null)
+            {
+                List<string> foundPaths = new List<string>();
+
+                foreach (string path in inputPaths)
                 {
                     try
                     {
-                        if (Directory.Exists(arg))
+                        if (Directory.Exists(path))
                         {
-                            found.AddRange(Directory.EnumerateFiles(arg, "*", SearchOption.AllDirectories)
+                            foundPaths.AddRange(Directory.EnumerateFiles(path, "*", SearchOption.AllDirectories)
                                                     .Where(file =>
-                                                        file.ToLower().EndsWith("ncm") ||
-                                                        file.ToLower().EndsWith("qmc0") ||
-                                                        file.ToLower().EndsWith("qmc3") ||
-                                                        file.ToLower().EndsWith("qmcflac"))
-                                                    .ToList());
+                                                        file.ToLower().EndsWith(".ncm") ||
+                                                        file.ToLower().EndsWith(".qmc0") ||
+                                                        file.ToLower().EndsWith(".qmc3") ||
+                                                        file.ToLower().EndsWith(".qmcflac"))
+                                                    );
                         }
-                        else if (File.Exists(arg))
+                        else if (File.Exists(path) && (
+                            path.ToLower().EndsWith(".ncm") ||
+                            path.ToLower().EndsWith(".qmc0") ||
+                            path.ToLower().EndsWith(".qmc3") ||
+                            path.ToLower().EndsWith(".qmcflac")))
                         {
-                            found.Add(arg);
+                            foundPaths.Add(path);
                         }
                     }
                     catch (IOException e)
@@ -43,28 +59,29 @@ namespace MusicDecrypto
                     }
                 }
 
-                string[] trimmed = found.Where((x, i) => found.FindIndex(y => y == x) == i).ToArray();
+                string[] trimmedPaths = foundPaths.Where((x, i) => foundPaths.FindIndex(y => y == x) == i).ToArray();
 
-                if (trimmed.Length > 0)
+                if (trimmedPaths.Length > 0)
                 {
-                    _ = Parallel.ForEach(trimmed, path =>
+                    _ = Parallel.ForEach(trimmedPaths, file =>
                     {
                         try
                         {
                             Decrypto decrypto = null;
-                            switch (Path.GetExtension(path))
+                            switch (Path.GetExtension(file))
                             {
                                 case ".ncm":
-                                    decrypto = new NetEaseDecrypto(path);
+                                    decrypto = new NetEaseDecrypto(file);
                                     break;
                                 case ".qmc0":
                                 case ".qmc3":
-                                    decrypto = new TencentDecrypto(path, "audio/mpeg");
+                                    decrypto = new TencentDecrypto(file, "audio/mpeg");
                                     break;
                                 case ".qmcflac":
-                                    decrypto = new TencentDecrypto(path, "audio/flac");
+                                    decrypto = new TencentDecrypto(file, "audio/flac");
                                     break;
                                 default:
+                                    Console.WriteLine($"[WARN] Cannot recognize {file}");
                                     break;
                             }
                         }
@@ -74,12 +91,24 @@ namespace MusicDecrypto
                         }
                     });
 
-                    Console.WriteLine($"Program finished with {trimmed.Length} files requested and {Decrypto.SaveCount} files saved successfully.");
+                    Console.WriteLine($"Program finished with {trimmedPaths.Length} files requested and {Decrypto.SuccessCount} files saved successfully.");
                     return;
                 }
-            }
 
-            Console.WriteLine("Usage: MusicDecrypto [-a|--avoid-overwrite] path...");
+                Console.WriteLine("[WARN] Found no valid file from specific path(s).");
+            }
+        }
+
+        internal class Options
+        {
+            [Option('a', "avoid-overwrite", Required = false, HelpText = "Do not overwrite existing files.")]
+            public bool AvoidOverwrite { get; set; } = false;
+
+            [Option('o', "output", Required = false, HelpText = "Specify output directory for all files.")]
+            public string OutputDir { get; set; }
+
+            [Value(0, Required = true, MetaName = "Paths", HelpText = "Specify the input files and/or directories.")]
+            public IEnumerable<string> InputPaths { get; set; }
         }
     }
 }

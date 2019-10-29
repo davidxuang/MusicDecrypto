@@ -7,8 +7,10 @@ namespace MusicDecrypto
     internal abstract class Decrypto
     {
         public static bool AvoidOverwrite { get; set; } = false;
-        public static ulong SaveCount { get; private set; } = 0;
-        public string SrcPath { get; protected set; }
+        public static string OutputDir { get; set; } = null;
+        public static ulong SuccessCount { get; private set; } = 0;
+
+        public string SrcPath { get; private set; }
         protected BinaryReader SrcFile { get; set; } = null;
         protected MemoryStream MainBuffer { get; set; } = new MemoryStream();
         protected MemoryStream CoverBuffer { get; set; } = new MemoryStream();
@@ -42,7 +44,16 @@ namespace MusicDecrypto
                 "audio/mpeg" => "mp3",
                 _ => throw new FileLoadException($"Failed to recognize music in {SrcPath}."),
             };
-            string path = $"{Path.Combine(Path.GetDirectoryName(SrcPath), Path.GetFileNameWithoutExtension(SrcPath))}.{extension}";
+
+            string path;
+            if (OutputDir == null)
+            {
+                path = $"{Path.Combine(Path.GetDirectoryName(SrcPath), Path.GetFileNameWithoutExtension(SrcPath))}.{extension}";
+            }
+            else
+            {
+                path = $"{Path.Combine(OutputDir, Path.GetFileNameWithoutExtension(SrcPath))}.{extension}";
+            }
 
             if (File.Exists(path) && AvoidOverwrite)
             {
@@ -52,7 +63,7 @@ namespace MusicDecrypto
 
             using FileStream file = new FileStream(path, FileMode.OpenOrCreate);
             MainBuffer.WriteTo(file);
-            SaveCount += 1;
+            SuccessCount += 1;
             Console.WriteLine($"[INFO] File was decrypted successfully at {path}.");
         }
 
