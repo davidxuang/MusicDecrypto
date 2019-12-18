@@ -19,11 +19,11 @@ namespace MusicDecrypto
         protected override void Load()
         {
             // Check file header
-            if (SrcFile.ReadUInt64() != 0x4d4144464e455443)
-                throw new FileLoadException($"Failed to recognize header in {SrcPath}.");
+            if (InFile.ReadUInt64() != 0x4d4144464e455443)
+                throw new FileLoadException($"Failed to recognize header in {InPath}.");
 
             // Skip ahead
-            _ = SrcFile.ReadBytes(2);
+            _ = InFile.ReadBytes(2);
 
             try
             {
@@ -67,21 +67,25 @@ namespace MusicDecrypto
                 }
 
                 // Resolve metadata
-                PropMetadata = JsonConvert.DeserializeObject<NetEaseMetadata>(Encoding.UTF8.GetString(
-                    AesEcbDecrypt(
-                        Convert.FromBase64String(Encoding.UTF8.GetString(metaChunk.Skip(skipCount).ToArray())),
-                        jsonKey)
-                    .Skip(6).ToArray())
+                PropMetadata = JsonConvert.DeserializeObject<NetEaseMetadata>(
+                    Encoding.UTF8.GetString(
+                        AesEcbDecrypt(
+                            Convert.FromBase64String(
+                                Encoding.UTF8.GetString(
+                                    metaChunk.Skip(skipCount).ToArray())
+                            ),
+                            jsonKey)
+                        .Skip(6).ToArray())
                 );
                 StdMetadata = new Metadata(PropMetadata);
             }
             catch (NullFileChunkException)
             {
-                Console.WriteLine($"[WARN] Missing metadata in {SrcPath}.");
+                Console.WriteLine($"[WARN] Missing metadata in {InPath}.");
             }
 
             // Skip ahead
-            _ = SrcFile.ReadBytes(9);
+            _ = InFile.ReadBytes(9);
 
             // Get cover data
             try
@@ -91,7 +95,7 @@ namespace MusicDecrypto
             }
             catch (NullFileChunkException)
             {
-                Console.WriteLine($"[WARN] Missing cover image in {SrcPath}.");
+                Console.WriteLine($"[WARN] Failed to load cover from {InPath}, trying to get image from server...");
 
                 // Plan B: get image from server
                 try
@@ -99,7 +103,7 @@ namespace MusicDecrypto
                     string coverUri = PropMetadata.AlbumPic;
                     if (!Uri.IsWellFormedUriString(coverUri, UriKind.Absolute))
                     {
-                        Console.WriteLine($"[WARN] No cover URI defined in {SrcPath}.");
+                        Console.WriteLine($"[WARN] No cover URI defined in {InPath}.");
                         throw;
                     }
                     using WebClient webClient = new WebClient();
@@ -107,7 +111,7 @@ namespace MusicDecrypto
                 }
                 catch (WebException)
                 {
-                    Console.WriteLine($"[WARN] Failed to download cover image for {SrcPath}.");
+                    Console.WriteLine($"[WARN] Failed to download cover image for {InPath}.");
                 }
             }
             CoverMime = MediaType.GetStreamMime(CoverBuffer);
@@ -128,20 +132,20 @@ namespace MusicDecrypto
                     mainChunk[i] ^= MainKey[(MainKey[j] + MainKey[(MainKey[j] + j) & 0xff]) & 0xff];
                 }
 
-                MainBuffer.Write(mainChunk);
+                OutBuffer.Write(mainChunk);
             }
-            MusicMime = MediaType.GetStreamMime(MainBuffer);
+            MusicMime = MediaType.GetStreamMime(OutBuffer);
         }
 
         protected override void FixMetadata()
         {
-            MainBuffer.Position = 0;
-            using TagLib.File file = TagLib.File.Create(new MemoryFileAbstraction($"buffer.{MediaType.MimeToExt(MusicMime)}", MainBuffer));
+            OutBuffer.Position = 0;
+            using TagLib.File file = TagLib.File.Create(new MemoryFileAbstraction($"buffer.{MediaType.MimeToExt(MusicMime)}", OutBuffer));
             TagLib.Tag tag = MusicMime switch
             {
                 "audio/flac" => file.Tag,
                 "audio/mpeg" => file.GetTag(TagLib.TagTypes.Id3v2),
-                _ => throw new FileLoadException($"Failed to get file type while processing {SrcPath}."),
+                _ => throw new FileLoadException($"Failed to get file type while processing {InPath}."),
             };
 
             if (CoverMime != null)

@@ -21,7 +21,7 @@ namespace MusicDecrypto
                         if (Directory.Exists(opts.OutputDir)) Decrypto.OutputDir = opts.OutputDir;
                         else Console.WriteLine($"[WARN] Specified output directory {opts.OutputDir} does not exist.");
                     }
-                    Decrypto.AvoidOverwrite = opts.AvoidOverwrite;
+                    Decrypto.SkipDuplicate = opts.SkipDuplicate;
                     inputPaths = opts.InputPaths.ToArray();
                 })
                 .WithNotParsed<Options>(errs => { });
@@ -36,13 +36,14 @@ namespace MusicDecrypto
                     {
                         if (Directory.Exists(path))
                         {
-                            foundPaths.AddRange(Directory.EnumerateFiles(path, "*", SearchOption.AllDirectories)
-                                                    .Where(file =>
-                                                        file.ToLower().EndsWith(".ncm") ||
-                                                        file.ToLower().EndsWith(".qmc0") ||
-                                                        file.ToLower().EndsWith(".qmc3") ||
-                                                        file.ToLower().EndsWith(".qmcflac"))
-                                                    );
+                            foundPaths.AddRange(
+                                Directory.EnumerateFiles(path, "*", SearchOption.AllDirectories)
+                                    .Where(file =>
+                                        file.ToLower().EndsWith(".ncm") ||
+                                        file.ToLower().EndsWith(".qmc0") ||
+                                        file.ToLower().EndsWith(".qmc3") ||
+                                        file.ToLower().EndsWith(".qmcflac"))
+                            );
                         }
                         else if (File.Exists(path) && (
                             path.ToLower().EndsWith(".ncm") ||
@@ -62,7 +63,7 @@ namespace MusicDecrypto
                 string[] trimmedPaths = foundPaths.Where((x, i) => foundPaths.FindIndex(y => y == x) == i).ToArray();
 
                 if (trimmedPaths.Length > 0)
-                {
+                {                    
                     _ = Parallel.ForEach(trimmedPaths, file =>
                     {
                         try
@@ -89,7 +90,7 @@ namespace MusicDecrypto
                         {
                             Console.WriteLine(e.ToString());
                         }
-                    });
+                    });                    
 
                     Console.WriteLine($"Program finished with {trimmedPaths.Length} files requested and {Decrypto.SuccessCount} files saved successfully.");
                     return;
@@ -101,13 +102,13 @@ namespace MusicDecrypto
 
         internal class Options
         {
-            [Option('a', "avoid-overwrite", Required = false, HelpText = "Do not overwrite existing files.")]
-            public bool AvoidOverwrite { get; set; } = false;
-
             [Option('o', "output", Required = false, HelpText = "Specify output directory for all files.")]
             public string OutputDir { get; set; }
 
-            [Value(0, Required = true, MetaName = "Paths", HelpText = "Specify the input files and/or directories.")]
+            [Option('s', "skip-duplicate", Required = false, HelpText = "Do not overwrite existing files.")]
+            public bool SkipDuplicate { get; set; } = false;
+            
+            [Value(0, Required = true, MetaName = "Path", HelpText = "Specify the input files and/or directories.")]
             public IEnumerable<string> InputPaths { get; set; }
         }
     }

@@ -6,13 +6,13 @@ namespace MusicDecrypto
 {
     internal abstract class Decrypto
     {
-        public static bool AvoidOverwrite { get; set; } = false;
+        public static bool SkipDuplicate { get; set; } = false;
         public static string OutputDir { get; set; } = null;
         public static ulong SuccessCount { get; private set; } = 0;
 
-        public string SrcPath { get; private set; }
-        protected BinaryReader SrcFile { get; set; } = null;
-        protected MemoryStream MainBuffer { get; set; } = new MemoryStream();
+        public string InPath { get; private set; }
+        protected BinaryReader InFile { get; set; } = null;
+        protected MemoryStream OutBuffer { get; set; } = new MemoryStream();
         protected MemoryStream CoverBuffer { get; set; } = new MemoryStream();
         protected string CoverMime { get; set; }
         protected string MusicMime { get; set; }
@@ -20,15 +20,15 @@ namespace MusicDecrypto
 
         protected Decrypto(string path, string mime = null)
         {
-            SrcPath = path;
-            SrcFile = new BinaryReader(new FileStream(SrcPath, FileMode.Open));
+            InPath = path;
+            InFile = new BinaryReader(new FileStream(InPath, FileMode.Open));
             MusicMime = mime;
         }
 
         ~Decrypto()
         {
-            SrcFile.Dispose();
-            MainBuffer.Dispose();
+            InFile.Dispose();
+            OutBuffer.Dispose();
             CoverBuffer.Dispose();
         }
 
@@ -42,27 +42,27 @@ namespace MusicDecrypto
             {
                 "audio/flac" => "flac",
                 "audio/mpeg" => "mp3",
-                _ => throw new FileLoadException($"Failed to recognize music in {SrcPath}."),
+                _ => throw new FileLoadException($"Failed to recognize music in {InPath}."),
             };
 
             string path;
             if (OutputDir == null)
             {
-                path = $"{Path.Combine(Path.GetDirectoryName(SrcPath), Path.GetFileNameWithoutExtension(SrcPath))}.{extension}";
+                path = $"{Path.Combine(Path.GetDirectoryName(InPath), Path.GetFileNameWithoutExtension(InPath))}.{extension}";
             }
             else
             {
-                path = $"{Path.Combine(OutputDir, Path.GetFileNameWithoutExtension(SrcPath))}.{extension}";
+                path = $"{Path.Combine(OutputDir, Path.GetFileNameWithoutExtension(InPath))}.{extension}";
             }
 
-            if (File.Exists(path) && AvoidOverwrite)
+            if (File.Exists(path) && SkipDuplicate)
             {
                 Console.WriteLine($"[INFO] Skipping {path}");
                 return;
             }
 
             using FileStream file = new FileStream(path, FileMode.Create);
-            MainBuffer.WriteTo(file);
+            OutBuffer.WriteTo(file);
             SuccessCount += 1;
             Console.WriteLine($"[INFO] File was decrypted successfully at {path}.");
         }
@@ -70,18 +70,18 @@ namespace MusicDecrypto
         protected byte[] ReadFixedChunk(ref int size)
         {
             byte[] chunk = new byte[size];
-            size = SrcFile.Read(chunk, 0, size);
+            size = InFile.Read(chunk, 0, size);
             return chunk;
         }
 
         protected byte[] ReadIndexedChunk(byte? obfuscator)
         {
-            int chunkSize = SrcFile.ReadInt32();
+            int chunkSize = InFile.ReadInt32();
 
             if (chunkSize > 0)
             {
                 byte[] chunk = new byte[chunkSize];
-                SrcFile.Read(chunk, 0, chunkSize);
+                InFile.Read(chunk, 0, chunkSize);
                 if (obfuscator != null)
                 {
                     for (int i = 0; i < chunkSize; i += 1)

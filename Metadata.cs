@@ -65,13 +65,16 @@ namespace MusicDecrypto
         internal Metadata(NetEaseMetadata src)
         {
             Title = src.MusicName;
-            Artists = new string[src.Artist.Count];
-            for (int i = 0; i < src.Artist.Count; i += 1)
+            if (src.Artist != null)
             {
-                Artists[i] = src.Artist[i][0];
+                Artists = new string[src.Artist.Count];
+                for (int i = 0; i < src.Artist.Count; i += 1)
+                {
+                    Artists[i] = src.Artist[i][0];
+                }
+                AlbumArtist = Artists[0];
             }
             Album = src.Album;
-            AlbumArtist = Artists[0];
         }
     }
 

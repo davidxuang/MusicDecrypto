@@ -33,7 +33,7 @@
                 {
                     chunk[i] ^= MainKey[i];
                 }
-                MainBuffer.Write(chunk);
+                OutBuffer.Write(chunk);
             }
         }
     }
