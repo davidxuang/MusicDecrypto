@@ -12,7 +12,7 @@ A .NET Core implementation of music de-DRM for NetEase Cloud Music and QQ Music.
 
 ### Dependencies
 
--   [.NET Core](https://dotnet.microsoft.com) 3.0
+-   [.NET Core](https://dotnet.microsoft.com) 3.1
 -   [CommandLineParser](https://github.com/commandlineparser/commandline)
 -   [Json.NET](https://www.newtonsoft.com/json)
 -   [TagLib#](https://github.com/mono/taglib-sharp)
@@ -25,8 +25,8 @@ Drag and drop files and/or directories into the executable or run:
 
 ### Options
 
-- `-a, --avoid-overwrite` Do not overwrite existing files.
 - `-o, --output <directory>` Specify output directory. 
+- `-s, --skip-duplicate` Do not overwrite existing files.
 
 ## References
 

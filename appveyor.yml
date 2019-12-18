@@ -1,4 +1,4 @@
-version: '1.1.0.{build}'
+version: '1.1.1.{build}'
 image: Visual Studio 2019
 shallow_clone: true
 pull_requests:
@@ -14,18 +14,18 @@ dotnet_csproj:
 before_build:
   - nuget install Microsoft.Packaging.Tools.Trimming -OutputDirectory packages -Version 1.1.0-preview1-26619-01
   - nuget install CommandLineParser -OutputDirectory packages -Version 2.6.0
-  - nuget install Newtonsoft.Json -OutputDirectory packages -Version 12.0.2
+  - nuget install Newtonsoft.Json -OutputDirectory packages -Version 12.0.3
   - nuget install TagLibSharp -OutputDirectory packages -Version 2.2.0
 build_script:
   - dotnet publish -c Release
   - dotnet publish -c Release -r win-x64 /p:PublishSingleFile=true
 after_build:
-  - 7z a MusicDecrypto-netcore3.0-generic.7z .\bin\Release\netcoreapp3.0\publish\*.exe .\bin\Release\netcoreapp3.0\publish\*.dll .\bin\Release\netcoreapp3.0\publish\*.json
-  - 7z a MusicDecrypto-netcore3.0-win64.7z .\bin\Release\netcoreapp3.0\win-x64\publish\*.exe
+  - 7z a MusicDecrypto-netcore3.1-generic.7z .\bin\Release\netcoreapp3.1\publish\*.exe .\bin\Release\netcoreapp3.1\publish\*.dll .\bin\Release\netcoreapp3.1\publish\*.json
+  - 7z a MusicDecrypto-netcore3.1-win64.7z .\bin\Release\netcoreapp3.1\win-x64\publish\*.exe
 artifacts:
-  - path: MusicDecrypto-netcore3.0-generic.7z
+  - path: MusicDecrypto-netcore3.1-generic.7z
     name: generic
-  - path: MusicDecrypto-netcore3.0-win64.7z
+  - path: MusicDecrypto-netcore3.1-win64.7z
     name: win64
 deploy:
   - provider: GitHub
@@ -35,5 +35,4 @@ deploy:
     auth_token:
       secure: s4KrkEh5TVzLxfOWeChe1mpLRpdh9OWjlZmFBV/rxEpaA2SQmxW59s0aQzGBaiJH
     on:
-      branch: master
       APPVEYOR_REPO_TAG: true
