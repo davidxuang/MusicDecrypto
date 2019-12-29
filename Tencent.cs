@@ -1,40 +1,184 @@
-﻿namespace MusicDecrypto
-{
-    internal sealed class TencentDecrypto : Decrypto
-    {
-        private static readonly byte[] MainKey = {
-        //    0     1     2     3     4     5     6     7     8     9     a     b     c     d     e     f
-            0x77, 0x48, 0x32, 0x73, 0xDE, 0xF2, 0xC0, 0xC8, 0x95, 0xEC, 0x30, 0xB2, 0x51, 0xC3, 0xE1, 0xA0, // 0
-            0x9E, 0xE6, 0x9D, 0xCF, 0xFA, 0x7F, 0x14, 0xD1, 0xCE, 0xB8, 0xDC, 0xC3, 0x4A, 0x67, 0x93, 0xD6, // 1
-            0x28, 0xC2, 0x91, 0x70, 0xCA, 0x8D, 0xA2, 0xA4, 0xF0, 0x08, 0x61, 0x90, 0x7E, 0x6F, 0xA2, 0xE0, // 2
-            0xEB, 0xAE, 0x3E, 0xB6, 0x67, 0xC7, 0x92, 0xF4, 0x91, 0xB5, 0xF6, 0x6C, 0x5E, 0x84, 0x40, 0xF7, // 3
-            0xF3, 0x1B, 0x02, 0x7F, 0xD5, 0xAB, 0x41, 0x89, 0x28, 0xF4, 0x25, 0xCC, 0x52, 0x11, 0xAD, 0x43, // 4
-            0x68, 0xA6, 0x41, 0x8B, 0x84, 0xB5, 0xFF, 0x2C, 0x92, 0x4A, 0x26, 0xD8, 0x47, 0x6A, 0x7C, 0x95, // 5
-            0x61, 0xCC, 0xE6, 0xCB, 0xBB, 0x3F, 0x47, 0x58, 0x89, 0x75, 0xC3, 0x75, 0xA1, 0xD9, 0xAF, 0xCC, // 6
-            0x08, 0x73, 0x17, 0xDC, 0xAA, 0x9A, 0xA2, 0x16, 0x41, 0xD8, 0xA2, 0x06, 0xC6, 0x8B, 0xFC, 0x66, // 7
-            0x34, 0x9F, 0xCF, 0x18, 0x23, 0xA0, 0x0A, 0x74, 0xE7, 0x2B, 0x27, 0x70, 0x92, 0xE9, 0xAF, 0x37, // 8
-            0xE6, 0x8C, 0xA7, 0xBC, 0x62, 0x65, 0x9C, 0xC2, 0x08, 0xC9, 0x88, 0xB3, 0xF3, 0x43, 0xAC, 0x74, // 9
-            0x2C, 0x0F, 0xD4, 0xAF, 0xA1, 0xC3, 0x01, 0x64, 0x95, 0x4E, 0x48, 0x9F, 0xF4, 0x35, 0x78, 0x95, // a
-            0x7A, 0x39, 0xD6, 0x6A, 0xA0, 0x6D, 0x40, 0xE8, 0x4F, 0xA8, 0xEF, 0x11, 0x1D, 0xF3, 0x1B, 0x3F, // b
-            0x3F, 0x07, 0xDD, 0x6F, 0x5B, 0x19, 0x30, 0x19, 0xFB, 0xEF, 0x0E, 0x37, 0xF0, 0x0E, 0xCD, 0x16, // c
-            0x49, 0xFE, 0x53, 0x47, 0x13, 0x1A, 0xBD, 0xA4, 0xF1, 0x40, 0x19, 0x60, 0x0E, 0xED, 0x68, 0x09, // d
-            0x06, 0x5F, 0x4D, 0xCF, 0x3D, 0x1A, 0xFE, 0x20, 0x77, 0xE4, 0xD9, 0xDA, 0xF9, 0xA4, 0x2B, 0x76, // e
-            0x1C, 0x71, 0xDB, 0x00, 0xBC, 0xFD, 0x0C, 0x6C, 0xA5, 0x47, 0xF7, 0xF6, 0x00, 0x79, 0x4A, 0x11  // f
-        };
+﻿using System;
+using System.Linq;
+using System.IO;
 
-        internal TencentDecrypto(string path, string mime) : base(path, mime) { Load(); Save(); }
+namespace MusicDecrypto
+{
+    internal abstract class TencentDecrypto : Decrypto
+    {
+        public static bool ForceRename { get; set; } = false;
+
+        internal TencentDecrypto(string path, string mime) : base(path, mime) { }
 
         protected override void Load()
         {
-            for (int chunkSize = 0x2000; chunkSize > 1;)
+            for (int chunkSize = 0x8000; ;)
             {
                 byte[] chunk = ReadFixedChunk(ref chunkSize);
-                for (int i = 0; i < chunkSize; i += 1)
+
+                for (int i = 0; i < chunkSize; i++)
                 {
-                    chunk[i] ^= MainKey[i];
+                    chunk[i] ^= NextMask();
                 }
-                OutBuffer.Write(chunk);
+
+                if (chunkSize < 0x8000)
+                {
+                    OutBuffer.Write(chunk.Take(chunkSize).ToArray());
+                    break;
+                }
+                else
+                    OutBuffer.Write(chunk);
             }
+        }
+
+        protected override void Metadata()
+        {
+            ResetOutBuffer();
+            using TagLib.File file = TagLib.File.Create(new MemoryFileAbstraction($"buffer.{MediaType.MimeToExt(MusicMime)}", OutBuffer));
+            TagLib.Tag tag = MusicMime switch
+            {
+                "audio/flac" => file.Tag,
+                "audio/mpeg" => file.GetTag(TagLib.TagTypes.Id3v2),
+                _ => throw new FileLoadException($"Failed to get file type while processing {InPath}."),
+            };
+
+            if (tag.Pictures.Length > 0)
+            {
+                tag.Pictures[0].Type = TagLib.PictureType.FrontCover;
+            }
+
+            if (ForceRename)
+            {
+                if (tag.Title != null && tag.AlbumArtists.Length > 0)
+                    OutName = $"{tag.AlbumArtists[0]} - {tag.Title}";
+                else if (tag.Title != null && tag.Performers.Length > 0)
+                    OutName = $"{tag.Performers[0]} - {tag.Title}";
+                else
+                    Console.WriteLine($"[WARN] Failed to find name for {InPath}.");
+            }
+
+            file.Save();
+        }
+
+        protected abstract byte NextMask();
+    }
+
+    internal sealed class TencentLegacyDecrypto : TencentDecrypto
+    {
+        private static readonly byte[,] SeedMap = {
+            {0x4a, 0xd6, 0xca, 0x90, 0x67, 0xf7, 0x52},
+            {0x5e, 0x95, 0x23, 0x9f, 0x13, 0x11, 0x7e},
+            {0x47, 0x74, 0x3d, 0x90, 0xaa, 0x3f, 0x51},
+            {0xc6, 0x09, 0xd5, 0x9f, 0xfa, 0x66, 0xf9},
+            {0xf3, 0xd6, 0xa1, 0x90, 0xa0, 0xf7, 0xf0},
+            {0x1d, 0x95, 0xde, 0x9f, 0x84, 0x11, 0xf4},
+            {0x0e, 0x74, 0xbb, 0x90, 0xbc, 0x3f, 0x92},
+            {0x00, 0x09, 0x5b, 0x9f, 0x62, 0x66, 0xa1}
+        };
+
+        internal TencentLegacyDecrypto(string path, string mime) : base(path, mime) { }
+
+        private int indexX = -1;
+        private int indexY = 8;
+        private int stepX = 1;
+        private int offset = -1;
+
+        protected override byte NextMask()
+        {
+            byte val;
+            offset++;
+            if (indexX < 0)
+            {
+                stepX = 1;
+                indexY = (8 - indexY) % 8;
+                val = 0xc3;
+            }
+            else if (indexX > 6)
+            {
+                stepX = -1;
+                indexY = 7 - indexY;
+                val = 0xd8;
+            }
+            else
+                val = SeedMap[indexY, indexX];
+            indexX += stepX;
+            if (offset == 0x8000 || (offset > 0x8000 && (offset + 1) % 0x8000 == 0))
+                return NextMask();
+            return val;
+        }
+    }
+
+    internal sealed class TencentNeonDecrypto : TencentDecrypto
+    {
+        byte[] mask = null;
+
+        internal TencentNeonDecrypto(string path, string mime) : base(path, mime) { }
+
+        protected override void Check()
+        {
+            int maskSize = 0x80;
+            int headerSize = 0x8;
+            byte[] lastMask = ReadFixedChunk(ref maskSize);
+            byte[] thisMask = ReadFixedChunk(ref maskSize);
+            while (maskSize == 0x80)
+            {
+                bool detected = true;
+                for (uint i = 0; i < 0x80; i++)
+                {
+                    if (lastMask[i] != thisMask[i])
+                    {
+                        detected = false;
+                        break;
+                    }
+                }
+                if (!detected)
+                {
+                    lastMask = thisMask;
+                    thisMask = ReadFixedChunk(ref maskSize);
+                    continue;
+                }
+
+                ResetInFile();
+
+                byte[] header = ReadFixedChunk(ref headerSize);
+                for (uint i = 0; i < headerSize; i++)
+                {
+                    header[i] ^= thisMask[i];
+                }
+                MemoryStream headerStream = new MemoryStream(header);
+                if (MediaType.GetStreamMime(headerStream) == "audio/flac")
+                {
+                    mask = new byte[maskSize];
+                    mask = thisMask;
+                    break;
+                }
+                headerStream.Dispose();
+                lastMask = thisMask;
+                thisMask = ReadFixedChunk(ref maskSize);
+            }
+
+            if (mask == null)
+                throw new FileLoadException($"{InPath} is currently not supported.");
+
+            ResetInFile();
+        }
+
+        private int index = -1;
+        private int offset = -1;
+
+        protected override byte NextMask()
+        {
+            offset++;
+            index++;
+
+            if (offset == 0x8000 || (offset > 0x8000 && (offset + 1) % 0x8000 == 0))
+            {
+                offset++;
+                index++;
+            }
+            if (index >= 0x80) index -= 0x80;
+
+            return mask[index];
         }
     }
 }

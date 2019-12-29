@@ -10,7 +10,10 @@ namespace MusicDecrypto
         public static string OutputDir { get; set; } = null;
         public static ulong SuccessCount { get; private set; } = 0;
 
+        private bool Processed = false;
+
         public string InPath { get; private set; }
+        public string OutName { get; protected set; } = null;
         protected BinaryReader InFile { get; set; } = null;
         protected MemoryStream OutBuffer { get; set; } = new MemoryStream();
         protected MemoryStream CoverBuffer { get; set; } = new MemoryStream();
@@ -32,28 +35,37 @@ namespace MusicDecrypto
             CoverBuffer.Dispose();
         }
 
-        protected abstract void Load();
+        public void Process()
+        {
+            if (!Processed)
+            {
+                Check(); Load(); Metadata(); Save();
+                Processed = true;
+            }
+        }
 
-        protected virtual void FixMetadata() { }
+        protected virtual void Check() { }
+        protected abstract void Load();
+        protected abstract void Metadata();
 
         protected void Save()
         {
-            string extension = MusicMime switch
+            string extension;
+            try
             {
-                "audio/flac" => "flac",
-                "audio/mpeg" => "mp3",
-                _ => throw new FileLoadException($"Failed to recognize music in {InPath}."),
-            };
+                extension = MediaType.MimeToExt(MusicMime);
+            }
+            catch (InvalidDataException)
+            {
+                throw new FileLoadException($"Failed to recognize music in {InPath}.");
+            }
 
             string path;
             if (OutputDir == null)
-            {
-                path = $"{Path.Combine(Path.GetDirectoryName(InPath), Path.GetFileNameWithoutExtension(InPath))}.{extension}";
-            }
-            else
-            {
-                path = $"{Path.Combine(OutputDir, Path.GetFileNameWithoutExtension(InPath))}.{extension}";
-            }
+                OutputDir = Path.GetDirectoryName(InPath);
+            if (OutName == null)
+                OutName = Path.GetFileNameWithoutExtension(InPath);
+            path = $"{Path.Combine(OutputDir, OutName)}.{extension}";
 
             if (File.Exists(path) && SkipDuplicate)
             {
@@ -84,7 +96,7 @@ namespace MusicDecrypto
                 InFile.Read(chunk, 0, chunkSize);
                 if (obfuscator != null)
                 {
-                    for (int i = 0; i < chunkSize; i += 1)
+                    for (int i = 0; i < chunkSize; i++)
                         chunk[i] ^= obfuscator.Value;
                 }
                 return chunk;
@@ -93,6 +105,15 @@ namespace MusicDecrypto
             {
                 throw new NullFileChunkException("Failed to load file chunk.");
             }
+        }
+
+        protected void ResetInFile()
+        {
+            InFile.BaseStream.Position = 0;
+        }
+        protected void ResetOutBuffer()
+        {
+            OutBuffer.Position = 0;
         }
 
         public static byte[] AesEcbDecrypt(byte[] cipher, byte[] key)

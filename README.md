@@ -25,10 +25,11 @@ Drag and drop files and/or directories into the executable or run:
 
 ### Options
 
-- `-o, --output <directory>` Specify output directory. 
-- `-s, --skip-duplicate` Do not overwrite existing files.
+- `-d, --skip-duplicate` Do not overwrite existing files.
+- `-o, --output <directory>` Specify output directory.
+- `-n, --force-rename` Try to fix Tencent file name basing on metadata.
 
 ## References
 
 -   [ncmdump](https://github.com/anonymous5l/ncmdump)
--   [qmcdump](https://github.com/MegrezZhu/qmcdump)
+-   [unlock-music](https://github.com/ix64/unlock-music)

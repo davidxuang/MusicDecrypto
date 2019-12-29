@@ -22,6 +22,7 @@ namespace MusicDecrypto
                         else Console.WriteLine($"[WARN] Specified output directory {opts.OutputDir} does not exist.");
                     }
                     Decrypto.SkipDuplicate = opts.SkipDuplicate;
+                    TencentDecrypto.ForceRename = opts.ForceRename;
                     inputPaths = opts.InputPaths.ToArray();
                 })
                 .WithNotParsed<Options>(errs => { });
@@ -40,15 +41,19 @@ namespace MusicDecrypto
                                 Directory.EnumerateFiles(path, "*", SearchOption.AllDirectories)
                                     .Where(file =>
                                         file.ToLower().EndsWith(".ncm") ||
+                                        file.ToLower().EndsWith(".mflac") ||
                                         file.ToLower().EndsWith(".qmc0") ||
                                         file.ToLower().EndsWith(".qmc3") ||
+                                        file.ToLower().EndsWith(".qmcogg") ||
                                         file.ToLower().EndsWith(".qmcflac"))
                             );
                         }
                         else if (File.Exists(path) && (
                             path.ToLower().EndsWith(".ncm") ||
+                            path.ToLower().EndsWith(".mflac") ||
                             path.ToLower().EndsWith(".qmc0") ||
                             path.ToLower().EndsWith(".qmc3") ||
+                            path.ToLower().EndsWith(".qmcogg") ||
                             path.ToLower().EndsWith(".qmcflac")))
                         {
                             foundPaths.Add(path);
@@ -63,7 +68,7 @@ namespace MusicDecrypto
                 string[] trimmedPaths = foundPaths.Where((x, i) => foundPaths.FindIndex(y => y == x) == i).ToArray();
 
                 if (trimmedPaths.Length > 0)
-                {                    
+                {
                     _ = Parallel.ForEach(trimmedPaths, file =>
                     {
                         try
@@ -76,21 +81,30 @@ namespace MusicDecrypto
                                     break;
                                 case ".qmc0":
                                 case ".qmc3":
-                                    decrypto = new TencentDecrypto(file, "audio/mpeg");
+                                    decrypto = new TencentLegacyDecrypto(file, "audio/mpeg");
+                                    break;
+                                case ".qmcogg":
+                                    decrypto = new TencentLegacyDecrypto(file, "audio/ogg");
                                     break;
                                 case ".qmcflac":
-                                    decrypto = new TencentDecrypto(file, "audio/flac");
+                                    decrypto = new TencentLegacyDecrypto(file, "audio/flac");
+                                    break;
+                                case ".mflac":
+                                    decrypto = new TencentNeonDecrypto(file, "audio/flac");
                                     break;
                                 default:
                                     Console.WriteLine($"[WARN] Cannot recognize {file}");
                                     break;
                             }
+
+                            if (decrypto != null)
+                                decrypto.Process();
                         }
                         catch (IOException e)
                         {
                             Console.WriteLine(e.ToString());
                         }
-                    });                    
+                    });
 
                     Console.WriteLine($"Program finished with {trimmedPaths.Length} files requested and {Decrypto.SuccessCount} files saved successfully.");
                     return;
@@ -102,12 +116,15 @@ namespace MusicDecrypto
 
         internal class Options
         {
+            [Option('d', "skip-duplicate", Required = false, HelpText = "Do not overwrite existing files.")]
+            public bool SkipDuplicate { get; set; } = false;
+
+            [Option('n', "force-rename", Required = false, HelpText = "Try to fix Tencent file name basing on metadata.")]
+            public bool ForceRename { get; set; } = false;
+
             [Option('o', "output", Required = false, HelpText = "Specify output directory for all files.")]
             public string OutputDir { get; set; }
 
-            [Option('s', "skip-duplicate", Required = false, HelpText = "Do not overwrite existing files.")]
-            public bool SkipDuplicate { get; set; } = false;
-            
             [Value(0, Required = true, MetaName = "Path", HelpText = "Specify the input files and/or directories.")]
             public IEnumerable<string> InputPaths { get; set; }
         }

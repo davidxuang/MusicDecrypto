@@ -14,9 +14,9 @@ namespace MusicDecrypto
         private byte[] MainKey { get; set; } = new byte[256];
         private NetEaseMetadata PropMetadata { get; set; }
 
-        internal NetEaseDecrypto(string path) : base(path) { Load(); FixMetadata(); Save(); }
+        internal NetEaseDecrypto(string path) : base(path) { }
 
-        protected override void Load()
+        protected override void Check()
         {
             // Check file header
             if (InFile.ReadUInt64() != 0x4d4144464e455443)
@@ -24,7 +24,10 @@ namespace MusicDecrypto
 
             // Skip ahead
             _ = InFile.ReadBytes(2);
+        }
 
+        protected override void Load()
+        {
             try
             {
                 // Read key
@@ -32,7 +35,7 @@ namespace MusicDecrypto
                 byte[] key = AesEcbDecrypt(keyChunk, rootKey);
 
                 // Build main key
-                for (uint i = 0; i < MainKey.Length; i += 1)
+                for (uint i = 0; i < MainKey.Length; i++)
                 {
                     MainKey[i] = Convert.ToByte(i);
                 }
@@ -57,7 +60,7 @@ namespace MusicDecrypto
                 // Read metadata
                 byte[] metaChunk = ReadIndexedChunk(0x63);
                 int skipCount = 22;
-                for (int i = 0; i < metaChunk.LongLength; i += 1)
+                for (int i = 0; i < metaChunk.LongLength; i++)
                 {
                     if (metaChunk[i] == 58)
                     {
@@ -122,24 +125,30 @@ namespace MusicDecrypto
             }
 
             // Read music
-            for (int chunkSize = 0x8000; chunkSize > 1;)
+            for (int chunkSize = 0x8000; ;)
             {
                 byte[] mainChunk = ReadFixedChunk(ref chunkSize);
 
-                for (int i = 0; i < chunkSize; i += 1)
+                for (int i = 0; i < chunkSize; i++)
                 {
                     int j = (i + 1) & 0xff;
                     mainChunk[i] ^= MainKey[(MainKey[j] + MainKey[(MainKey[j] + j) & 0xff]) & 0xff];
                 }
 
-                OutBuffer.Write(mainChunk);
+                if (chunkSize < 0x8000)
+                {
+                    OutBuffer.Write(mainChunk.Take(chunkSize).ToArray());
+                    break;
+                }
+                else
+                    OutBuffer.Write(mainChunk);
             }
             MusicMime = MediaType.GetStreamMime(OutBuffer);
         }
 
-        protected override void FixMetadata()
+        protected override void Metadata()
         {
-            OutBuffer.Position = 0;
+            ResetOutBuffer();
             using TagLib.File file = TagLib.File.Create(new MemoryFileAbstraction($"buffer.{MediaType.MimeToExt(MusicMime)}", OutBuffer));
             TagLib.Tag tag = MusicMime switch
             {

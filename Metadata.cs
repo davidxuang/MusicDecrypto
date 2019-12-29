@@ -27,6 +27,8 @@ namespace MusicDecrypto
             ? "audio/flac" //            f     L     a     C
             : HeaderMatch(new byte[] { 0x49, 0x44, 0x33 }, stream)
             ? "audio/mpeg" //            I     D     3
+            : HeaderMatch(new byte[] { 0x4f, 0x67, 0x67, 0x53 }, stream)
+            ? "audio/ogg" //             O     g     g     S
             : HeaderMatch(new byte[] { 0x47, 0x49, 0x46, 0x38 }, stream)
             ? "image/gif" //             G     I     F     8
             : HeaderMatch(new byte[] { 0xff, 0xd8 }, stream)
@@ -34,7 +36,7 @@ namespace MusicDecrypto
             : HeaderMatch(new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A }, stream)
             ? "image/png" //                   P     N     G
             : null;
-
+            
         private static bool HeaderMatch(byte[] target, MemoryStream stream)
         {
             if (target.Length > stream.Length) return false;
@@ -44,8 +46,9 @@ namespace MusicDecrypto
         public static string MimeToExt(string mime) => mime switch
         {
             "audio/flac" => "flac",
+            "audio/ogg" => "ogg",
             "audio/mpeg" => "mp3",
-            _ => null
+            _ => throw new InvalidDataException($"Failed to recognize music type.")
         };
     }
 
@@ -68,7 +71,7 @@ namespace MusicDecrypto
             if (src.Artist != null)
             {
                 Artists = new string[src.Artist.Count];
-                for (int i = 0; i < src.Artist.Count; i += 1)
+                for (int i = 0; i < src.Artist.Count; i++)
                 {
                     Artists[i] = src.Artist[i][0];
                 }
