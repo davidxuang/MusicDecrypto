@@ -10,7 +10,7 @@ namespace MusicDecrypto
 
         internal TencentDecrypto(string path, string mime) : base(path, mime) { }
 
-        protected override void Load()
+        protected override void Decrypt()
         {
             for (int chunkSize = 0x8000; ;)
             {
@@ -39,6 +39,7 @@ namespace MusicDecrypto
             {
                 "audio/flac" => file.Tag,
                 "audio/mpeg" => file.GetTag(TagLib.TagTypes.Id3v2),
+                "audio/ogg" => file.Tag,
                 _ => throw new FileLoadException($"Failed to get file type while processing {InPath}."),
             };
 
@@ -63,7 +64,7 @@ namespace MusicDecrypto
         protected abstract byte NextMask();
     }
 
-    internal sealed class TencentLegacyDecrypto : TencentDecrypto
+    internal sealed class TencentFixedDecrypto : TencentDecrypto
     {
         private static readonly byte[,] SeedMap = {
             {0x4a, 0xd6, 0xca, 0x90, 0x67, 0xf7, 0x52},
@@ -76,7 +77,7 @@ namespace MusicDecrypto
             {0x00, 0x09, 0x5b, 0x9f, 0x62, 0x66, 0xa1}
         };
 
-        internal TencentLegacyDecrypto(string path, string mime) : base(path, mime) { }
+        internal TencentFixedDecrypto(string path, string mime) : base(path, mime) { }
 
         private int indexX = -1;
         private int indexY = 8;
@@ -108,11 +109,11 @@ namespace MusicDecrypto
         }
     }
 
-    internal sealed class TencentNeonDecrypto : TencentDecrypto
+    internal sealed class TencentDynamicDecrypto : TencentDecrypto
     {
         byte[] mask = null;
 
-        internal TencentNeonDecrypto(string path, string mime) : base(path, mime) { }
+        internal TencentDynamicDecrypto(string path, string mime) : base(path, mime) { }
 
         protected override void Check()
         {
@@ -138,7 +139,7 @@ namespace MusicDecrypto
                     continue;
                 }
 
-                ResetInFile();
+                ResetInBuffer();
 
                 byte[] header = ReadFixedChunk(ref headerSize);
                 for (uint i = 0; i < headerSize; i++)
@@ -160,7 +161,7 @@ namespace MusicDecrypto
             if (mask == null)
                 throw new FileLoadException($"{InPath} is currently not supported.");
 
-            ResetInFile();
+            ResetInBuffer();
         }
 
         private int index = -1;

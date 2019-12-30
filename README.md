@@ -26,8 +26,8 @@ Drag and drop files and/or directories into the executable or run:
 ### Options
 
 - `-d, --skip-duplicate` Do not overwrite existing files.
-- `-o, --output <directory>` Specify output directory.
 - `-n, --force-rename` Try to fix Tencent file name basing on metadata.
+- `-o, --output <directory>` Specify output directory.
 
 ## References
 

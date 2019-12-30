@@ -4,48 +4,52 @@ using System.Security.Cryptography;
 
 namespace MusicDecrypto
 {
-    internal abstract class Decrypto
+    internal abstract class Decrypto : IDisposable
     {
         public static bool SkipDuplicate { get; set; } = false;
         public static string OutputDir { get; set; } = null;
         public static ulong SuccessCount { get; private set; } = 0;
 
-        private bool Processed = false;
-
-        public string InPath { get; private set; }
+        public bool Dumped { get; private set; } = false;
+        public string InPath { get; private set; } = null;
         public string OutName { get; protected set; } = null;
-        protected BinaryReader InFile { get; set; } = null;
+        protected string CoverMime { get; set; } = null;
+        protected string MusicMime { get; set; } = null;
+        protected MemoryStream InBuffer { get; set; } = new MemoryStream();
         protected MemoryStream OutBuffer { get; set; } = new MemoryStream();
         protected MemoryStream CoverBuffer { get; set; } = new MemoryStream();
-        protected string CoverMime { get; set; }
-        protected string MusicMime { get; set; }
         public Metadata StdMetadata { get; protected set; }
 
         protected Decrypto(string path, string mime = null)
         {
             InPath = path;
-            InFile = new BinaryReader(new FileStream(InPath, FileMode.Open));
+            using FileStream file = new FileStream(InPath, FileMode.Open);
+            file.CopyTo(InBuffer);
+            ResetInBuffer();
             MusicMime = mime;
         }
 
-        ~Decrypto()
+        public virtual void Dispose()
         {
-            InFile.Dispose();
+            InBuffer.Dispose();
             OutBuffer.Dispose();
             CoverBuffer.Dispose();
         }
 
-        public void Process()
+        public void Dump()
         {
-            if (!Processed)
+            if (!Dumped)
             {
-                Check(); Load(); Metadata(); Save();
-                Processed = true;
+                Check();
+                Decrypt();
+                Metadata();
+                Save();
+                Dumped = true;
             }
         }
 
         protected virtual void Check() { }
-        protected abstract void Load();
+        protected abstract void Decrypt();
         protected abstract void Metadata();
 
         protected void Save()
@@ -61,11 +65,8 @@ namespace MusicDecrypto
             }
 
             string path;
-            if (OutputDir == null)
-                OutputDir = Path.GetDirectoryName(InPath);
-            if (OutName == null)
-                OutName = Path.GetFileNameWithoutExtension(InPath);
-            path = $"{Path.Combine(OutputDir, OutName)}.{extension}";
+            if (OutName == null) OutName = Path.GetFileNameWithoutExtension(InPath);
+            path = ((OutputDir == null) ? Path.Combine(Path.GetDirectoryName(InPath), OutName) : Path.Combine(OutputDir, OutName)) + $".{extension}";
 
             if (File.Exists(path) && SkipDuplicate)
             {
@@ -75,41 +76,20 @@ namespace MusicDecrypto
 
             using FileStream file = new FileStream(path, FileMode.Create);
             OutBuffer.WriteTo(file);
-            SuccessCount += 1;
+            SuccessCount++;
             Console.WriteLine($"[INFO] File was decrypted successfully at {path}.");
         }
 
         protected byte[] ReadFixedChunk(ref int size)
         {
             byte[] chunk = new byte[size];
-            size = InFile.Read(chunk, 0, size);
+            size = InBuffer.Read(chunk, 0, size);
             return chunk;
         }
 
-        protected byte[] ReadIndexedChunk(byte? obfuscator)
+        protected void ResetInBuffer()
         {
-            int chunkSize = InFile.ReadInt32();
-
-            if (chunkSize > 0)
-            {
-                byte[] chunk = new byte[chunkSize];
-                InFile.Read(chunk, 0, chunkSize);
-                if (obfuscator != null)
-                {
-                    for (int i = 0; i < chunkSize; i++)
-                        chunk[i] ^= obfuscator.Value;
-                }
-                return chunk;
-            }
-            else
-            {
-                throw new NullFileChunkException("Failed to load file chunk.");
-            }
-        }
-
-        protected void ResetInFile()
-        {
-            InFile.BaseStream.Position = 0;
+            InBuffer.Position = 0;
         }
         protected void ResetOutBuffer()
         {

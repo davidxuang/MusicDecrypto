@@ -81,16 +81,16 @@ namespace MusicDecrypto
                                     break;
                                 case ".qmc0":
                                 case ".qmc3":
-                                    decrypto = new TencentLegacyDecrypto(file, "audio/mpeg");
+                                    decrypto = new TencentFixedDecrypto(file, "audio/mpeg");
                                     break;
                                 case ".qmcogg":
-                                    decrypto = new TencentLegacyDecrypto(file, "audio/ogg");
+                                    decrypto = new TencentFixedDecrypto(file, "audio/ogg");
                                     break;
                                 case ".qmcflac":
-                                    decrypto = new TencentLegacyDecrypto(file, "audio/flac");
+                                    decrypto = new TencentFixedDecrypto(file, "audio/flac");
                                     break;
                                 case ".mflac":
-                                    decrypto = new TencentNeonDecrypto(file, "audio/flac");
+                                    decrypto = new TencentDynamicDecrypto(file, "audio/flac");
                                     break;
                                 default:
                                     Console.WriteLine($"[WARN] Cannot recognize {file}");
@@ -98,7 +98,10 @@ namespace MusicDecrypto
                             }
 
                             if (decrypto != null)
-                                decrypto.Process();
+                            {
+                                decrypto.Dump();
+                                decrypto.Dispose();
+                            }
                         }
                         catch (IOException e)
                         {

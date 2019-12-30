@@ -12,21 +12,31 @@ namespace MusicDecrypto
         private static readonly byte[] rootKey = { 0x68, 0x7A, 0x48, 0x52, 0x41, 0x6D, 0x73, 0x6F, 0x35, 0x6B, 0x49, 0x6E, 0x62, 0x61, 0x78, 0x57 };
         private static readonly byte[] jsonKey = { 0x23, 0x31, 0x34, 0x6C, 0x6A, 0x6B, 0x5F, 0x21, 0x5C, 0x5D, 0x26, 0x30, 0x55, 0x3C, 0x27, 0x28 };
         private byte[] MainKey { get; set; } = new byte[256];
+        private BinaryReader InReader { get; set; } = null;
         private NetEaseMetadata PropMetadata { get; set; }
 
-        internal NetEaseDecrypto(string path) : base(path) { }
+        internal NetEaseDecrypto(string path) : base(path)
+        {
+            InReader = new BinaryReader(InBuffer);
+        }
+
+        public override void Dispose()
+        {
+            InReader.Dispose();
+            base.Dispose();
+        }
 
         protected override void Check()
         {
             // Check file header
-            if (InFile.ReadUInt64() != 0x4d4144464e455443)
+            if (InReader.ReadUInt64() != 0x4d4144464e455443)
                 throw new FileLoadException($"Failed to recognize header in {InPath}.");
 
             // Skip ahead
-            _ = InFile.ReadBytes(2);
+            _ = InBuffer.Seek(2, SeekOrigin.Current);
         }
 
-        protected override void Load()
+        protected override void Decrypt()
         {
             try
             {
@@ -39,7 +49,7 @@ namespace MusicDecrypto
                 {
                     MainKey[i] = Convert.ToByte(i);
                 }
-                for (uint trgIndex = 0, swpIndex, lastIndex = 0, srcOffset = 17, srcIndex = srcOffset; trgIndex < MainKey.Length; trgIndex += 1)
+                for (uint trgIndex = 0, swpIndex, lastIndex = 0, srcOffset = 17, srcIndex = srcOffset; trgIndex < MainKey.Length; trgIndex++)
                 {
                     byte swap = MainKey[trgIndex];
                     swpIndex = (swap + lastIndex + key[srcIndex++]) & 0xff;
@@ -88,7 +98,7 @@ namespace MusicDecrypto
             }
 
             // Skip ahead
-            _ = InFile.ReadBytes(9);
+            _ = InBuffer.Seek(9, SeekOrigin.Current);
 
             // Get cover data
             try
@@ -178,6 +188,27 @@ namespace MusicDecrypto
                 tag.AlbumArtists = new string[] { StdMetadata.AlbumArtist };
 
             file.Save();
+        }
+
+        private byte[] ReadIndexedChunk(byte? obfuscator)
+        {
+            int chunkSize = InReader.ReadInt32();
+
+            if (chunkSize > 0)
+            {
+                byte[] chunk = new byte[chunkSize];
+                InBuffer.Read(chunk, 0, chunkSize);
+                if (obfuscator != null)
+                {
+                    for (int i = 0; i < chunkSize; i++)
+                        chunk[i] ^= obfuscator.Value;
+                }
+                return chunk;
+            }
+            else
+            {
+                throw new NullFileChunkException("Failed to load file chunk.");
+            }
         }
     }
 }
