@@ -1,5 +1,4 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using System.IO;
 
 namespace MusicDecrypto
@@ -40,7 +39,7 @@ namespace MusicDecrypto
                 "audio/flac" => file.Tag,
                 "audio/mpeg" => file.GetTag(TagLib.TagTypes.Id3v2),
                 "audio/ogg" => file.Tag,
-                _ => throw new FileLoadException($"Failed to get file type while processing {InPath}."),
+                _ => throw new FileLoadException($"Failed to get file type while processing \"{InPath}\"."),
             };
 
             if (tag.Pictures.Length > 0)
@@ -55,7 +54,7 @@ namespace MusicDecrypto
                 else if (tag.Title != null && tag.Performers.Length > 0)
                     OutName = $"{tag.Performers[0]} - {tag.Title}";
                 else
-                    Console.WriteLine($"[WARN] Failed to find name for {InPath}.");
+                Logger.Error("Failed to find name for {Path}", InPath);
             }
 
             file.Save();
@@ -159,7 +158,7 @@ namespace MusicDecrypto
             }
 
             if (mask == null)
-                throw new FileLoadException($"{InPath} is currently not supported.");
+                throw new FileLoadException($"\"{InPath}\" is currently not supported.");
 
             ResetInBuffer();
         }

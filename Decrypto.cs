@@ -1,4 +1,5 @@
-﻿using System;
+﻿using NLog;
+using System;
 using System.IO;
 using System.Security.Cryptography;
 
@@ -6,6 +7,8 @@ namespace MusicDecrypto
 {
     internal abstract class Decrypto : IDisposable
     {
+        protected static readonly Logger Logger = LogManager.GetCurrentClassLogger();
+
         public static bool SkipDuplicate { get; set; } = false;
         public static string OutputDir { get; set; } = null;
         public static ulong SuccessCount { get; private set; } = 0;
@@ -55,14 +58,9 @@ namespace MusicDecrypto
         protected void Save()
         {
             string extension;
-            try
-            {
-                extension = MediaType.MimeToExt(MusicMime);
-            }
-            catch (InvalidDataException)
-            {
-                throw new FileLoadException($"Failed to recognize music in {InPath}.");
-            }
+            extension = MediaType.MimeToExt(MusicMime);
+            if (extension == null)
+                throw new FileLoadException($"\"{InPath}\" is invalid.");
 
             string path;
             if (OutName == null) OutName = Path.GetFileNameWithoutExtension(InPath);
@@ -70,14 +68,14 @@ namespace MusicDecrypto
 
             if (File.Exists(path) && SkipDuplicate)
             {
-                Console.WriteLine($"[INFO] Skipping {path}");
+                Logger.Info("Skipping {Path}", path);
                 return;
             }
 
             using FileStream file = new FileStream(path, FileMode.Create);
             OutBuffer.WriteTo(file);
             SuccessCount++;
-            Console.WriteLine($"[INFO] File was decrypted successfully at {path}.");
+            Logger.Info("File was decrypted successfully at {Path}", path);
         }
 
         protected byte[] ReadFixedChunk(ref int size)

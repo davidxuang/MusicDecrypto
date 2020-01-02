@@ -1,4 +1,5 @@
 ﻿using CommandLine;
+using NLog;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -9,112 +10,129 @@ namespace MusicDecrypto
 {
     internal static class Program
     {
+        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
+
         static void Main(string[] args)
         {
-            string[] inputPaths = null;
-
-            CommandLine.Parser.Default.ParseArguments<Options>(args)
-                .WithParsed<Options>(opts =>
-                {
-                    if (opts.OutputDir != null)
-                    {
-                        if (Directory.Exists(opts.OutputDir)) Decrypto.OutputDir = opts.OutputDir;
-                        else Console.WriteLine($"[WARN] Specified output directory {opts.OutputDir} does not exist.");
-                    }
-                    Decrypto.SkipDuplicate = opts.SkipDuplicate;
-                    TencentDecrypto.ForceRename = opts.ForceRename;
-                    inputPaths = opts.InputPaths.ToArray();
-                })
-                .WithNotParsed<Options>(errs => { });
-
-            if (inputPaths != null)
+            try
             {
-                List<string> foundPaths = new List<string>();
+                // Setup NLog
+                var logConfig = new NLog.Config.LoggingConfiguration();
+                var logFile = new NLog.Targets.FileTarget("logfile") { FileName = "debug.log" };
+                var logConsole = new NLog.Targets.ColoredConsoleTarget("logconsole");
+                logConfig.AddRule(LogLevel.Info, LogLevel.Fatal, logConsole);
+                logConfig.AddRule(LogLevel.Debug, LogLevel.Fatal, logFile);
+                NLog.LogManager.Configuration = logConfig;
 
-                foreach (string path in inputPaths)
-                {
-                    try
+                // Parse options
+                string[] inputPaths = null;
+                CommandLine.Parser.Default.ParseArguments<Options>(args)
+                    .WithParsed<Options>(opts =>
                     {
-                        if (Directory.Exists(path))
+                        if (opts.OutputDir != null)
                         {
-                            foundPaths.AddRange(
-                                Directory.EnumerateFiles(path, "*", SearchOption.AllDirectories)
-                                    .Where(file =>
-                                        file.ToLower().EndsWith(".ncm") ||
-                                        file.ToLower().EndsWith(".mflac") ||
-                                        file.ToLower().EndsWith(".qmc0") ||
-                                        file.ToLower().EndsWith(".qmc3") ||
-                                        file.ToLower().EndsWith(".qmcogg") ||
-                                        file.ToLower().EndsWith(".qmcflac"))
-                            );
+                            if (Directory.Exists(opts.OutputDir)) Decrypto.OutputDir = opts.OutputDir;
+                            else Logger.Error("Designated output directory {Path} does not exist.", opts.OutputDir);
                         }
-                        else if (File.Exists(path) && (
-                            path.ToLower().EndsWith(".ncm") ||
-                            path.ToLower().EndsWith(".mflac") ||
-                            path.ToLower().EndsWith(".qmc0") ||
-                            path.ToLower().EndsWith(".qmc3") ||
-                            path.ToLower().EndsWith(".qmcogg") ||
-                            path.ToLower().EndsWith(".qmcflac")))
-                        {
-                            foundPaths.Add(path);
-                        }
-                    }
-                    catch (IOException e)
-                    {
-                        Console.WriteLine(e.ToString());
-                    }
-                }
+                        Decrypto.SkipDuplicate = opts.SkipDuplicate;
+                        TencentDecrypto.ForceRename = opts.ForceRename;
+                        inputPaths = opts.InputPaths.ToArray();
+                    })
+                    .WithNotParsed<Options>(errs => { });
 
-                string[] trimmedPaths = foundPaths.Where((x, i) => foundPaths.FindIndex(y => y == x) == i).ToArray();
-
-                if (trimmedPaths.Length > 0)
+                if (inputPaths != null)
                 {
-                    _ = Parallel.ForEach(trimmedPaths, file =>
+                    // Search for files
+                    List<string> foundPaths = new List<string>();
+                    foreach (string path in inputPaths)
                     {
-                        Decrypto decrypto = null;
-
                         try
                         {
-                            switch (Path.GetExtension(file))
+                            if (Directory.Exists(path))
                             {
-                                case ".ncm":
-                                    decrypto = new NetEaseDecrypto(file);
-                                    break;
-                                case ".qmc0":
-                                case ".qmc3":
-                                    decrypto = new TencentFixedDecrypto(file, "audio/mpeg");
-                                    break;
-                                case ".qmcogg":
-                                    decrypto = new TencentFixedDecrypto(file, "audio/ogg");
-                                    break;
-                                case ".qmcflac":
-                                    decrypto = new TencentFixedDecrypto(file, "audio/flac");
-                                    break;
-                                case ".mflac":
-                                    decrypto = new TencentDynamicDecrypto(file, "audio/flac");
-                                    break;
-                                default:
-                                    Console.WriteLine($"[WARN] Cannot recognize {file}");
-                                    break;
+                                foundPaths.AddRange(
+                                    Directory.EnumerateFiles(path, "*", SearchOption.AllDirectories)
+                                        .Where(file =>
+                                            file.ToLower().EndsWith(".ncm") ||
+                                            file.ToLower().EndsWith(".mflac") ||
+                                            file.ToLower().EndsWith(".qmc0") ||
+                                            file.ToLower().EndsWith(".qmc3") ||
+                                            file.ToLower().EndsWith(".qmcogg") ||
+                                            file.ToLower().EndsWith(".qmcflac"))
+                                );
                             }
-
-                            if (decrypto != null) decrypto.Dump();
+                            else if (File.Exists(path) && (
+                                path.ToLower().EndsWith(".ncm") ||
+                                path.ToLower().EndsWith(".mflac") ||
+                                path.ToLower().EndsWith(".qmc0") ||
+                                path.ToLower().EndsWith(".qmc3") ||
+                                path.ToLower().EndsWith(".qmcogg") ||
+                                path.ToLower().EndsWith(".qmcflac")))
+                            {
+                                foundPaths.Add(path);
+                            }
                         }
                         catch (IOException e)
                         {
-                            Console.WriteLine(e.ToString());
+                            Logger.Error(e);
                         }
-                        finally
+                    }
+
+                    // Decrypt and dump
+                    string[] trimmedPaths = foundPaths.Where((x, i) => foundPaths.FindIndex(y => y == x) == i).ToArray();
+                    if (trimmedPaths.Length > 0)
+                    {
+                        _ = Parallel.ForEach(trimmedPaths, file =>
                         {
-                            if (decrypto != null) decrypto.Dispose();
-                        }
-                    });
+                            Decrypto decrypto = null;
 
-                    Console.WriteLine($"Program finished with {trimmedPaths.Length} files requested and {Decrypto.SuccessCount} files saved successfully.");
-                    return;
+                            try
+                            {
+                                switch (Path.GetExtension(file))
+                                {
+                                    case ".ncm":
+                                        decrypto = new NetEaseDecrypto(file);
+                                        break;
+                                    case ".qmc0":
+                                    case ".qmc3":
+                                        decrypto = new TencentFixedDecrypto(file, "audio/mpeg");
+                                        break;
+                                    case ".qmcogg":
+                                        decrypto = new TencentFixedDecrypto(file, "audio/ogg");
+                                        break;
+                                    case ".qmcflac":
+                                        decrypto = new TencentFixedDecrypto(file, "audio/flac");
+                                        break;
+                                    case ".mflac":
+                                        decrypto = new TencentDynamicDecrypto(file, "audio/flac");
+                                        break;
+                                    default:
+                                        Logger.Error("Cannot recognize {Path}", file);
+                                        break;
+                                }
+
+                                if (decrypto != null) decrypto.Dump();
+                            }
+                            catch (IOException e)
+                            {
+                                Logger.Error(e);
+                            }
+                            finally
+                            {
+                                if (decrypto != null) decrypto.Dispose();
+                            }
+                        });
+
+                        Logger.Info("Program finished with {Requested} files requested and {Succeeded} files saved successfully.", trimmedPaths.Length, Decrypto.SuccessCount);
+                        return;
+                    }
+
+                    Logger.Error("Found no valid file from specified path(s).");
                 }
-
-                Console.WriteLine("[WARN] Found no valid file from specified path(s).");
+            }
+            catch (Exception e)
+            {
+                Logger.Fatal(e);
             }
         }
 

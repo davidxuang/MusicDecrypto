@@ -48,7 +48,7 @@ namespace MusicDecrypto
             "audio/flac" => "flac",
             "audio/ogg" => "ogg",
             "audio/mpeg" => "mp3",
-            _ => throw new InvalidDataException($"Failed to recognize music type.")
+            _ => null
         };
     }
 

@@ -12,10 +12,7 @@ dotnet_csproj:
   file_version: '{version}'
   informational_version: '{version}'
 before_build:
-  - nuget install Microsoft.Packaging.Tools.Trimming -OutputDirectory packages -Version 1.1.0-preview1-26619-01
-  - nuget install CommandLineParser -OutputDirectory packages -Version 2.7.82
-  - nuget install Newtonsoft.Json -OutputDirectory packages -Version 12.0.3
-  - nuget install TagLibSharp -OutputDirectory packages -Version 2.2.0
+  - nuget restore .\MusicDecrypto.csproj
 build_script:
   - dotnet publish -c Release
   - dotnet publish -c Release -r win-x64 /p:PublishSingleFile=true

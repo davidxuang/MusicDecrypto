@@ -30,7 +30,7 @@ namespace MusicDecrypto
         {
             // Check file header
             if (InReader.ReadUInt64() != 0x4d4144464e455443)
-                throw new FileLoadException($"Failed to recognize header in {InPath}.");
+                throw new FileLoadException($"Failed to verify header of \"{InPath}\".");
 
             // Skip ahead
             _ = InBuffer.Seek(2, SeekOrigin.Current);
@@ -94,7 +94,7 @@ namespace MusicDecrypto
             }
             catch (NullFileChunkException)
             {
-                Console.WriteLine($"[WARN] Missing metadata in {InPath}.");
+                Logger.Warn("Missing metadata in {Path}", InPath);
             }
 
             // Skip ahead
@@ -108,7 +108,7 @@ namespace MusicDecrypto
             }
             catch (NullFileChunkException)
             {
-                Console.WriteLine($"[WARN] Failed to load cover from {InPath}, trying to get image from server...");
+                Logger.Warn("Failed to load cover from {Path}, trying to get from server...", InPath);
 
                 // Plan B: get image from server
                 try
@@ -116,15 +116,15 @@ namespace MusicDecrypto
                     string coverUri = PropMetadata.AlbumPic;
                     if (!Uri.IsWellFormedUriString(coverUri, UriKind.Absolute))
                     {
-                        Console.WriteLine($"[WARN] No cover URI defined in {InPath}.");
+                        Logger.Error("No cover URI was found in {Path}", InPath);
                         throw;
                     }
                     using WebClient webClient = new WebClient();
                     CoverBuffer.Write(webClient.DownloadData(coverUri));
                 }
-                catch (WebException)
+                catch (Exception)
                 {
-                    Console.WriteLine($"[WARN] Failed to download cover image for {InPath}.");
+                    Logger.Error("Failed to download cover image for {Path}", InPath);
                 }
             }
             CoverMime = MediaType.GetStreamMime(CoverBuffer);
@@ -164,7 +164,7 @@ namespace MusicDecrypto
             {
                 "audio/flac" => file.Tag,
                 "audio/mpeg" => file.GetTag(TagLib.TagTypes.Id3v2),
-                _ => throw new FileLoadException($"Failed to get file type while processing {InPath}."),
+                _ => throw new FileLoadException($"Failed to get file type while processing \"{InPath}\"."),
             };
 
             if (CoverMime != null)
