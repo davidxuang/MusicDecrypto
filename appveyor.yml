@@ -13,7 +13,7 @@ dotnet_csproj:
   informational_version: '{version}'
 before_build:
   - nuget install Microsoft.Packaging.Tools.Trimming -OutputDirectory packages -Version 1.1.0-preview1-26619-01
-  - nuget install CommandLineParser -OutputDirectory packages -Version 2.6.0
+  - nuget install CommandLineParser -OutputDirectory packages -Version 2.7.82
   - nuget install Newtonsoft.Json -OutputDirectory packages -Version 12.0.3
   - nuget install TagLibSharp -OutputDirectory packages -Version 2.2.0
 build_script:

@@ -71,9 +71,10 @@ namespace MusicDecrypto
                 {
                     _ = Parallel.ForEach(trimmedPaths, file =>
                     {
+                        Decrypto decrypto = null;
+
                         try
                         {
-                            Decrypto decrypto = null;
                             switch (Path.GetExtension(file))
                             {
                                 case ".ncm":
@@ -97,15 +98,15 @@ namespace MusicDecrypto
                                     break;
                             }
 
-                            if (decrypto != null)
-                            {
-                                decrypto.Dump();
-                                decrypto.Dispose();
-                            }
+                            if (decrypto != null) decrypto.Dump();
                         }
                         catch (IOException e)
                         {
                             Console.WriteLine(e.ToString());
+                        }
+                        finally
+                        {
+                            if (decrypto != null) decrypto.Dispose();
                         }
                     });
 
@@ -113,7 +114,7 @@ namespace MusicDecrypto
                     return;
                 }
 
-                Console.WriteLine("[WARN] Found no valid file from specific path(s).");
+                Console.WriteLine("[WARN] Found no valid file from specified path(s).");
             }
         }
 
