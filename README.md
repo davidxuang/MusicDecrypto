@@ -15,6 +15,7 @@ A .NET Core implementation of music de-DRM for NetEase Cloud Music and QQ Music.
 -   [.NET Core](https://dotnet.microsoft.com) 3.1
 -   [CommandLineParser](https://github.com/commandlineparser/commandline)
 -   [Json.NET](https://www.newtonsoft.com/json)
+-   [NLog](https://nlog-project.org/)
 -   [TagLib#](https://github.com/mono/taglib-sharp)
 
 ## Run

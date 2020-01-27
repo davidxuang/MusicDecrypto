@@ -1,5 +1,7 @@
-version: '2.1.0.{build}'
-image: Visual Studio 2019
+version: '3.0.0.{build}'
+image:
+  - Ubuntu
+  - Visual Studio 2019
 shallow_clone: true
 pull_requests:
   do_not_increment_build_number: true
@@ -12,24 +14,50 @@ dotnet_csproj:
   file_version: '{version}'
   informational_version: '{version}'
 before_build:
-  - nuget restore .\MusicDecrypto.csproj
+  - ps: dotnet add package Microsoft.DotNet.ILCompiler -v 1.0.0-alpha-*
+  - sh: sudo ln -s libgssapi_krb5.so.2.2 /usr/lib/x86_64-linux-gnu/libgssapi_krb5.so
 build_script:
-  - dotnet publish -c Release
-  - dotnet publish -c Release -r win-x64 /p:PublishSingleFile=true
+  - sh: dotnet publish -c Release -r linux-x64 /p:IlcOptimizationPreference=Speed
+  - cmd: dotnet publish -c Release -r win-x64 /p:IlcOptimizationPreference=Speed
 after_build:
-  - 7z a MusicDecrypto-netcore3.1-generic.7z .\bin\Release\netcoreapp3.1\publish\*.exe .\bin\Release\netcoreapp3.1\publish\*.dll .\bin\Release\netcoreapp3.1\publish\*.json
-  - 7z a MusicDecrypto-netcore3.1-win64.7z .\bin\Release\netcoreapp3.1\win-x64\publish\*.exe
-artifacts:
-  - path: MusicDecrypto-netcore3.1-generic.7z
-    name: generic
-  - path: MusicDecrypto-netcore3.1-win64.7z
-    name: win64
-deploy:
-  - provider: GitHub
-    artifact: generic,win64
-    draft: false
-    prerelease: false
-    auth_token:
-      secure: s4KrkEh5TVzLxfOWeChe1mpLRpdh9OWjlZmFBV/rxEpaA2SQmxW59s0aQzGBaiJH
-    on:
-      APPVEYOR_REPO_TAG: true
+  - ps: >-
+      if ($env:APPVEYOR_REPO_TAG_NAME -eq $null) { $env:APPVEYOR_REPO_TAG_NAME = $env:APPVEYOR_BUILD_VERSION }
+      if ($env:APPVEYOR_BUILD_WORKER_IMAGE -eq "Ubuntu") {
+        7z a MusicDecrypto-linux64-$env:APPVEYOR_REPO_TAG_NAME.7z ./bin/Release/netcoreapp3.1/linux-x64/native/MusicDecrypto
+      } else {
+        7z a MusicDecrypto-win64-$env:APPVEYOR_REPO_TAG_NAME.7z .\bin\Release\netcoreapp3.1\win-x64\native\MusicDecrypto.exe
+      }
+      (Get-FileHash -Algorithm SHA256 *.7z).Hash.ToString().ToLower() + " *" + (dir *.7z).Name > ((dir *.7z).Name + ".sha256")
+for:
+  -
+    matrix:
+      only:
+        - image: Ubuntu
+    artifacts:
+      - path: '*.7z*'
+        name: linux64
+    deploy:
+      - provider: GitHub
+        artifact: linux64
+        draft: false
+        prerelease: false
+        auth_token:
+          secure: s4KrkEh5TVzLxfOWeChe1mpLRpdh9OWjlZmFBV/rxEpaA2SQmxW59s0aQzGBaiJH
+        on:
+          APPVEYOR_REPO_TAG: true
+  -
+    matrix:
+      only:
+        - image: Visual Studio 2019
+    artifacts:
+      - path: '*.7z*'
+        name: win64
+    deploy:
+      - provider: GitHub
+        artifact: win64
+        draft: false
+        prerelease: false
+        auth_token:
+          secure: s4KrkEh5TVzLxfOWeChe1mpLRpdh9OWjlZmFBV/rxEpaA2SQmxW59s0aQzGBaiJH
+        on:
+          APPVEYOR_REPO_TAG: true
