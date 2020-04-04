@@ -4,7 +4,7 @@
 [![Build status](https://ci.appveyor.com/api/projects/status/github/davidxuang/musicdecrypto?svg=true)](https://ci.appveyor.com/project/davidxuang/musicdecrypto)
 [![GitHub license](https://img.shields.io/github/license/davidxuang/musicdecrypto.svg)](https://github.com/davidxuang/musicdecrypto/blob/master/LICENSE)
 
-A .NET Core implementation of music de-DRM for NetEase Cloud Music and QQ Music.
+This project aims to implement music de-DRM for NetEase Cloud Music and QQ Music on .NET Core, and generate native executable through [CoreRT](https://github.com/dotnet/corert).
 
 ## Build
 
