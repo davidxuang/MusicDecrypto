@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.IO;
 
 namespace MusicDecrypto
@@ -38,6 +39,7 @@ namespace MusicDecrypto
             {
                 "audio/flac" => file.Tag,
                 "audio/mpeg" => file.GetTag(TagLib.TagTypes.Id3v2),
+                "audio/mpeg4" => file.Tag,
                 "audio/ogg" => file.Tag,
                 _ => throw new FileLoadException($"Failed to get file type while processing \"{InPath}\"."),
             };
@@ -63,6 +65,24 @@ namespace MusicDecrypto
         protected abstract byte NextMask();
     }
 
+    internal sealed class TencentSimpleDecrypto : TencentDecrypto
+    {
+        private static byte[] header = new byte[] { 0x00, 0x00, 0x00, 0x20, 0x66, 0x74, 0x79, 0x70 };
+
+        internal TencentSimpleDecrypto(string path, string mime) : base(path, mime) { }
+
+        protected override void Decrypt()
+        {
+            OutBuffer.Write(header);
+            OutBuffer.Write(InBuffer.GetBuffer().Skip(8).ToArray());
+        }
+
+        protected override byte NextMask() 
+        {
+            throw new NotImplementedException();
+        }
+    }
+    
     internal sealed class TencentFixedDecrypto : TencentDecrypto
     {
         private static readonly byte[,] SeedMap = {

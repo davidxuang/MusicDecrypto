@@ -48,6 +48,7 @@ namespace MusicDecrypto
             "audio/flac" => "flac",
             "audio/ogg" => "ogg",
             "audio/mpeg" => "mp3",
+            "audio/mpeg4" => "m4a",
             _ => null
         };
     }

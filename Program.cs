@@ -58,7 +58,11 @@ namespace MusicDecrypto
                                             file.ToLower().EndsWith(".qmc0") ||
                                             file.ToLower().EndsWith(".qmc3") ||
                                             file.ToLower().EndsWith(".qmcogg") ||
-                                            file.ToLower().EndsWith(".qmcflac"))
+                                            file.ToLower().EndsWith(".tkm") ||
+                                            file.ToLower().EndsWith(".tm2") ||
+                                            file.ToLower().EndsWith(".tm6") ||
+                                            file.ToLower().EndsWith(".bkcmp3") ||
+                                            file.ToLower().EndsWith(".bkcflac"))
                                 );
                             }
                             else if (File.Exists(path) && (
@@ -67,7 +71,12 @@ namespace MusicDecrypto
                                 path.ToLower().EndsWith(".qmc0") ||
                                 path.ToLower().EndsWith(".qmc3") ||
                                 path.ToLower().EndsWith(".qmcogg") ||
-                                path.ToLower().EndsWith(".qmcflac")))
+                                path.ToLower().EndsWith(".qmcflac") ||
+                                path.ToLower().EndsWith(".tkm") ||
+                                path.ToLower().EndsWith(".tm2") ||
+                                path.ToLower().EndsWith(".tm6") ||
+                                path.ToLower().EndsWith(".bkcmp3") ||
+                                path.ToLower().EndsWith(".bkcflac")))
                             {
                                 foundPaths.Add(path);
                             }
@@ -93,15 +102,24 @@ namespace MusicDecrypto
                                     case ".ncm":
                                         decrypto = new NetEaseDecrypto(file);
                                         break;
+                                    case ".tm2":
+                                    case ".tm6":
+                                        decrypto = new TencentSimpleDecrypto(file, "audio/mpeg4");
+                                        break;
                                     case ".qmc0":
                                     case ".qmc3":
+                                    case ".bkcmp3":
                                         decrypto = new TencentFixedDecrypto(file, "audio/mpeg");
                                         break;
                                     case ".qmcogg":
                                         decrypto = new TencentFixedDecrypto(file, "audio/ogg");
                                         break;
                                     case ".qmcflac":
+                                    case ".bkcflac":
                                         decrypto = new TencentFixedDecrypto(file, "audio/flac");
+                                        break;
+                                    case ".tkm":
+                                        decrypto = new TencentFixedDecrypto(file, "audio/mpeg4");
                                         break;
                                     case ".mflac":
                                         decrypto = new TencentDynamicDecrypto(file, "audio/flac");
@@ -111,7 +129,7 @@ namespace MusicDecrypto
                                         break;
                                 }
 
-                                if (decrypto != null) decrypto.Dump();
+                                decrypto?.Dump();
                             }
                             catch (IOException e)
                             {
@@ -119,7 +137,7 @@ namespace MusicDecrypto
                             }
                             finally
                             {
-                                if (decrypto != null) decrypto.Dispose();
+                                decrypto?.Dispose();
                             }
                         });
 
