@@ -67,7 +67,7 @@ namespace MusicDecrypto
 
     internal sealed class TencentSimpleDecrypto : TencentDecrypto
     {
-        private static byte[] header = new byte[] { 0x00, 0x00, 0x00, 0x20, 0x66, 0x74, 0x79, 0x70 };
+        private static readonly byte[] header = { 0x00, 0x00, 0x00, 0x20, 0x66, 0x74, 0x79, 0x70 };
 
         internal TencentSimpleDecrypto(string path, string mime) : base(path, mime) { }
 

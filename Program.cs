@@ -22,12 +22,12 @@ namespace MusicDecrypto
                 var logConsole = new NLog.Targets.ColoredConsoleTarget("logconsole");
                 logConfig.AddRule(LogLevel.Info, LogLevel.Fatal, logConsole);
                 logConfig.AddRule(LogLevel.Debug, LogLevel.Fatal, logFile);
-                NLog.LogManager.Configuration = logConfig;
+                LogManager.Configuration = logConfig;
 
                 // Parse options
                 string[] inputPaths = null;
-                CommandLine.Parser.Default.ParseArguments<Options>(args)
-                    .WithParsed<Options>(opts =>
+                _ = Parser.Default.ParseArguments<Options>(args)
+                    .WithParsed(opts =>
                     {
                         if (opts.OutputDir != null)
                         {
@@ -38,7 +38,7 @@ namespace MusicDecrypto
                         TencentDecrypto.ForceRename = opts.ForceRename;
                         inputPaths = opts.InputPaths.ToArray();
                     })
-                    .WithNotParsed<Options>(errs => { });
+                    .WithNotParsed(errs => { });
 
                 if (inputPaths != null)
                 {
