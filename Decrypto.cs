@@ -103,8 +103,7 @@ namespace MusicDecrypto
                 Padding = PaddingMode.PKCS7
             };
             using ICryptoTransform cryptoTransform = rijndael.CreateDecryptor();
-            byte[] plain = cryptoTransform.TransformFinalBlock(cipher, 0, cipher.Length);
-            return plain;
+            return cryptoTransform.TransformFinalBlock(cipher, 0, cipher.Length);
         }
     }
 

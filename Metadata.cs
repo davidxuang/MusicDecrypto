@@ -36,12 +36,10 @@ namespace MusicDecrypto
             : HeaderMatch(new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A }, stream)
             ? "image/png" //                   P     N     G
             : null;
-            
+
         private static bool HeaderMatch(byte[] target, MemoryStream stream)
-        {
-            if (target.Length > stream.Length) return false;
-            return Enumerable.SequenceEqual(stream.ToArray().Take(target.Length).ToArray(), target);
-        }
+            => target.Length <= stream.Length
+               && Enumerable.SequenceEqual(stream.ToArray().Take(target.Length).ToArray(), target);
 
         public static string MimeToExt(string mime) => mime switch
         {

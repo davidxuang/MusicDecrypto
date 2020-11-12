@@ -14,7 +14,7 @@ dotnet_csproj:
   file_version: '{version}'
   informational_version: '{version}'
 before_build:
-  - ps: dotnet add package Microsoft.DotNet.ILCompiler -v 1.0.0-alpha-*
+  - ps: dotnet add package Microsoft.DotNet.ILCompiler -v 6.0.0-*
   - sh: sudo ln -s libgssapi_krb5.so.2.2 /usr/lib/x86_64-linux-gnu/libgssapi_krb5.so
 build_script:
   - sh: dotnet publish -c Release -r linux-x64 /p:IlcOptimizationPreference=Speed
