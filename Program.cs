@@ -11,8 +11,10 @@ namespace MusicDecrypto
 {
     public static class Program
     {
-        private static readonly HashSet<string> SupportedExtensions
-            = new HashSet<string> { ".ncm", ".mflac", ".qmc0", ".qmc3", ".qmcogg", ".qmcflac", ".tkm", ".tm2", ".tm6", ".bkcmp3", ".bkcflac" };
+        private static readonly HashSet<string> _support
+            = new HashSet<string> { ".ncm", ".tm2", ".tm6", ".qmc0", ".qmc3", ".bkcmp3", ".qmcogg", ".qmcflac", ".tkm", ".bkcflac", ".mflac", ".xm" };
+        private static readonly HashSet<string> _extendedSupport
+            = new HashSet<string> { ".ncm", ".tm2", ".tm6", ".qmc0", ".qmc3", ".bkcmp3", ".qmcogg", ".qmcflac", ".tkm", ".bkcflac", ".mflac", ".xm", ".mp3", ".m4a", ".wav", ".flac" };
 
         public static int Main(string[] args)
         {
@@ -21,11 +23,12 @@ namespace MusicDecrypto
                 new Argument<FileSystemInfo[]>("input", "Input files/directories."),
                 new Option<bool>(new[] { "-f", "--force-overwrite"}, "Overwrite existing files."),
                 new Option<bool>(new[] { "-n", "--renew-name" }, "Renew Hash-like names basing on metadata."),
-                new Option<bool>(new[] { "-r", "--recursive" }, "Search files recursively"),
+                new Option<bool>(new[] { "-r", "--recursive" }, "Search files recursively."),
+                new Option<bool>(new[] { "-x", "--extensive" }, "Extend range of extensions to be detected."),
                 new Option<DirectoryInfo>(new[] { "-o", "--output" }, "Output directory."),
             };
 
-            command.Handler = CommandHandler.Create<FileSystemInfo[], bool, bool, bool, DirectoryInfo>((input, forceOverwrite, renewName, recursive, output) =>
+            command.Handler = CommandHandler.Create<FileSystemInfo[], bool, bool, bool, bool, DirectoryInfo>((input, forceOverwrite, renewName, recursive, extensive, output) =>
             {
                 if (input == null) return;
                 Decrypto.ForceOverwrite = forceOverwrite;
@@ -48,8 +51,9 @@ namespace MusicDecrypto
                     {
                         files.UnionWith((item as DirectoryInfo)
                             .GetFiles("*", recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly)
-                            .Where(file => SupportedExtensions.Contains(
-                                file.Extension.ToLowerInvariant())));
+                            .Where(file => extensive
+                                ? _extendedSupport.Contains(file.Extension.ToLowerInvariant())
+                                : _support.Contains(file.Extension.ToLowerInvariant())));
                     }
                     else
                     {
@@ -80,6 +84,11 @@ namespace MusicDecrypto
                             ".qmcflac" or ".bkcflac"
                                       => new TencentStaticDecrypto(file, MusicTypes.Flac),
                             ".mflac"  => new TencentDynamicDecrypto(file, MusicTypes.Flac),
+                            ".xm"     => new XiamiDecrypto(file, null),
+                            ".mp3"    => new XiamiDecrypto(file, MusicTypes.Mpeg),
+                            ".m4a"    => new XiamiDecrypto(file, MusicTypes.XM4a),
+                            ".wav"    => new XiamiDecrypto(file, MusicTypes.XWav),
+                            ".flac"   => new XiamiDecrypto(file, MusicTypes.Flac),
                             _ => throw new DecryptoException("File has an unsupported extension.", file.FullName)
                         };
 

@@ -2,6 +2,15 @@ version: '3.1.0.{build}'
 image:
   - Ubuntu
   - Visual Studio 2019
+environment:
+  DOTNET_SDK: net5.0
+  matrix:
+    - ARCH: generic
+    - ARCH: x64
+matrix:
+  exclude:
+    - image: Ubuntu
+      ARCH: generic
 shallow_clone: true
 pull_requests:
   do_not_increment_build_number: true
@@ -15,7 +24,32 @@ dotnet_csproj:
   informational_version: '{version}'
 before_build:
   - dotnet add package Microsoft.DotNet.ILCompiler -v 6.0.0-*
+deploy:
+  - provider: GitHub
+    artifact: archive
+    draft: false
+    prerelease: false
+    auth_token:
+      secure: s4KrkEh5TVzLxfOWeChe1mpLRpdh9OWjlZmFBV/rxEpaA2SQmxW59s0aQzGBaiJH
+    on:
+      APPVEYOR_REPO_TAG: true
 for:
+  -
+    matrix:
+      only:
+        - ARCH: generic
+    skip_non_tags: true
+    build_script:
+      - pwsh: dotnet publish -c Release
+    after_build:
+      - pwsh: Remove-Item .\bin\Release\net5.0\publish\*.pdb
+      - pwsh: >-
+          if ($env:APPVEYOR_REPO_TAG_NAME -eq $null) { $env:APPVEYOR_REPO_TAG_NAME = 'snapshot' }
+          7z a "MusicDecrypto-net5.0-generic-$env:APPVEYOR_REPO_TAG_NAME.7z" .\bin\Release\net5.0\publish\*;
+          (Get-FileHash "MusicDecrypto-net5.0-generic-$env:APPVEYOR_REPO_TAG_NAME.7z" SHA256).Hash + " MusicDecrypto-net5.0-generic-$env:APPVEYOR_REPO_TAG_NAME.7z" > "MusicDecrypto-net5.0-generic-$APPVEYOR_REPO_TAG_NAME.7z.sha256"
+    artifacts:
+      - path: '*.7z*'
+        name: archive
   -
     matrix:
       only:
@@ -23,47 +57,26 @@ for:
     install:
       - sudo apt-get update && sudo apt-get -y install libkrb5-dev
     build_script:
-      - dotnet publish -c Release -r linux-x64 /p:IlcInvariantGlobalization=true /p:IlcGenerateCompleteTypeMetadata=false /p:IlcGenerateStackTraceData=false
+      - dotnet publish -r linux-x64 -c Release /p:IlcInvariantGlobalization=true /p:IlcGenerateCompleteTypeMetadata=false /p:IlcGenerateStackTraceData=false
     after_build:
-      - pwsh: >-
-          strip ./bin/Release/net5.0/linux-x64/publish/MusicDecrypto;
-          if ($env:APPVEYOR_REPO_TAG_NAME -eq $null) { $env:APPVEYOR_REPO_TAG_NAME = 'snapshot' }
-          $archive = 'MusicDecrypto-linux-x64-' + $env:APPVEYOR_REPO_TAG_NAME + '.tar.gz';
-          tar czvf $archive -C ./bin/Release/net5.0/linux-x64/publish MusicDecrypto;
-          (Get-FileHash -Algorithm SHA256 $archive).Hash.ToString().ToLower() > ($archive + '.sha256')
+      - strip ./bin/Release/net5.0/linux-x64/publish/MusicDecrypto
+      - pwsh: if ($env:APPVEYOR_REPO_TAG_NAME -eq $null) { $env:APPVEYOR_REPO_TAG_NAME = 'snapshot' }
+      - tar czvf "MusicDecrypto-linux-x64-$APPVEYOR_REPO_TAG_NAME.tar.gz" -C "./bin/Release/net5.0/linux-x64/publish" MusicDecrypto
+      - sha256sum "MusicDecrypto-linux-x64-$APPVEYOR_REPO_TAG_NAME.tar.gz" > "MusicDecrypto-linux-x64-$APPVEYOR_REPO_TAG_NAME.tar.gz.sha256"
     artifacts:
       - path: '*.gz*'
-        name: linux-x64
-    deploy:
-      - provider: GitHub
-        artifact: linux-x64
-        draft: false
-        prerelease: false
-        auth_token:
-          secure: s4KrkEh5TVzLxfOWeChe1mpLRpdh9OWjlZmFBV/rxEpaA2SQmxW59s0aQzGBaiJH
-        on:
-          APPVEYOR_REPO_TAG: true
+        name: archive
   -
     matrix:
       only:
         - image: Visual Studio 2019
     build_script:
-      - dotnet publish -c Release -r win-x64 /p:IlcInvariantGlobalization=true /p:IlcGenerateCompleteTypeMetadata=false /p:IlcGenerateStackTraceData=false
+      - dotnet publish -r win-x64 -c Release /p:IlcInvariantGlobalization=true /p:IlcGenerateCompleteTypeMetadata=false /p:IlcGenerateStackTraceData=false
     after_build:
       - pwsh: >-
           if ($env:APPVEYOR_REPO_TAG_NAME -eq $null) { $env:APPVEYOR_REPO_TAG_NAME = 'snapshot' }
-          $archive = 'MusicDecrypto-win-x64-' + $env:APPVEYOR_REPO_TAG_NAME + '.7z';
-          7z a $archive .\bin\Release\net5.0\win-x64\publish\MusicDecrypto.exe;
-          (Get-FileHash -Algorithm SHA256 $archive).Hash.ToString().ToLower() > ($archive + '.sha256')
+          7z a "MusicDecrypto-win-x64-$env:APPVEYOR_REPO_TAG_NAME.7z" .\bin\Release\net5.0\win-x64\publish\MusicDecrypto.exe;
+          (Get-FileHash "MusicDecrypto-win-x64-$env:APPVEYOR_REPO_TAG_NAME.7z" SHA256).Hash + " MusicDecrypto-win-x64-$env:APPVEYOR_REPO_TAG_NAME.7z" > "MusicDecrypto-win-x64-$env:APPVEYOR_REPO_TAG_NAME.7z.sha256"
     artifacts:
       - path: '*.7z*'
-        name: win-x64
-    deploy:
-      - provider: GitHub
-        artifact: win-x64
-        draft: false
-        prerelease: false
-        auth_token:
-          secure: s4KrkEh5TVzLxfOWeChe1mpLRpdh9OWjlZmFBV/rxEpaA2SQmxW59s0aQzGBaiJH
-        on:
-          APPVEYOR_REPO_TAG: true
+        name: archive

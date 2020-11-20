@@ -61,8 +61,10 @@ namespace MusicDecrypto
 
             string path;
             if (_outName == null) _outName = Path.GetFileNameWithoutExtension(_input.FullName);
-            path = (Output == null) ? Path.Combine(_input.DirectoryName, _outName + extension)
-                                    : Path.Combine(Output.FullName, _outName + extension);
+            _outName += extension;
+            if (_outName == _input.Name) _outName += extension;
+            path = (Output == null) ? Path.Combine(_input.DirectoryName, _outName)
+                                    : Path.Combine(Output.FullName, _outName);
 
             if (File.Exists(path) && !ForceOverwrite)
             {
