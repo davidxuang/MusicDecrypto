@@ -14,31 +14,29 @@ dotnet_csproj:
   file_version: '{version}'
   informational_version: '{version}'
 before_build:
-  - ps: dotnet add package Microsoft.DotNet.ILCompiler -v 6.0.0-*
-  - sh: sudo ln -s libgssapi_krb5.so.2.2 /usr/lib/x86_64-linux-gnu/libgssapi_krb5.so
-build_script:
-  - sh: dotnet publish -c Release -r linux-x64 /p:IlcOptimizationPreference=Speed
-  - cmd: dotnet publish -c Release -r win-x64 /p:IlcOptimizationPreference=Speed
-after_build:
-  - ps: >-
-      if ($env:APPVEYOR_REPO_TAG_NAME -eq $null) { $env:APPVEYOR_REPO_TAG_NAME = $env:APPVEYOR_BUILD_VERSION }
-      if ($env:APPVEYOR_BUILD_WORKER_IMAGE -eq "Ubuntu") {
-        7z a MusicDecrypto-linux64-$env:APPVEYOR_REPO_TAG_NAME.7z ./bin/Release/netcoreapp3.1/linux-x64/native/MusicDecrypto
-      } else {
-        7z a MusicDecrypto-win64-$env:APPVEYOR_REPO_TAG_NAME.7z .\bin\Release\netcoreapp3.1\win-x64\native\MusicDecrypto.exe
-      }
-      (Get-FileHash -Algorithm SHA256 *.7z).Hash.ToString().ToLower() + " *" + (dir *.7z).Name > ((dir *.7z).Name + ".sha256")
+  - dotnet add package Microsoft.DotNet.ILCompiler -v 6.0.0-*
 for:
   -
     matrix:
       only:
         - image: Ubuntu
+    install:
+      - sudo apt-get update && sudo apt-get -y install libkrb5-dev
+    build_script:
+      - dotnet publish -c Release -r linux-x64 /p:IlcInvariantGlobalization=true /p:IlcGenerateCompleteTypeMetadata=false /p:IlcGenerateStackTraceData=false
+    after_build:
+      - pwsh: >-
+          strip ./bin/Release/net5.0/linux-x64/publish/MusicDecrypto;
+          if ($env:APPVEYOR_REPO_TAG_NAME -eq $null) { $env:APPVEYOR_REPO_TAG_NAME = 'snapshot' }
+          $archive = 'MusicDecrypto-linux-x64-' + $env:APPVEYOR_REPO_TAG_NAME + '.tar.gz';
+          tar czvf $archive -C ./bin/Release/net5.0/linux-x64/publish MusicDecrypto;
+          (Get-FileHash -Algorithm SHA256 $archive).Hash.ToString().ToLower() > ($archive + '.sha256')
     artifacts:
-      - path: '*.7z*'
-        name: linux64
+      - path: '*.gz*'
+        name: linux-x64
     deploy:
       - provider: GitHub
-        artifact: linux64
+        artifact: linux-x64
         draft: false
         prerelease: false
         auth_token:
@@ -49,12 +47,20 @@ for:
     matrix:
       only:
         - image: Visual Studio 2019
+    build_script:
+      - dotnet publish -c Release -r win-x64 /p:IlcInvariantGlobalization=true /p:IlcGenerateCompleteTypeMetadata=false /p:IlcGenerateStackTraceData=false
+    after_build:
+      - pwsh: >-
+          if ($env:APPVEYOR_REPO_TAG_NAME -eq $null) { $env:APPVEYOR_REPO_TAG_NAME = 'snapshot' }
+          $archive = 'MusicDecrypto-win-x64-' + $env:APPVEYOR_REPO_TAG_NAME + '.7z';
+          7z a $archive .\bin\Release\net5.0\win-x64\publish\MusicDecrypto.exe;
+          (Get-FileHash -Algorithm SHA256 $archive).Hash.ToString().ToLower() > ($archive + '.sha256')
     artifacts:
       - path: '*.7z*'
-        name: win64
+        name: win-x64
     deploy:
       - provider: GitHub
-        artifact: win64
+        artifact: win-x64
         draft: false
         prerelease: false
         auth_token:

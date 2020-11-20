@@ -1,47 +1,27 @@
 ﻿using System;
-using System.Linq;
 using System.IO;
+using System.Linq;
 
 namespace MusicDecrypto
 {
-    internal abstract class TencentDecrypto : Decrypto
+    public abstract class TencentDecrypto : Decrypto
     {
-        public static bool ForceRename { get; set; } = false;
+        public static bool RenewName { get; set; }
 
-        internal TencentDecrypto(string path, string mime) : base(path, mime) { }
+        protected TencentDecrypto(FileInfo file, MusicTypes type) : base(file, type) { }
 
-        protected override void Decrypt()
+        protected override void PostDecrypt()
         {
-            for (int chunkSize = 0x8000; ;)
+            base.PostDecrypt();
+
+            _buffer.ResetPosition();
+            using TagLib.File file = TagLib.File.Create(_buffer);
+            TagLib.Tag tag = _musicType switch
             {
-                byte[] chunk = ReadFixedChunk(ref chunkSize);
-
-                for (int i = 0; i < chunkSize; i++)
-                {
-                    chunk[i] ^= NextMask();
-                }
-
-                if (chunkSize < 0x8000)
-                {
-                    OutBuffer.Write(chunk.Take(chunkSize).ToArray());
-                    break;
-                }
-                else
-                    OutBuffer.Write(chunk);
-            }
-        }
-
-        protected override void Metadata()
-        {
-            ResetOutBuffer();
-            using TagLib.File file = TagLib.File.Create(new MemoryFileAbstraction($"buffer.{MediaType.MimeToExt(MusicMime)}", OutBuffer));
-            TagLib.Tag tag = MusicMime switch
-            {
-                "audio/flac" => file.Tag,
-                "audio/mpeg" => file.GetTag(TagLib.TagTypes.Id3v2),
-                "audio/mpeg4" => file.Tag,
-                "audio/ogg" => file.Tag,
-                _ => throw new FileLoadException($"Failed to get file type while processing \"{InPath}\"."),
+                MusicTypes.Flac or MusicTypes.Ogg or MusicTypes.XM4a
+                                => file.Tag,
+                MusicTypes.Mpeg => file.GetTag(TagLib.TagTypes.Id3v2),
+                _ => throw new DecryptoException("File has an unexpected MIME value.", _input.FullName),
             };
 
             if (tag.Pictures.Length > 0)
@@ -49,156 +29,112 @@ namespace MusicDecrypto
                 tag.Pictures[0].Type = TagLib.PictureType.FrontCover;
             }
 
-            if (ForceRename)
+            if (RenewName)
             {
                 if (tag.Title != null && tag.AlbumArtists.Length > 0)
-                    OutName = $"{tag.AlbumArtists[0]} - {tag.Title}";
+                    _outName = tag.AlbumArtists[0] + " - " + tag.Title;
                 else if (tag.Title != null && tag.Performers.Length > 0)
-                    OutName = $"{tag.Performers[0]} - {tag.Title}";
+                    _outName = tag.Performers[0] + " - " + tag.Title;
                 else
-                Logger.Error("Failed to find name for {Path}", InPath);
+                    Logger.Log("Failed to find name.", _input.FullName, LogLevel.Error);
             }
 
             file.Save();
         }
-
-        protected abstract byte NextMask();
     }
 
-    internal sealed class TencentSimpleDecrypto : TencentDecrypto
+    public sealed class TencentSimpleDecrypto : TencentDecrypto
     {
-        private static readonly byte[] header = { 0x00, 0x00, 0x00, 0x20, 0x66, 0x74, 0x79, 0x70 };
+        private static readonly byte[] _header = { 0x00, 0x00, 0x00, 0x20, 0x66, 0x74, 0x79, 0x70 };
 
-        internal TencentSimpleDecrypto(string path, string mime) : base(path, mime) { }
+        public TencentSimpleDecrypto(FileInfo file, MusicTypes type) : base(file, type) { }
 
         protected override void Decrypt()
         {
-            OutBuffer.Write(header);
-            OutBuffer.Write(InBuffer.GetBuffer().Skip(8).ToArray());
-        }
-
-        protected override byte NextMask() 
-        {
-            throw new NotImplementedException();
-        }
-    }
-    
-    internal sealed class TencentFixedDecrypto : TencentDecrypto
-    {
-        private static readonly byte[,] SeedMap = {
-            {0x4a, 0xd6, 0xca, 0x90, 0x67, 0xf7, 0x52},
-            {0x5e, 0x95, 0x23, 0x9f, 0x13, 0x11, 0x7e},
-            {0x47, 0x74, 0x3d, 0x90, 0xaa, 0x3f, 0x51},
-            {0xc6, 0x09, 0xd5, 0x9f, 0xfa, 0x66, 0xf9},
-            {0xf3, 0xd6, 0xa1, 0x90, 0xa0, 0xf7, 0xf0},
-            {0x1d, 0x95, 0xde, 0x9f, 0x84, 0x11, 0xf4},
-            {0x0e, 0x74, 0xbb, 0x90, 0xbc, 0x3f, 0x92},
-            {0x00, 0x09, 0x5b, 0x9f, 0x62, 0x66, 0xa1}
-        };
-
-        internal TencentFixedDecrypto(string path, string mime) : base(path, mime) { }
-
-        private int indexX = -1;
-        private int indexY = 8;
-        private int stepX = 1;
-        private int offset = -1;
-
-        protected override byte NextMask()
-        {
-            byte val;
-            offset++;
-            if (indexX < 0)
-            {
-                stepX = 1;
-                indexY = (8 - indexY) % 8;
-                val = 0xc3;
-            }
-            else if (indexX > 6)
-            {
-                stepX = -1;
-                indexY = 7 - indexY;
-                val = 0xd8;
-            }
-            else
-                val = SeedMap[indexY, indexX];
-            indexX += stepX;
-            if (offset == 0x8000 || (offset > 0x8000 && (offset + 1) % 0x8000 == 0))
-                return NextMask();
-            return val;
+            _buffer.Write(_header);
         }
     }
 
-    internal sealed class TencentDynamicDecrypto : TencentDecrypto
+    public abstract class TencentMaskDecrypto : TencentDecrypto
     {
-        byte[] mask = null;
+        protected int _length;
 
-        internal TencentDynamicDecrypto(string path, string mime) : base(path, mime) { }
+        protected TencentMaskDecrypto(FileInfo file, MusicTypes type) : base(file, type)
+        {   
+            _length = Convert.ToInt32(_buffer.Length);
+        }
 
-        protected override void Check()
+        protected override void Decrypt()
         {
-            int maskSize = 0x80;
+            _buffer.SetLength(_length);
+            _buffer.PerformEach((x, i) => (byte)(x ^ GetMask(i)));
+        }
+
+        protected byte GetMask(int index)
+            => Mask((index < 0x8000 ? index : index + (index / 0x7FFF)) % 0x80);
+
+        protected abstract byte Mask(int offset);
+    }
+
+    public sealed class TencentStaticDecrypto : TencentMaskDecrypto
+    {
+        private static readonly byte[] _mask = new byte[] 
+            {
+                0xc3, 0x4a, 0xd6, 0xca, 0x90, 0x67, 0xf7, 0x52,
+                0xd8, 0xa1, 0x66, 0x62, 0x9f, 0x5b, 0x09, 0x00,
+                0xc3, 0x5e, 0x95, 0x23, 0x9f, 0x13, 0x11, 0x7e,
+                0xd8, 0x92, 0x3f, 0xbc, 0x90, 0xbb, 0x74, 0x0e,
+                0xc3, 0x47, 0x74, 0x3d, 0x90, 0xaa, 0x3f, 0x51,
+                0xd8, 0xf4, 0x11, 0x84, 0x9f, 0xde, 0x95, 0x1d,
+                0xc3, 0xc6, 0x09, 0xd5, 0x9f, 0xfa, 0x66, 0xf9,
+                0xd8, 0xf0, 0xf7, 0xa0, 0x90, 0xa1, 0xd6, 0xf3,
+                0xc3, 0xf3, 0xd6, 0xa1, 0x90, 0xa0, 0xf7, 0xf0,
+                0xd8, 0xf9, 0x66, 0xfa, 0x9f, 0xd5, 0x09, 0xc6,
+                0xc3, 0x1d, 0x95, 0xde, 0x9f, 0x84, 0x11, 0xf4,
+                0xd8, 0x51, 0x3f, 0xaa, 0x90, 0x3d, 0x74, 0x47,
+                0xc3, 0x0e, 0x74, 0xbb, 0x90, 0xbc, 0x3f, 0x92,
+                0xd8, 0x7e, 0x11, 0x13, 0x9f, 0x23, 0x95, 0x5e,
+                0xc3, 0x00, 0x09, 0x5b, 0x9f, 0x62, 0x66, 0xa1,
+                0xd8, 0x52, 0xf7, 0x67, 0x90, 0xca, 0xd6, 0x4a,               
+            };
+
+        public TencentStaticDecrypto(FileInfo file, MusicTypes type) : base(file, type) { }
+
+        protected override byte Mask(int index) => _mask[index];
+    }
+
+    public sealed class TencentDynamicDecrypto : TencentMaskDecrypto
+    {
+        private byte[] _mask;
+
+        public TencentDynamicDecrypto(FileInfo file, MusicTypes type) : base(file, type) { }
+
+        protected override void PreDecrypt()
+        {
             int headerSize = 0x8;
-            byte[] lastMask = ReadFixedChunk(ref maskSize);
-            byte[] thisMask = ReadFixedChunk(ref maskSize);
-            while (maskSize == 0x80)
+            byte[] header = new byte[headerSize];
+            if (_reader.Read(header) < headerSize)
+                throw new DecryptoException("File seems incomplete.", _input.FullName);
+            _buffer.ResetPosition();
+            int maskSize = 0x80;
+            for (int i = 0; i < Math.Min(0x100, _length / maskSize); i++)
             {
-                bool detected = true;
-                for (uint i = 0; i < 0x80; i++)
+                byte[] candidate = _reader.ReadBytes(maskSize);
+                if (header.Select((x, i) => (byte)(x ^ candidate[i])).ToArray().ParseMusicType() == MusicTypes.Flac)
                 {
-                    if (lastMask[i] != thisMask[i])
-                    {
-                        detected = false;
-                        break;
-                    }
-                }
-                if (!detected)
-                {
-                    lastMask = thisMask;
-                    thisMask = ReadFixedChunk(ref maskSize);
-                    continue;
-                }
-
-                ResetInBuffer();
-
-                byte[] header = ReadFixedChunk(ref headerSize);
-                for (uint i = 0; i < headerSize; i++)
-                {
-                    header[i] ^= thisMask[i];
-                }
-                MemoryStream headerStream = new MemoryStream(header);
-                if (MediaType.GetStreamMime(headerStream) == "audio/flac")
-                {
-                    mask = new byte[maskSize];
-                    mask = thisMask;
+                    _mask = candidate;
                     break;
                 }
-                headerStream.Dispose();
-                lastMask = thisMask;
-                thisMask = ReadFixedChunk(ref maskSize);
             }
+            if (_mask == null)
+                throw new DecryptoException($"File is currently not supported.", _input.FullName);
 
-            if (mask == null)
-                throw new FileLoadException($"\"{InPath}\" is currently not supported.");
-
-            ResetInBuffer();
+            _buffer.Seek(-4, SeekOrigin.End);
+            uint keyLength = _reader.ReadUInt32();
+            _length -= (int)(keyLength + 4);
+            _buffer.ResetPosition();
         }
 
-        private int index = -1;
-        private int offset = -1;
-
-        protected override byte NextMask()
-        {
-            offset++;
-            index++;
-
-            if (offset == 0x8000 || (offset > 0x8000 && (offset + 1) % 0x8000 == 0))
-            {
-                offset++;
-                index++;
-            }
-            if (index >= 0x80) index -= 0x80;
-
-            return mask[index];
-        }
+        protected override byte Mask(int index) => _mask[index];
     }
 }

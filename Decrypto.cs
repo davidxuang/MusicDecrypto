@@ -1,102 +1,87 @@
-﻿using NLog;
-using System;
+﻿using System;
 using System.IO;
 using System.Security.Cryptography;
 
 namespace MusicDecrypto
 {
-    internal abstract class Decrypto : IDisposable
+    public abstract class Decrypto : IDisposable
     {
-        protected static readonly Logger Logger = LogManager.GetCurrentClassLogger();
+        protected readonly FileInfo _input;
+        protected string _outName;
+        protected bool _dumped;
+        protected MusicTypes? _musicType;
+        protected ExtendedMemoryStream _buffer = new ExtendedMemoryStream();
+        protected BinaryReader _reader;
+        protected ImageTypes? _coverType;
+        protected byte[] _coverBuffer;
 
-        public static bool SkipDuplicate { get; set; } = false;
-        public static string OutputDir { get; set; } = null;
-        public static ulong SuccessCount { get; private set; } = 0;
+        public static bool ForceOverwrite { get; set; }
+        public static DirectoryInfo Output { get; set; }
+        public static ulong DumpCount { get; private set; }
 
-        public bool Dumped { get; private set; } = false;
-        public string InPath { get; private set; } = null;
-        public string OutName { get; protected set; } = null;
-        protected string CoverMime { get; set; } = null;
-        protected string MusicMime { get; set; } = null;
-        protected MemoryStream InBuffer { get; set; } = new MemoryStream();
-        protected MemoryStream OutBuffer { get; set; } = new MemoryStream();
-        protected MemoryStream CoverBuffer { get; set; } = new MemoryStream();
-        public Metadata StdMetadata { get; protected set; }
-
-        protected Decrypto(string path, string mime = null)
+        protected Decrypto(FileInfo file, MusicTypes? type = null)
         {
-            InPath = path;
-            using FileStream file = new FileStream(InPath, FileMode.Open);
-            file.CopyTo(InBuffer);
-            ResetInBuffer();
-            MusicMime = mime;
+            _input = file;
+            using FileStream stream = file.OpenRead();
+            stream.CopyTo(_buffer);
+            _buffer.ResetPosition();
+            _musicType = type;
+            _reader = new BinaryReader(_buffer);
         }
 
-        public virtual void Dispose()
+        public void Dispose()
         {
-            InBuffer.Dispose();
-            OutBuffer.Dispose();
-            CoverBuffer.Dispose();
+            _reader.Dispose();
+            _buffer.Dispose();
+            GC.SuppressFinalize(this);
         }
 
         public void Dump()
         {
-            if (!Dumped)
+            if (!_dumped)
             {
-                Check();
+                PreDecrypt();
                 Decrypt();
-                Metadata();
+                PostDecrypt();
                 Save();
-                Dumped = true;
+                _dumped = true;
             }
         }
 
-        protected virtual void Check() { }
+        protected virtual void PreDecrypt() { }
         protected abstract void Decrypt();
-        protected abstract void Metadata();
+        protected virtual void PostDecrypt() { _buffer.Name = "buffer." + _musicType?.GetExtension(); }
 
         protected void Save()
         {
             string extension;
-            extension = MediaType.MimeToExt(MusicMime);
+            extension = _musicType?.GetExtension();
             if (extension == null)
-                throw new FileLoadException($"\"{InPath}\" is invalid.");
+                throw new DecryptoException("Unable to determine output extension.", _input.FullName);
 
             string path;
-            if (OutName == null) OutName = Path.GetFileNameWithoutExtension(InPath);
-            path = ((OutputDir == null) ? Path.Combine(Path.GetDirectoryName(InPath), OutName) : Path.Combine(OutputDir, OutName)) + $".{extension}";
+            if (_outName == null) _outName = Path.GetFileNameWithoutExtension(_input.FullName);
+            path = (Output == null) ? Path.Combine(_input.DirectoryName, _outName + extension)
+                                    : Path.Combine(Output.FullName, _outName + extension);
 
-            if (File.Exists(path) && SkipDuplicate)
+            if (File.Exists(path) && !ForceOverwrite)
             {
-                Logger.Info("Skipping {Path}", path);
+                Logger.Log("Skipping existing file.", path, LogLevel.Warn);
                 return;
             }
 
-            using FileStream file = new FileStream(path, FileMode.Create);
-            OutBuffer.WriteTo(file);
-            SuccessCount++;
-            Logger.Info("File was decrypted successfully at {Path}", path);
+            using var file = new FileStream(path, FileMode.Create);
+            _buffer.WriteTo(file);
+            DumpCount++;
+            Logger.Log("File was successfully decrypted.", path, LogLevel.Info);
         }
+    }
 
-        protected byte[] ReadFixedChunk(ref int size)
+    public static class DecryptExtensions
+    {
+        public static byte[] AesEcbDecrypt(this byte[] cipher, byte[] key)
         {
-            byte[] chunk = new byte[size];
-            size = InBuffer.Read(chunk, 0, size);
-            return chunk;
-        }
-
-        protected void ResetInBuffer()
-        {
-            InBuffer.Position = 0;
-        }
-        protected void ResetOutBuffer()
-        {
-            OutBuffer.Position = 0;
-        }
-
-        public static byte[] AesEcbDecrypt(byte[] cipher, byte[] key)
-        {
-            using RijndaelManaged rijndael = new RijndaelManaged
+            using var rijndael = new RijndaelManaged
             {
                 Key = key,
                 Mode = CipherMode.ECB,
@@ -107,9 +92,18 @@ namespace MusicDecrypto
         }
     }
 
-    internal class NullFileChunkException : IOException
+    public class DecryptoException : IOException
     {
-        internal NullFileChunkException(string message)
+        public DecryptoException(string message, string path)
+            : base($"{message} ({path})") { }
+
+        public DecryptoException(string message, string path, Exception innerException)
+            : base($"{message} ({path})", innerException) { }
+    }
+
+    public class NullFileChunkException : IOException
+    {
+        public NullFileChunkException(string message)
             : base(message) { }
     }
 }

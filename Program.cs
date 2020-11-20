@@ -1,172 +1,109 @@
-﻿using CommandLine;
-using NLog;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using System.CommandLine;
+using System.CommandLine.Invocation;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
 namespace MusicDecrypto
 {
-    internal static class Program
+    public static class Program
     {
-        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
+        private static readonly HashSet<string> SupportedExtensions
+            = new HashSet<string> { ".ncm", ".mflac", ".qmc0", ".qmc3", ".qmcogg", ".qmcflac", ".tkm", ".tm2", ".tm6", ".bkcmp3", ".bkcflac" };
 
-        static void Main(string[] args)
+        public static int Main(string[] args)
         {
-            try
+            var command = new RootCommand
             {
-                // Setup NLog
-                var logConfig = new NLog.Config.LoggingConfiguration();
-                var logFile = new NLog.Targets.FileTarget("logfile") { FileName = "debug.log" };
-                var logConsole = new NLog.Targets.ColoredConsoleTarget("logconsole");
-                logConfig.AddRule(LogLevel.Info, LogLevel.Fatal, logConsole);
-                logConfig.AddRule(LogLevel.Debug, LogLevel.Fatal, logFile);
-                LogManager.Configuration = logConfig;
+                new Argument<FileSystemInfo[]>("input", "Input files/directories."),
+                new Option<bool>(new[] { "-f", "--force-overwrite"}, "Overwrite existing files."),
+                new Option<bool>(new[] { "-n", "--renew-name" }, "Renew Hash-like names basing on metadata."),
+                new Option<bool>(new[] { "-r", "--recursive" }, "Search files recursively"),
+                new Option<DirectoryInfo>(new[] { "-o", "--output" }, "Output directory."),
+            };
 
-                // Parse options
-                string[] inputPaths = null;
-                _ = Parser.Default.ParseArguments<Options>(args)
-                    .WithParsed(opts =>
-                    {
-                        if (opts.OutputDir != null)
-                        {
-                            if (Directory.Exists(opts.OutputDir)) Decrypto.OutputDir = opts.OutputDir;
-                            else Logger.Error("Designated output directory {Path} does not exist.", opts.OutputDir);
-                        }
-                        Decrypto.SkipDuplicate = opts.SkipDuplicate;
-                        TencentDecrypto.ForceRename = opts.ForceRename;
-                        inputPaths = opts.InputPaths.ToArray();
-                    })
-                    .WithNotParsed(errs => { });
-
-                if (inputPaths != null)
+            command.Handler = CommandHandler.Create<FileSystemInfo[], bool, bool, bool, DirectoryInfo>((input, forceOverwrite, renewName, recursive, output) =>
+            {
+                if (input == null) return;
+                Decrypto.ForceOverwrite = forceOverwrite;
+                TencentDecrypto.RenewName = renewName;
+                if (output != null)
                 {
-                    // Search for files
-                    List<string> foundPaths = new List<string>();
-                    foreach (string path in inputPaths)
-                    {
-                        try
-                        {
-                            if (Directory.Exists(path))
-                            {
-                                foundPaths.AddRange(
-                                    Directory.EnumerateFiles(path, "*", SearchOption.AllDirectories)
-                                        .Where(file =>
-                                            file.ToLower().EndsWith(".ncm") ||
-                                            file.ToLower().EndsWith(".mflac") ||
-                                            file.ToLower().EndsWith(".qmc0") ||
-                                            file.ToLower().EndsWith(".qmc3") ||
-                                            file.ToLower().EndsWith(".qmcogg") ||
-                                            file.ToLower().EndsWith(".tkm") ||
-                                            file.ToLower().EndsWith(".tm2") ||
-                                            file.ToLower().EndsWith(".tm6") ||
-                                            file.ToLower().EndsWith(".bkcmp3") ||
-                                            file.ToLower().EndsWith(".bkcflac"))
-                                );
-                            }
-                            else if (File.Exists(path) && (
-                                path.ToLower().EndsWith(".ncm") ||
-                                path.ToLower().EndsWith(".mflac") ||
-                                path.ToLower().EndsWith(".qmc0") ||
-                                path.ToLower().EndsWith(".qmc3") ||
-                                path.ToLower().EndsWith(".qmcogg") ||
-                                path.ToLower().EndsWith(".qmcflac") ||
-                                path.ToLower().EndsWith(".tkm") ||
-                                path.ToLower().EndsWith(".tm2") ||
-                                path.ToLower().EndsWith(".tm6") ||
-                                path.ToLower().EndsWith(".bkcmp3") ||
-                                path.ToLower().EndsWith(".bkcflac")))
-                            {
-                                foundPaths.Add(path);
-                            }
-                        }
-                        catch (IOException e)
-                        {
-                            Logger.Error(e);
-                        }
-                    }
-
-                    // Decrypt and dump
-                    string[] trimmedPaths = foundPaths.Where((x, i) => foundPaths.FindIndex(y => y == x) == i).ToArray();
-                    if (trimmedPaths.Length > 0)
-                    {
-                        _ = Parallel.ForEach(trimmedPaths, file =>
-                        {
-                            Decrypto decrypto = null;
-
-                            try
-                            {
-                                switch (Path.GetExtension(file))
-                                {
-                                    case ".ncm":
-                                        decrypto = new NetEaseDecrypto(file);
-                                        break;
-                                    case ".tm2":
-                                    case ".tm6":
-                                        decrypto = new TencentSimpleDecrypto(file, "audio/mpeg4");
-                                        break;
-                                    case ".qmc0":
-                                    case ".qmc3":
-                                    case ".bkcmp3":
-                                        decrypto = new TencentFixedDecrypto(file, "audio/mpeg");
-                                        break;
-                                    case ".qmcogg":
-                                        decrypto = new TencentFixedDecrypto(file, "audio/ogg");
-                                        break;
-                                    case ".qmcflac":
-                                    case ".bkcflac":
-                                        decrypto = new TencentFixedDecrypto(file, "audio/flac");
-                                        break;
-                                    case ".tkm":
-                                        decrypto = new TencentFixedDecrypto(file, "audio/mpeg4");
-                                        break;
-                                    case ".mflac":
-                                        decrypto = new TencentDynamicDecrypto(file, "audio/flac");
-                                        break;
-                                    default:
-                                        Logger.Error("Cannot recognize {Path}", file);
-                                        break;
-                                }
-
-                                decrypto?.Dump();
-                            }
-                            catch (IOException e)
-                            {
-                                Logger.Error(e);
-                            }
-                            finally
-                            {
-                                decrypto?.Dispose();
-                            }
-                        });
-
-                        Logger.Info("Program finished with {Requested} files requested and {Succeeded} files saved successfully.", trimmedPaths.Length, Decrypto.SuccessCount);
-                        return;
-                    }
-
-                    Logger.Error("Found no valid file from specified path(s).");
+                    if (output.Exists)
+                        Decrypto.Output = output;
+                    else
+                        Logger.Log("Ignore output directory which does not exist.", output.FullName, LogLevel.Error);
                 }
-            }
-            catch (Exception e)
-            {
-                Logger.Fatal(e);
-            }
+
+                // Search for files
+                var files = new HashSet<FileInfo>(new FileInfoComparer());
+                foreach (FileSystemInfo item in input)
+                {
+                    if (item?.Exists != true) continue;
+
+                    if (item is DirectoryInfo)
+                    {
+                        files.UnionWith((item as DirectoryInfo)
+                            .GetFiles("*", recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly)
+                            .Where(file => SupportedExtensions.Contains(
+                                file.Extension.ToLowerInvariant())));
+                    }
+                    else
+                    {
+                        files.Add(item as FileInfo);
+                    }
+                }
+
+                if (files.Count == 0)
+                {
+                    Logger.Log("Found no supported file from specified path(s).", LogLevel.Error);
+                    return;
+                }
+
+                // Decrypt and dump
+                _ = Parallel.ForEach(files, file =>
+                {
+                    try
+                    {
+                        using Decrypto decrypto = file.Extension switch
+                        {
+                            ".ncm"    => new NetEaseDecrypto(file),
+                            ".tm2" or ".tm6"
+                                      => new TencentSimpleDecrypto(file, MusicTypes.XM4a),
+                            ".qmc0" or ".qmc3" or ".bkcmp3"
+                                      => new TencentStaticDecrypto(file, MusicTypes.Mpeg),
+                            ".qmcogg" => new TencentStaticDecrypto(file, MusicTypes.Ogg),
+                            ".tkm"    => new TencentStaticDecrypto(file, MusicTypes.XM4a),
+                            ".qmcflac" or ".bkcflac"
+                                      => new TencentStaticDecrypto(file, MusicTypes.Flac),
+                            ".mflac"  => new TencentDynamicDecrypto(file, MusicTypes.Flac),
+                            _ => throw new DecryptoException("File has an unsupported extension.", file.FullName)
+                        };
+
+                        decrypto?.Dump();
+                    }
+                    catch (Exception e)
+                    {
+                        Logger.Log(e.ToString(), LogLevel.Fatal);
+                    }
+                });
+
+                Logger.Log($"Program finished with {Decrypto.DumpCount}/{files.Count} files decrypted successfully.", LogLevel.Info);
+            });
+
+            if (args.Length == 0)
+                return command.Invoke("-h");
+
+            return command.Invoke(args);
         }
+    }
 
-        internal class Options
-        {
-            [Option('d', "skip-duplicate", Required = false, HelpText = "Do not overwrite existing files.")]
-            public bool SkipDuplicate { get; set; } = false;
-
-            [Option('n', "force-rename", Required = false, HelpText = "Try to fix Tencent file name basing on metadata.")]
-            public bool ForceRename { get; set; } = false;
-
-            [Option('o', "output", Required = false, HelpText = "Specify output directory for all files.")]
-            public string OutputDir { get; set; }
-
-            [Value(0, Required = true, MetaName = "Path", HelpText = "Specify the input files and/or directories.")]
-            public IEnumerable<string> InputPaths { get; set; }
-        }
+    internal class FileInfoComparer : IEqualityComparer<FileInfo>
+    {
+        public bool Equals(FileInfo x, FileInfo y) => Equals(x.FullName, y.FullName);
+        public int GetHashCode([DisallowNull] FileInfo obj) => obj.FullName.GetHashCode();
     }
 }
