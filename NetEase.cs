@@ -129,8 +129,8 @@ namespace MusicDecrypto
             _buffer.Origin = _buffer.Position;
             _buffer.PerformEach((x, i) =>
             {
-                int j = (i + 1) & 0xff;
-                return (byte)(x ^ (_mainKey[(_mainKey[j] + _mainKey[(_mainKey[j] + j) & 0xff]) & 0xff]));
+                var offset = (byte)(i + 1);
+                return (byte)(x ^ (_mainKey[(byte)(_mainKey[offset] + _mainKey[(byte)(_mainKey[offset] + offset)])]));
             });
             _musicType = _buffer.ToArray().ParseMusicType();
         }
@@ -164,7 +164,7 @@ namespace MusicDecrypto
             if (_metadata?.Artists?.Count() > 0)
             {
                 tag.Performers = _metadata?.Artists?.ToArray();
-                tag.AlbumArtists = new string[] { _metadata?.Artists?.First() };
+                tag.AlbumArtists = new[] { _metadata?.Artists?.First() };
             }
             if (_metadata?.Album != null)
                 tag.Album = _metadata?.Album;

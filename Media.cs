@@ -51,7 +51,7 @@ namespace MusicDecrypto
             {
                 return null;
             }
-            
+
         }
 
         public static string GetMime(this ImageTypes type) => type switch

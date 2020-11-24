@@ -1,6 +1,6 @@
-version: '3.1.0.{build}'
+version: '3.2.0.{build}'
 image:
-  - Ubuntu
+  - Ubuntu2004
   - Visual Studio 2019
 environment:
   DOTNET_SDK: net5.0
@@ -9,7 +9,7 @@ environment:
     - ARCH: x64
 matrix:
   exclude:
-    - image: Ubuntu
+    - image: Ubuntu2004
       ARCH: generic
 shallow_clone: true
 pull_requests:
@@ -22,8 +22,6 @@ dotnet_csproj:
   assembly_version: '{version}'
   file_version: '{version}'
   informational_version: '{version}'
-before_build:
-  - dotnet add package Microsoft.DotNet.ILCompiler -v 6.0.0-*
 deploy:
   - provider: GitHub
     artifact: archive
@@ -46,16 +44,18 @@ for:
       - pwsh: >-
           if ($env:APPVEYOR_REPO_TAG_NAME -eq $null) { $env:APPVEYOR_REPO_TAG_NAME = 'snapshot' }
           7z a "MusicDecrypto-net5.0-generic-$env:APPVEYOR_REPO_TAG_NAME.7z" .\bin\Release\net5.0\publish\*;
-          (Get-FileHash "MusicDecrypto-net5.0-generic-$env:APPVEYOR_REPO_TAG_NAME.7z" SHA256).Hash + " MusicDecrypto-net5.0-generic-$env:APPVEYOR_REPO_TAG_NAME.7z" > "MusicDecrypto-net5.0-generic-$APPVEYOR_REPO_TAG_NAME.7z.sha256"
+          (Get-FileHash "MusicDecrypto-net5.0-generic-$env:APPVEYOR_REPO_TAG_NAME.7z" SHA256).Hash + " MusicDecrypto-net5.0-generic-$env:APPVEYOR_REPO_TAG_NAME.7z" > "MusicDecrypto-net5.0-generic-$env:APPVEYOR_REPO_TAG_NAME.7z.sha256"
     artifacts:
       - path: '*.7z*'
         name: archive
   -
     matrix:
       only:
-        - image: Ubuntu
+        - image: Ubuntu2004
     install:
       - sudo apt-get update && sudo apt-get -y install libkrb5-dev
+    before_build:
+      - dotnet add package Microsoft.DotNet.ILCompiler -v 6.0.0-*
     build_script:
       - dotnet publish -r linux-x64 -c Release /p:IlcInvariantGlobalization=true /p:IlcGenerateCompleteTypeMetadata=false /p:IlcGenerateStackTraceData=false
     after_build:
@@ -70,6 +70,8 @@ for:
     matrix:
       only:
         - image: Visual Studio 2019
+    before_build:
+      - dotnet add package Microsoft.DotNet.ILCompiler -v 6.0.0-*
     build_script:
       - dotnet publish -r win-x64 -c Release /p:IlcInvariantGlobalization=true /p:IlcGenerateCompleteTypeMetadata=false /p:IlcGenerateStackTraceData=false
     after_build:

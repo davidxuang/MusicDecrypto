@@ -60,7 +60,7 @@ namespace MusicDecrypto
         protected int _length;
 
         protected TencentMaskDecrypto(FileInfo file, MusicTypes type) : base(file, type)
-        {   
+        {
             _length = Convert.ToInt32(_buffer.Length);
         }
 
@@ -78,7 +78,7 @@ namespace MusicDecrypto
 
     public sealed class TencentStaticDecrypto : TencentMaskDecrypto
     {
-        private static readonly byte[] _mask = new byte[] 
+        private static readonly byte[] _mask = new byte[]
             {
                 0xc3, 0x4a, 0xd6, 0xca, 0x90, 0x67, 0xf7, 0x52,
                 0xd8, 0xa1, 0x66, 0x62, 0x9f, 0x5b, 0x09, 0x00,
@@ -95,7 +95,7 @@ namespace MusicDecrypto
                 0xc3, 0x0e, 0x74, 0xbb, 0x90, 0xbc, 0x3f, 0x92,
                 0xd8, 0x7e, 0x11, 0x13, 0x9f, 0x23, 0x95, 0x5e,
                 0xc3, 0x00, 0x09, 0x5b, 0x9f, 0x62, 0x66, 0xa1,
-                0xd8, 0x52, 0xf7, 0x67, 0x90, 0xca, 0xd6, 0x4a,               
+                0xd8, 0x52, 0xf7, 0x67, 0x90, 0xca, 0xd6, 0x4a,
             };
 
         public TencentStaticDecrypto(FileInfo file, MusicTypes type) : base(file, type) { }
