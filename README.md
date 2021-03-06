@@ -34,9 +34,9 @@ This project aims to implement music de-DRM for NetEase Cloud Music and QQ Music
 <td>✔️<br/><sub>.bkcflac</sub></td>
 </tr>
 <tr>
-<td rowspan="3">QQ</td>
+<td rowspan="3">QQ<sup>*</sup></td>
 <td></td>
-<td><sup>*</sup></td>
+<td></td>
 <td>✔️<br/><sub>.tm2/tm6</sub></td>
 <td></td>
 <td></td>
@@ -78,7 +78,7 @@ This project aims to implement music de-DRM for NetEase Cloud Music and QQ Music
 
 -   [.NET](https://dotnet.microsoft.com) 5
 -   [Json.NET](https://www.newtonsoft.com/json)
--   [System.Commandline](https://github.com/dotnet/command-line-api)
+-   [Mono.Options](https://github.com/xamarin/XamarinComponents/tree/master/XPlat/Mono.Options)
 -   [TagLib#](https://github.com/mono/taglib-sharp)
 
 ## Run

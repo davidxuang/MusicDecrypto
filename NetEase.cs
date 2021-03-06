@@ -161,7 +161,7 @@ namespace MusicDecrypto
 
             if (_metadata?.Title != null)
                 tag.Title = _metadata?.Title;
-            if (_metadata?.Artists?.Count() > 0)
+            if (_metadata?.Artists?.Count() > 0 && tag.AlbumArtists.Length == 0)
             {
                 tag.Performers = _metadata?.Artists?.ToArray();
                 tag.AlbumArtists = new[] { _metadata?.Artists?.First() };

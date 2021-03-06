@@ -23,11 +23,10 @@ namespace MusicDecrypto
                 MusicTypes.Mpeg => file.GetTag(TagLib.TagTypes.Id3v2),
                 _ => throw new DecryptoException("File has an unexpected MIME value.", _input.FullName),
             };
+            if (tag == null) return;
 
             if (tag.Pictures.Length > 0)
-            {
                 tag.Pictures[0].Type = TagLib.PictureType.FrontCover;
-            }
 
             if (RenewName)
             {

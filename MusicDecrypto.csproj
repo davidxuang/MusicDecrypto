@@ -7,8 +7,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Mono.Options" Version="6.*" />
     <PackageReference Include="Newtonsoft.Json" Version="12.*" />
-    <PackageReference Include="System.CommandLine" Version="2.0.0-beta*" />
     <PackageReference Include="TagLibSharp" Version="2.*" />
   </ItemGroup>
 

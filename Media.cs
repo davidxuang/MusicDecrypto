@@ -24,10 +24,10 @@ namespace MusicDecrypto
     {
         public static string GetExtension(this MusicTypes type) => type switch
         {
-            MusicTypes.XM4a => ".m4a",
             MusicTypes.Flac => ".flac",
             MusicTypes.Mpeg => ".mp3",
             MusicTypes.Ogg  => ".ogg",
+            MusicTypes.XM4a => ".m4a",
             MusicTypes.XWav => ".wav",
             _ => throw new InvalidDataException("Undefined music type."),
         };
@@ -37,15 +37,15 @@ namespace MusicDecrypto
             try
             {
                 return Enum.GetValues<MusicTypes>()
-                            .Where(type => type switch
-                            {
-                                //                                                                       f     L     a     C
-                                MusicTypes.Flac => Enumerable.SequenceEqual(data.Take(4), new byte[] { 0x66, 0x4c, 0x61, 0x43 }),
-                                //                                                                       I     D     3
-                                MusicTypes.Mpeg => Enumerable.SequenceEqual(data.Take(3), new byte[] { 0x49, 0x44, 0x33 }),
-                                _ => false
-                            })
-                            .Single();
+                           .Where(type => type switch
+                           {
+                               //                                                                       f     L     a     C
+                               MusicTypes.Flac => Enumerable.SequenceEqual(data.Take(4), new byte[] { 0x66, 0x4c, 0x61, 0x43 }),
+                               //                                                                       I     D     3
+                               MusicTypes.Mpeg => Enumerable.SequenceEqual(data.Take(3), new byte[] { 0x49, 0x44, 0x33 }),
+                               _ => false
+                           })
+                           .Single();
             }
             catch (InvalidOperationException)
             {

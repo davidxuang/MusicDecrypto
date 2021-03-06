@@ -1,7 +1,6 @@
-﻿using System;
+﻿using Mono.Options;
+using System;
 using System.Collections.Generic;
-using System.CommandLine;
-using System.CommandLine.Invocation;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
@@ -11,53 +10,65 @@ namespace MusicDecrypto
 {
     public static class Program
     {
-        private static readonly HashSet<string> _support
+        private static ConsoleColor _pushColor;
+        private static readonly HashSet<string> _extension
             = new HashSet<string> { ".ncm", ".tm2", ".tm6", ".qmc0", ".qmc3", ".bkcmp3", ".qmcogg", ".qmcflac", ".tkm", ".bkcflac", ".mflac", ".xm" };
-        private static readonly HashSet<string> _extendedSupport
-            = new HashSet<string> { ".ncm", ".tm2", ".tm6", ".qmc0", ".qmc3", ".bkcmp3", ".qmcogg", ".qmcflac", ".tkm", ".bkcflac", ".mflac", ".xm", ".mp3", ".m4a", ".wav", ".flac" };
 
-        public static int Main(string[] args)
+        public static void Main(string[] args)
         {
-            var command = new RootCommand
+            _pushColor = Console.ForegroundColor;
+            AppDomain.CurrentDomain.ProcessExit += new EventHandler(OnProcessExit);
+
+            List<string> input;
+            SearchOption search = SearchOption.TopDirectoryOnly;
+            bool help = args.Length == 0;
+            var options = new OptionSet
             {
-                new Argument<FileSystemInfo[]>("input", "Input files/directories."),
-                new Option<bool>(new[] { "-f", "--force-overwrite"}, "Overwrite existing files."),
-                new Option<bool>(new[] { "-n", "--renew-name" }, "Renew Hash-like names basing on metadata."),
-                new Option<bool>(new[] { "-r", "--recursive" }, "Search files recursively."),
-                new Option<bool>(new[] { "-x", "--extensive" }, "Extend range of extensions to be detected."),
-                new Option<DirectoryInfo>(new[] { "-o", "--output" }, "Output directory."),
+                { "f|force-overwrite", "Overwrite existing files.", f => Decrypto.ForceOverwrite = f != null },
+                { "n|renew-name", "Renew Hash-like names basing on metadata.", n => TencentDecrypto.RenewName = n != null },
+                { "r|recursive", "Search files recursively.", r => { if (r != null) search = SearchOption.AllDirectories; } },
+                { "x|extensive", "Extend range of extensions to be detected.", x => { if (x != null) _extension.UnionWith(new []{ ".mp3", ".m4a", ".wav", ".flac" }); } },
+                { "o|output=", "Output directory", o => { if (o != null) Decrypto.Output = new DirectoryInfo(o); } },
+                { "h|help", "Show help.", h => help = h != null },
             };
 
-            command.Handler = CommandHandler.Create<FileSystemInfo[], bool, bool, bool, bool, DirectoryInfo>((input, forceOverwrite, renewName, recursive, extensive, output) =>
+            try
             {
-                if (input == null) return;
-                Decrypto.ForceOverwrite = forceOverwrite;
-                TencentDecrypto.RenewName = renewName;
-                if (output != null)
+                input = options.Parse(args);
+
+                if (help)
                 {
-                    if (output.Exists)
-                        Decrypto.Output = output;
-                    else
-                        Logger.Log("Ignore output directory which does not exist.", output.FullName, LogLevel.Error);
+                    Console.ForegroundColor = ConsoleColor.White;
+                    Console.WriteLine(@"
+Usage:
+  MusicDecrypto [options] [<input>...]
+
+Arguments:
+  <input>    Input files/directories.
+
+Options:");
+                    options.WriteOptionDescriptions(Console.Out);
+                    return;
+                }
+
+                if (Decrypto.Output?.Exists == false)
+                {
+                    Logger.Log("Ignore output directory which does not exist.", Decrypto.Output.FullName, LogLevel.Error);
                 }
 
                 // Search for files
                 var files = new HashSet<FileInfo>(new FileInfoComparer());
-                foreach (FileSystemInfo item in input)
+                foreach (string item in input)
                 {
-                    if (item?.Exists != true) continue;
-
-                    if (item is DirectoryInfo)
+                    if (Directory.Exists(item))
                     {
-                        files.UnionWith((item as DirectoryInfo)
-                            .GetFiles("*", recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly)
-                            .Where(file => extensive
-                                ? _extendedSupport.Contains(file.Extension.ToLowerInvariant())
-                                : _support.Contains(file.Extension.ToLowerInvariant())));
+                        files.UnionWith(Directory.GetFiles(item, "*", search)
+                                                 .Where(path => _extension.Contains(Path.GetExtension(path).ToLowerInvariant()))
+                                                 .Select(path => new FileInfo(path)));
                     }
-                    else
+                    else if (File.Exists(item))
                     {
-                        files.Add(item as FileInfo);
+                        files.Add(new FileInfo(item));
                     }
                 }
 
@@ -101,12 +112,16 @@ namespace MusicDecrypto
                 });
 
                 Logger.Log($"Program finished with {Decrypto.DumpCount}/{files.Count} files decrypted successfully.", LogLevel.Info);
-            });
+            }
+            catch (OptionException e)
+            {
+                Logger.Log(e.ToString(), LogLevel.Fatal);
+            }
+        }
 
-            if (args.Length == 0)
-                return command.Invoke("-h");
-
-            return command.Invoke(args);
+        private static void OnProcessExit (object sender, EventArgs e)
+        {
+            Console.ForegroundColor = _pushColor;
         }
     }
 
