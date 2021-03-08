@@ -10,9 +10,9 @@ namespace MusicDecrypto
 {
     public sealed class NetEaseDecrypto : Decrypto
     {
-        private static readonly byte[] _rootKey = { 0x68, 0x7A, 0x48, 0x52, 0x41, 0x6D, 0x73, 0x6F, 0x35, 0x6B, 0x49, 0x6E, 0x62, 0x61, 0x78, 0x57 };
-        private static readonly byte[] _jsonKey = { 0x23, 0x31, 0x34, 0x6C, 0x6A, 0x6B, 0x5F, 0x21, 0x5C, 0x5D, 0x26, 0x30, 0x55, 0x3C, 0x27, 0x28 };
-        private readonly byte[] _mainKey = Enumerable.Range(0, 0x100).Select(x => (byte)x).ToArray();
+        private static readonly byte[] _root = { 0x68, 0x7A, 0x48, 0x52, 0x41, 0x6D, 0x73, 0x6F, 0x35, 0x6B, 0x49, 0x6E, 0x62, 0x61, 0x78, 0x57 };
+        private static readonly byte[] _rootMeta = { 0x23, 0x31, 0x34, 0x6C, 0x6A, 0x6B, 0x5F, 0x21, 0x5C, 0x5D, 0x26, 0x30, 0x55, 0x3C, 0x27, 0x28 };
+        private readonly byte[] _mask = Enumerable.Range(0, 0x100).Select(x => (byte)x).ToArray();
         private Metadata? _metadata;
 
         public NetEaseDecrypto(FileInfo file) : base(file) { }
@@ -32,17 +32,17 @@ namespace MusicDecrypto
             try
             {
                 // Read key
-                byte[] key = ReadIndexedChunk(0x64).AesEcbDecrypt(_rootKey);
+                byte[] key = ReadIndexedChunk(0x64).AesEcbDecrypt(_root);
 
                 // Build main key
-                for (uint trgIndex = 0, swpIndex, lastIndex = 0, srcOffset = 17, srcIndex = srcOffset; trgIndex < _mainKey.Length; trgIndex++)
+                for (uint trgIndex = 0, swpIndex, lastIndex = 0, srcOffset = 17, srcIndex = srcOffset; trgIndex < _mask.Length; trgIndex++)
                 {
-                    byte swap = _mainKey[trgIndex];
+                    byte swap = _mask[trgIndex];
                     swpIndex = (swap + lastIndex + key[srcIndex++]) & 0xff;
                     if (srcIndex >= key.Length)
                         srcIndex = srcOffset;
-                    _mainKey[trgIndex] = _mainKey[swpIndex];
-                    _mainKey[swpIndex] = swap;
+                    _mask[trgIndex] = _mask[swpIndex];
+                    _mask[swpIndex] = swap;
                     lastIndex = swpIndex;
                 }
             }
@@ -71,14 +71,14 @@ namespace MusicDecrypto
                         Convert.FromBase64String(
                             Encoding.ASCII.GetString(
                                 metaChunk.Skip(skipCount).ToArray()))
-                        .AesEcbDecrypt(_jsonKey).Skip(6).ToArray()));
+                        .AesEcbDecrypt(_rootMeta).Skip(6).ToArray()));
                 if (_metadata?.Title == null)
                     _metadata = _metadata = JsonConvert.DeserializeObject<RadioMetadata>(
                         Encoding.UTF8.GetString(
                             Convert.FromBase64String(
                                 Encoding.ASCII.GetString(
                                     metaChunk.Skip(skipCount).ToArray()))
-                            .AesEcbDecrypt(_jsonKey).Skip(6).ToArray())).MainMusic;
+                            .AesEcbDecrypt(_rootMeta).Skip(6).ToArray())).MainMusic;
             }
             catch (NullFileChunkException)
             {
@@ -130,7 +130,7 @@ namespace MusicDecrypto
             _buffer.PerformEach((x, i) =>
             {
                 var offset = (byte)(i + 1);
-                return (byte)(x ^ (_mainKey[(byte)(_mainKey[offset] + _mainKey[(byte)(_mainKey[offset] + offset)])]));
+                return (byte)(x ^ (_mask[(byte)(_mask[offset] + _mask[(byte)(_mask[offset] + offset)])]));
             });
             _musicType = _buffer.ToArray().ParseMusicType();
         }

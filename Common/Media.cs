@@ -11,6 +11,7 @@ namespace MusicDecrypto
         Ogg,
         XM4a,
         XWav,
+        XWma,
     }
 
     public enum ImageTypes
@@ -29,6 +30,7 @@ namespace MusicDecrypto
             MusicTypes.Ogg  => ".ogg",
             MusicTypes.XM4a => ".m4a",
             MusicTypes.XWav => ".wav",
+            MusicTypes.XWma => ".wma",
             _ => throw new InvalidDataException("Undefined music type."),
         };
 
@@ -43,6 +45,8 @@ namespace MusicDecrypto
                                MusicTypes.Flac => Enumerable.SequenceEqual(data.Take(4), new byte[] { 0x66, 0x4c, 0x61, 0x43 }),
                                //                                                                       I     D     3
                                MusicTypes.Mpeg => Enumerable.SequenceEqual(data.Take(3), new byte[] { 0x49, 0x44, 0x33 }),
+                               //
+                               MusicTypes.XWma => Enumerable.SequenceEqual(data.Take(16), new byte[] { 0x30, 0x26, 0xb2, 0x75, 0x8e, 0x66, 0xcf, 0x11, 0xa6, 0xd9, 0x00, 0xaa, 0x00, 0x62, 0xce, 0x6c }),
                                _ => false
                            })
                            .Single();
@@ -51,7 +55,6 @@ namespace MusicDecrypto
             {
                 return null;
             }
-
         }
 
         public static string GetMime(this ImageTypes type) => type switch

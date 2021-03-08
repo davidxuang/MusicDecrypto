@@ -12,7 +12,7 @@ namespace MusicDecrypto
     {
         private static ConsoleColor _pushColor;
         private static readonly HashSet<string> _extension
-            = new HashSet<string> { ".ncm", ".tm2", ".tm6", ".qmc0", ".qmc3", ".bkcmp3", ".qmcogg", ".qmcflac", ".tkm", ".bkcflac", ".mflac", ".xm" };
+            = new HashSet<string> { ".ncm", ".tm2", ".tm6", ".qmc0", ".qmc3", ".bkcmp3", ".qmcogg", ".qmcflac", ".tkm", ".bkcflac", ".mflac", ".kwm", ".xm" };
 
         public static void Main(string[] args)
         {
@@ -95,6 +95,7 @@ Options:");
                             ".qmcflac" or ".bkcflac"
                                       => new TencentStaticDecrypto(file, MusicTypes.Flac),
                             ".mflac"  => new TencentDynamicDecrypto(file, MusicTypes.Flac),
+                            ".kwm"    => new KuwoDecrypto(file),
                             ".xm"     => new XiamiDecrypto(file, null),
                             ".mp3"    => new XiamiDecrypto(file, MusicTypes.Mpeg),
                             ".m4a"    => new XiamiDecrypto(file, MusicTypes.XM4a),
