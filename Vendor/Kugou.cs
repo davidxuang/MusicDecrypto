@@ -30,21 +30,27 @@ namespace MusicDecrypto
         };
 
         private static MemoryStream _mask;
-        private static Mutex _initLock = new();
+        private static readonly Mutex _initLock = new();
 
         public KugouDecrypto(FileInfo file) : base(file) { }
 
         private static void InitMask()
         {
-            _initLock.WaitOne(Timeout.InfiniteTimeSpan);
-            if (_mask == null)
+            try
             {
-                using var maskBr = Assembly.GetExecutingAssembly().GetManifestResourceStream("MusicDecrypto.Properties.KugouMask.br");
-                using var brotli = new BrotliStream(maskBr, CompressionMode.Decompress);
-                _mask = new();
-                brotli.CopyTo(_mask);
+                _initLock.WaitOne(Timeout.InfiniteTimeSpan);
+                if (_mask == null)
+                {
+                    using var maskBr = Assembly.GetExecutingAssembly().GetManifestResourceStream("MusicDecrypto.Properties.KugouMask.br");
+                    using var brotli = new BrotliStream(maskBr, CompressionMode.Decompress);
+                    _mask = new();
+                    brotli.CopyTo(_mask);
+                }
             }
-            _initLock.ReleaseMutex();
+            finally
+            {
+                _initLock.ReleaseMutex();
+            }
         }
 
         protected override void PreDecrypt()
