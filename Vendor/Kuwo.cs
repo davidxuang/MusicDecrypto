@@ -1,10 +1,13 @@
+using System;
 using System.IO;
+using System.Linq;
 using System.Text;
 
 namespace MusicDecrypto
 {
     public sealed class KuwoDecrypto : Decrypto
     {
+        private static readonly byte[] _magic = { 0x79, 0x65, 0x65, 0x6c, 0x69, 0x6f, 0x6e, 0x2d, 0x6b, 0x75, 0x77, 0x6f, 0x2d, 0x74, 0x6d, 0x65 };
         private static readonly byte[] _root = Encoding.ASCII.GetBytes("MoOtOiTvINGwd2E6n0E1i7L5t2IoOoNk");
 
         public KuwoDecrypto(FileInfo file) : base(file) { }
@@ -13,7 +16,7 @@ namespace MusicDecrypto
         {
             if (_buffer.Length < 1024)
                 throw new DecryptoException("File is too small.", _input.FullName);
-            if (_reader.ReadUInt64() != 0x2d6e6f696c656579 || _reader.ReadUInt64() != 0x656d742d6f77756b)
+            if (!_reader.ReadBytes(16).SequenceEqual(_magic))
                 throw new DecryptoException("File header is unexpected.", _input.FullName);
 
             _ = _buffer.Seek(8, SeekOrigin.Current);
@@ -28,10 +31,9 @@ namespace MusicDecrypto
 
             _buffer.Origin = 0x400;
             _buffer.PerformEach((x, i) => (byte)(x ^ mask[i]));
-            _musicType = _buffer.ToArray().ParseMusicType();
         }
 
-        protected override void PostDecrypt() { }
+        protected override void PostDecrypt() { _musicType = _buffer.ToArray().ParseMusicType(); }
 
         private static byte[] PadKey(byte[] key)
         {

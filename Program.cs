@@ -12,7 +12,7 @@ namespace MusicDecrypto
     {
         private static ConsoleColor _pushColor;
         private static readonly HashSet<string> _extension
-            = new HashSet<string> { ".ncm", ".tm2", ".tm6", ".qmc0", ".qmc3", ".bkcmp3", ".qmcogg", ".qmcflac", ".tkm", ".bkcflac", ".mflac", ".kwm", ".xm" };
+            = new HashSet<string> { ".ncm", ".tm2", ".tm6", ".qmc0", ".qmc3", ".bkcmp3", ".qmcogg", ".qmcflac", ".tkm", ".bkcflac", ".mflac", ".kgm", ".kgma", ".vpr", ".kwm", ".xm" };
 
         public static void Main(string[] args)
         {
@@ -87,19 +87,22 @@ Options:");
                         {
                             ".ncm"    => new NetEaseDecrypto(file),
                             ".tm2" or ".tm6"
-                                      => new TencentSimpleDecrypto(file, MusicTypes.XM4a),
+                                      => new TencentSimpleDecrypto(file, MusicTypes.Mp4),
                             ".qmc0" or ".qmc3" or ".bkcmp3"
                                       => new TencentStaticDecrypto(file, MusicTypes.Mpeg),
                             ".qmcogg" => new TencentStaticDecrypto(file, MusicTypes.Ogg),
-                            ".tkm"    => new TencentStaticDecrypto(file, MusicTypes.XM4a),
+                            ".tkm"    => new TencentStaticDecrypto(file, MusicTypes.Mp4),
                             ".qmcflac" or ".bkcflac"
                                       => new TencentStaticDecrypto(file, MusicTypes.Flac),
                             ".mflac"  => new TencentDynamicDecrypto(file, MusicTypes.Flac),
                             ".kwm"    => new KuwoDecrypto(file),
+                            ".kgm" or ".kgma"
+                                      => new KugouBasicDecrypto(file),
+                            ".vpr"    => new KugouVprDecrypto(file),
                             ".xm"     => new XiamiDecrypto(file, null),
                             ".mp3"    => new XiamiDecrypto(file, MusicTypes.Mpeg),
-                            ".m4a"    => new XiamiDecrypto(file, MusicTypes.XM4a),
-                            ".wav"    => new XiamiDecrypto(file, MusicTypes.XWav),
+                            ".m4a"    => new XiamiDecrypto(file, MusicTypes.Mp4),
+                            ".wav"    => new XiamiDecrypto(file, MusicTypes.Wav),
                             ".flac"   => new XiamiDecrypto(file, MusicTypes.Flac),
                             _ => throw new DecryptoException("File has an unsupported extension.", file.FullName)
                         };

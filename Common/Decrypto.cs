@@ -10,7 +10,7 @@ namespace MusicDecrypto
         protected string _outName;
         protected bool _dumped;
         protected MusicTypes? _musicType;
-        protected ExtendedMemoryStream _buffer = new ExtendedMemoryStream();
+        protected ExtendedMemoryStream _buffer = new();
         protected BinaryReader _reader;
         protected ImageTypes? _coverType;
         protected byte[] _coverBuffer;
@@ -56,12 +56,10 @@ namespace MusicDecrypto
         {
             string extension;
             extension = _musicType?.GetExtension();
-            if (extension == null)
-                throw new DecryptoException("Unable to determine output extension.", _input.FullName);
 
             string path;
             if (_outName == null) _outName = Path.GetFileNameWithoutExtension(_input.FullName);
-            _outName += extension;
+            _outName += extension ?? throw new DecryptoException("Unable to determine output extension.", _input.FullName);
             if (_outName == _input.Name) _outName += extension;
             path = (Output == null) ? Path.Combine(_input.DirectoryName, _outName)
                                     : Path.Combine(Output.FullName, _outName);

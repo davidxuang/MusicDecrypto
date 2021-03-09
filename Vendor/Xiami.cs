@@ -1,18 +1,20 @@
 using System.IO;
+using System.Linq;
 
 namespace MusicDecrypto
 {
     public sealed class XiamiDecrypto : Decrypto
     {
+        private static readonly byte[] _magic = { 0x69, 0x66, 0x6d, 0x74 };
+        private static readonly byte[] _separator = { 0x69, 0x66, 0x6d, 0x74 };
+
+        
         public XiamiDecrypto(FileInfo file, MusicTypes? type = null) : base(file, type) { }
 
         protected override void PreDecrypt()
         {
             // Check file header
-            uint magic = _reader.ReadUInt32();
-            _ = _buffer.Seek(4, SeekOrigin.Current);
-            uint separator = _reader.ReadUInt32();
-            if (magic != 0x746d6669 || separator != 0xfefefefe)
+            if (!_reader.ReadBytes(8).Take(4).SequenceEqual(_magic) || !_reader.ReadBytes(4).SequenceEqual(_separator))
             {
                 if (_input.Extension.TrimStart('.') == "xm")
                     throw new DecryptoException("File header is unexpected.", _input.FullName);
@@ -27,10 +29,10 @@ namespace MusicDecrypto
             string identifier = _reader.ReadChars(4).ToString();
             if (_musicType == null) _musicType = identifier switch
             {
-                " A4M" => MusicTypes.XM4a,
+                " A4M" => MusicTypes.Mp4,
                 "FLAC" => MusicTypes.Flac,
                 " MP3" => MusicTypes.Mpeg,
-                " WAV" => MusicTypes.XWav,
+                " WAV" => MusicTypes.Wav,
                 _ => throw new DecryptoException("Unable to determine media format.", _input.FullName),
             };
 

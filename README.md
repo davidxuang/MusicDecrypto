@@ -17,6 +17,7 @@ This project aims to implement music de-DRM for NetEase Cloud Music and QQ Music
 <th>AAC</th>
 <th>PCM</th>
 <th>FLAC</th>
+<th>DSD</th>
 </tr>
 <tr>
 <td>NetEase</td>
@@ -26,6 +27,7 @@ This project aims to implement music de-DRM for NetEase Cloud Music and QQ Music
 <td></td>
 <td></td>
 <td>✔️<br/><sub>.ncm</sub></td>
+<td></td>
 </tr>
 <tr>
 <td rowspan="3">QQ<sup>*</sup></td>
@@ -33,6 +35,7 @@ This project aims to implement music de-DRM for NetEase Cloud Music and QQ Music
 <td></td>
 <td></td>
 <td>✔️<br/><sub>.tm2/tm6</sub></td>
+<td></td>
 <td></td>
 <td></td>
 </tr>
@@ -43,6 +46,7 @@ This project aims to implement music de-DRM for NetEase Cloud Music and QQ Music
 <td>✔️<br/><sub>.tkm</sub></td>
 <td></td>
 <td>✔️<br/><sub>.qmcflac</sub></td>
+<td></td>
 </tr>
 <tr>
 <td>❌<br/><sub>.mgg</sub></td>
@@ -51,6 +55,7 @@ This project aims to implement music de-DRM for NetEase Cloud Music and QQ Music
 <td></td>
 <td></td>
 <td>⭕<br/><sub>.mflac</sub></td>
+<td></td>
 </tr>
 <tr>
 <td>Moo</td>
@@ -60,6 +65,7 @@ This project aims to implement music de-DRM for NetEase Cloud Music and QQ Music
 <td></td>
 <td></td>
 <td>✔️<br/><sub>.bkcflac</sub></td>
+<td></td>
 </tr>
 <tr>
 <td>Kuwo</td>
@@ -69,20 +75,33 @@ This project aims to implement music de-DRM for NetEase Cloud Music and QQ Music
 <td></td>
 <td></td>
 <td>✔️<br/><sub>.kwm</sub></td>
+<td></td>
+</tr>
+<tr>
+<td>Kugou</td>
+<td></td>
+<td>✔️<br/><sub>.kgm/kgma</sub></td>
+<td></td>
+<td></td>
+<td></td>
+<td>⭕<br/><sub>.kgm/kgma/vpr**</sub></td>
+<td>⭕<br/><sub>.vpr**</sub></td>
 </tr>
 <tr>
 <td>Xiami</td>
 <td></td>
-<td>✔️<br/><sub>.xm**</sub></td>
+<td>✔️<br/><sub>.xm***</sub></td>
 <td></td>
-<td>✔️<br/><sub>.xm**</sub></td>
-<td>✔️<br/><sub>.xm**</sub></td>
-<td>✔️<br/><sub>.xm**</sub></td>
+<td>✔️<br/><sub>.xm***</sub></td>
+<td>✔️<br/><sub>.xm***</sub></td>
+<td>✔️<br/><sub>.xm***</sub></td>
+<td></td>
 </tr>
 <tr>
-<td colspan="6" align="left">
+<td colspan="8" align="left">
 <sup>*</sup> .tm0/tm3 are just custom MP3 extensions.<br/>
-<sup>**</sup> use <code>-x</code> to include files with a “normal” extension.</td>
+<sup>**</sup> only for files not larger than ~1.09 GiB.<br/>
+<sup>***</sup> use <code>-x</code> to include files with a “normal” extension.</td>
 </tr>
 </tbody></table>
 

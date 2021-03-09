@@ -18,7 +18,7 @@ namespace MusicDecrypto
             using TagLib.File file = TagLib.File.Create(_buffer);
             TagLib.Tag tag = _musicType switch
             {
-                MusicTypes.Flac or MusicTypes.Ogg or MusicTypes.XM4a
+                MusicTypes.Flac or MusicTypes.Ogg or MusicTypes.Mp4
                                 => file.Tag,
                 MusicTypes.Mpeg => file.GetTag(TagLib.TagTypes.Id3v2),
                 _ => throw new DecryptoException("File has an unexpected MIME value.", _input.FullName),
