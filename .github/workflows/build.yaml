@@ -1,0 +1,91 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - '*'
+
+concurrency: 
+  group: ${{ github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  linux:
+    runs-on: ubuntu-18.04
+    container: mcr.microsoft.com/dotnet-buildtools/prereqs:ubuntu-18.04-cross-arm64-20210727130204-b2c2436 # https://github.com/dotnet/versions/blob/main/build-info/docker/image-info.dotnet-dotnet-buildtools-prereqs-docker-main.json
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: '5.0.x'
+    - name: Publish
+      run: |
+        dotnet publish MusicDecrypto.Commandline/MusicDecrypto.Commandline.csproj -c Release
+    - name: Add packages
+      run: |
+        dotnet add MusicDecrypto.Commandline/MusicDecrypto.Commandline.csproj package Microsoft.DotNet.ILCompiler -v 6.0.0-*
+        dotnet add MusicDecrypto.Commandline/MusicDecrypto.Commandline.csproj package runtime.linux-x64.Microsoft.DotNet.ILCompiler -v 6.0.0-*
+    - name: Publish
+      run: |
+        dotnet publish MusicDecrypto.Commandline/MusicDecrypto.Commandline.csproj -c Release -r linux-x64 -p:CppCompilerAndLinker=clang-9 -p:IlcInvariantGlobalization=true -p:IlcGenerateCompleteTypeMetadata=false -p:IlcGenerateStackTraceData=false
+        dotnet publish MusicDecrypto.Commandline/MusicDecrypto.Commandline.csproj -c Release -r linux-arm64 -p:CppCompilerAndLinker=clang-9 -p:SysRoot=/crossrootfs/arm64 -p:IlcInvariantGlobalization=true -p:IlcGenerateCompleteTypeMetadata=false -p:IlcGenerateStackTraceData=false  
+    - name: Extract tag name
+      id: tag
+      uses: olegtarasov/get-tag@v2.1.1
+    - name: Pack
+      run: |
+        rm ./MusicDecrypto.Commandline/bin/Release/net5.0/publish/*.pdb
+        tar czvf musicdecrypto-net5.0-$GIT_TAG_NAME.tar.gz -C ./MusicDecrypto.Commandline/bin/Release/net5.0/publish/ .
+        sha256sum musicdecrypto-net5.0-$GIT_TAG_NAME.tar.gz > musicdecrypto-net5.0-$GIT_TAG_NAME.tar.gz.sha256
+        strip ./MusicDecrypto.Commandline/bin/Release/net5.0/linux-x64/publish/musicdecrypto
+        tar czvf musicdecrypto-linux-x64-$GIT_TAG_NAME.tar.gz -C ./MusicDecrypto.Commandline/bin/Release/net5.0/linux-x64/publish/ musicdecrypto
+        sha256sum musicdecrypto-linux-x64-$GIT_TAG_NAME.tar.gz > musicdecrypto-linux-x64-$GIT_TAG_NAME.tar.gz.sha256
+        aarch64-linux-gnu-strip ./MusicDecrypto.Commandline/bin/Release/net5.0/linux-arm64/publish/musicdecrypto
+        tar czvf musicdecrypto-linux-arm64-$GIT_TAG_NAME.tar.gz -C ./MusicDecrypto.Commandline/bin/Release/net5.0/linux-arm64/publish/ musicdecrypto
+        sha256sum musicdecrypto-linux-arm64-$GIT_TAG_NAME.tar.gz > musicdecrypto-linux-arm64-$GIT_TAG_NAME.tar.gz.sha256
+    - name: Release
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          musicdecrypto-net5.0-${{ steps.tag.outputs.tag }}.tar.gz
+          musicdecrypto-net5.0-${{ steps.tag.outputs.tag }}.tar.gz.sha256
+          musicdecrypto-linux-x64-${{ steps.tag.outputs.tag }}.tar.gz
+          musicdecrypto-linux-x64-${{ steps.tag.outputs.tag }}.tar.gz.sha256
+          musicdecrypto-linux-arm64-${{ steps.tag.outputs.tag }}.tar.gz
+          musicdecrypto-linux-arm64-${{ steps.tag.outputs.tag }}.tar.gz.sha256
+  win:
+    runs-on: windows-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Add packages
+      run: |
+        dotnet add MusicDecrypto.Commandline/MusicDecrypto.Commandline.csproj package Microsoft.DotNet.ILCompiler -v 6.0.0-*
+        dotnet add MusicDecrypto.Commandline/MusicDecrypto.Commandline.csproj package runtime.win-x64.Microsoft.DotNet.ILCompiler -v 6.0.0-*
+    - name: Publish
+      run: |
+        dotnet publish MusicDecrypto.Commandline/MusicDecrypto.Commandline.csproj -c Release -r win-x64 -p:IlcInvariantGlobalization=true -p:IlcGenerateCompleteTypeMetadata=false -p:IlcGenerateStackTraceData=false
+        dotnet publish MusicDecrypto.Commandline/MusicDecrypto.Commandline.csproj -c Release -r win-arm64 -p:IlcInvariantGlobalization=true -p:IlcGenerateCompleteTypeMetadata=false -p:IlcGenerateStackTraceData=false
+    - name: Extract tag name
+      id: tag
+      uses: olegtarasov/get-tag@v2.1.1
+    - name: Pack
+      run: |
+        7z a musicdecrypto-win-x64-$env:GIT_TAG_NAME.7z .\MusicDecrypto.Commandline\bin\Release\net5.0\win-x64\publish\musicdecrypto.exe
+        (Get-FileHash musicdecrypto-win-x64-$env:GIT_TAG_NAME.7z SHA256).Hash + " musicdecrypto-win-x64-$env:GIT_TAG_NAME.7z" > musicdecrypto-win-x64-$env:GIT_TAG_NAME.7z.sha256
+        7z a musicdecrypto-win-arm64-$env:GIT_TAG_NAME.7z .\MusicDecrypto.Commandline\bin\Release\net5.0\win-arm64\publish\musicdecrypto.exe
+        (Get-FileHash musicdecrypto-win-arm64-$env:GIT_TAG_NAME.7z SHA256).Hash + " musicdecrypto-win-arm64-$env:GIT_TAG_NAME.7z" > musicdecrypto-win-arm64-$env:GIT_TAG_NAME.7z.sha256
+    - name: Release
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          musicdecrypto-win-x64-${{ steps.tag.outputs.tag }}.7z
+          musicdecrypto-win-x64-${{ steps.tag.outputs.tag }}.7z.sha256
+          musicdecrypto-win-arm64-${{ steps.tag.outputs.tag }}.7z
+          musicdecrypto-win-arm64-${{ steps.tag.outputs.tag }}.7z.sha256
