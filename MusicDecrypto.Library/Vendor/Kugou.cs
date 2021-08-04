@@ -1,3 +1,4 @@
+using MusicDecrypto.Library.Common;
 using System;
 using System.IO;
 using System.IO.Compression;
@@ -5,7 +6,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 
-namespace MusicDecrypto
+namespace MusicDecrypto.Library.Vendor
 {
     public abstract class KugouDecrypto : Decrypto
     {
@@ -30,7 +31,7 @@ namespace MusicDecrypto
         };
 
         private static MemoryStream _mask;
-        private static readonly Mutex _initLock = new();
+        private static readonly Mutex _initLock = new Mutex();
 
         public KugouDecrypto(FileInfo file) : base(file) { }
 
@@ -41,9 +42,9 @@ namespace MusicDecrypto
                 _initLock.WaitOne(Timeout.InfiniteTimeSpan);
                 if (_mask == null)
                 {
-                    using var maskBr = Assembly.GetExecutingAssembly().GetManifestResourceStream("MusicDecrypto.Properties.KugouMask.br");
+                    using var maskBr = Assembly.GetExecutingAssembly().GetManifestResourceStream("MusicDecrypto.Library.Properties.KugouMask.br");
                     using var brotli = new BrotliStream(maskBr, CompressionMode.Decompress);
-                    _mask = new();
+                    _mask = new MemoryStream();
                     brotli.CopyTo(_mask);
                 }
             }

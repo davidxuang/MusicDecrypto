@@ -1,8 +1,9 @@
-﻿using System;
+﻿using MusicDecrypto.Library.Common;
+using System;
 using System.IO;
 using System.Security.Cryptography;
 
-namespace MusicDecrypto
+namespace MusicDecrypto.Library
 {
     public abstract class Decrypto : IDisposable
     {
@@ -10,7 +11,7 @@ namespace MusicDecrypto
         protected string _outName;
         protected bool _dumped;
         protected MusicTypes? _musicType;
-        protected ExtendedMemoryStream _buffer = new();
+        protected ExtendedMemoryStream _buffer = new ExtendedMemoryStream();
         protected BinaryReader _reader;
         protected ImageTypes? _coverType;
         protected byte[] _coverBuffer;

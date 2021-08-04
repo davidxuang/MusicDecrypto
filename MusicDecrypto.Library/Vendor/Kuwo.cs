@@ -1,9 +1,10 @@
+using MusicDecrypto.Library.Common;
 using System;
 using System.IO;
 using System.Linq;
 using System.Text;
 
-namespace MusicDecrypto
+namespace MusicDecrypto.Library.Vendor
 {
     public sealed class KuwoDecrypto : Decrypto
     {

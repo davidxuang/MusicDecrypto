@@ -1,8 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace MusicDecrypto
+namespace MusicDecrypto.Library.Common
 {
     public enum MusicTypes
     {
@@ -40,7 +41,7 @@ namespace MusicDecrypto
         {
             try
             {
-                return Enum.GetValues<MusicTypes>()
+                return (Enum.GetValues(typeof(MusicTypes)) as IEnumerable<MusicTypes>)
                            .Where(type => type switch
                            {
                                //                                                           f     L     a     C
@@ -72,7 +73,7 @@ namespace MusicDecrypto
         {
             try
             {
-                return Enum.GetValues<ImageTypes>()
+                return (Enum.GetValues(typeof(ImageTypes)) as IEnumerable<ImageTypes>)
                            .Where(type => type switch
                            {
                            //                                                           G     I     F     8

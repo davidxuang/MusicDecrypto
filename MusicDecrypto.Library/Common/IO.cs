@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 
-namespace MusicDecrypto
+namespace MusicDecrypto.Library.Common
 {
     public sealed class ExtendedMemoryStream : Stream, TagLib.File.IFileAbstraction
     {

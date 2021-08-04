@@ -1,0 +1,18 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+    <AssemblyName>musicdecrypto</AssemblyName>
+    <OutputType>Exe</OutputType>
+    <Version>3.3.0</Version>
+  </PropertyGroup>
+  
+  <ItemGroup>
+    <PackageReference Include="Mono.Options" Version="6.*" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <ProjectReference Include="..\MusicDecrypto.Library\MusicDecrypto.Library.csproj" />
+  </ItemGroup>
+
+</Project>

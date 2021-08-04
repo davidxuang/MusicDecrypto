@@ -1,7 +1,8 @@
+using MusicDecrypto.Library.Common;
 using System.IO;
 using System.Linq;
 
-namespace MusicDecrypto
+namespace MusicDecrypto.Library.Vendor
 {
     public sealed class XiamiDecrypto : Decrypto
     {

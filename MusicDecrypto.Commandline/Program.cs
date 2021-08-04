@@ -1,4 +1,7 @@
 ﻿using Mono.Options;
+using MusicDecrypto.Library;
+using MusicDecrypto.Library.Common;
+using MusicDecrypto.Library.Vendor;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -6,18 +9,21 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace MusicDecrypto
+namespace MusicDecrypto.Commandline
 {
     public static class Program
     {
         private static ConsoleColor _pushColor;
         private static readonly HashSet<string> _extension
-            = new HashSet<string> { ".ncm", ".tm2", ".tm6", ".qmc0", ".qmc3", ".bkcmp3", ".qmcogg", ".qmcflac", ".tkm", ".bkcflac", ".mflac", ".kgm", ".kgma", ".vpr", ".kwm", ".xm" };
+            = new() { ".ncm", ".tm2", ".tm6", ".qmc0", ".qmc3", ".bkcmp3", ".qmcogg", ".qmcflac", ".tkm", ".bkcflac", ".mflac", ".kgm", ".kgma", ".vpr", ".kwm", ".xm" };
 
         public static void Main(string[] args)
         {
             _pushColor = Console.ForegroundColor;
             AppDomain.CurrentDomain.ProcessExit += new EventHandler(OnProcessExit);
+
+            // Register log event
+            Logger.LogEvent += new Logger.LogHandler(Log);
 
             List<string> input;
             SearchOption search = SearchOption.TopDirectoryOnly;
@@ -123,9 +129,23 @@ Options:");
             }
         }
 
-        private static void OnProcessExit (object sender, EventArgs e)
+        private static void OnProcessExit(object sender, EventArgs e)
         {
             Console.ForegroundColor = _pushColor;
+        }
+
+        private static void Log(string message, LogLevel level)
+        {
+            Console.ForegroundColor = level switch
+            {
+                LogLevel.Info => ConsoleColor.White,
+                LogLevel.Warn => ConsoleColor.Yellow,
+                LogLevel.Error => ConsoleColor.Red,
+                LogLevel.Fatal => ConsoleColor.DarkRed,
+                _ => throw new ArgumentOutOfRangeException(nameof(level)),
+            };
+            Console.WriteLine(DateTimeOffset.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ") + '|'
+                            + level.ToString().ToUpperInvariant() + '|' + message);
         }
     }
 

@@ -1,21 +1,17 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <TargetFramework>net5.0</TargetFramework>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <AssemblyName>libmusicdecrypto</AssemblyName>
     <Version>3.3.0</Version>
   </PropertyGroup>
 
   <ItemGroup>
     <None Remove="Properties\KugouMask.br" />
-  </ItemGroup>
-
-  <ItemGroup>
     <EmbeddedResource Include="Properties\KugouMask.br" />
   </ItemGroup>
   
   <ItemGroup>
-    <PackageReference Include="Mono.Options" Version="6.*" />
     <PackageReference Include="Newtonsoft.Json" Version="12.*" />
     <PackageReference Include="TagLibSharp" Version="2.*" />
   </ItemGroup>
