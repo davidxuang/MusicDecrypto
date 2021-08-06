@@ -4,7 +4,7 @@
     <TargetFramework>net5.0</TargetFramework>
     <AssemblyName>musicdecrypto</AssemblyName>
     <OutputType>Exe</OutputType>
-    <Version>3.3.0</Version>
+    <Version>3.3.1</Version>
   </PropertyGroup>
   
   <ItemGroup>

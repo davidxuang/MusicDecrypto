@@ -1,10 +1,10 @@
 # MusicDecrypto
 
+[![Build](https://github.com/davidxuang/MusicDecrypto/actions/workflows/build.yaml/badge.svg)](https://github.com/davidxuang/MusicDecrypto/actions/workflows/build.yaml)
 [![GitHub release](https://img.shields.io/github/release/davidxuang/musicdecrypto.svg)](https://GitHub.com/davidxuang/musicdecrypto/releases/)
-[![Build status](https://ci.appveyor.com/api/projects/status/github/davidxuang/musicdecrypto?svg=true)](https://ci.appveyor.com/project/davidxuang/musicdecrypto)
 [![GitHub license](https://img.shields.io/github/license/davidxuang/musicdecrypto.svg)](https://github.com/davidxuang/musicdecrypto/blob/master/LICENSE)
 
-This project aims to implement music de-DRM for NetEase Cloud Music and QQ Music on .NET Core, and generate native executable through experimental [Native AOT](https://github.com/dotnet/runtimelab/tree/feature/NativeAOT) feature.
+This project aims to implement music de-DRM for NetEase Cloud Music and QQ Music on .NET, and generate native executable through experimental [Native AOT](https://github.com/dotnet/runtimelab/tree/feature/NativeAOT) feature.
 
 ## Supported formats
 
@@ -107,7 +107,7 @@ This project aims to implement music de-DRM for NetEase Cloud Music and QQ Music
 
 ## Build
 
-`dotnet build -c Release`
+`dotnet build MusicDecrypto.Commandline/MusicDecrypto.Commandline.csproj -c Release`
 
 ### Dependencies
 
