@@ -138,7 +138,7 @@ namespace MusicDecrypto.Library.Vendor
 
         protected override void PostDecrypt()
         {
-            _musicType = _buffer.ToArray().SniffMusicType();
+            _musicType = _buffer.SniffMusicType();
             base.PostDecrypt();
 
             _buffer.ResetPosition();

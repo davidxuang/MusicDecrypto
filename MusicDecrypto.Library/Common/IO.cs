@@ -70,10 +70,10 @@ namespace MusicDecrypto.Library.Common
             }
         }
 
-        public byte[] ToArray()
+        public byte[] ToArray(int? length)
         {
-            int count = Convert.ToInt32(Length);
-            if (count == 0)
+            int count = length ?? Convert.ToInt32(Math.Min(int.MaxValue, Length));
+            if (count <= 0)
                 return Array.Empty<byte>();
             var copy = new byte[count];
             Buffer.BlockCopy(_inst.GetBuffer(), _origin, copy, 0, count);

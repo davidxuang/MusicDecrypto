@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace MusicDecrypto.Library.Common
+﻿namespace MusicDecrypto.Library.Common
 {
     public enum LogLevel
     {

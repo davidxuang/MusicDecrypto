@@ -84,7 +84,7 @@ namespace MusicDecrypto.Library.Vendor
             });
         }
 
-        protected override void PostDecrypt() { _musicType = _buffer.ToArray().SniffMusicType(); }
+        protected override void PostDecrypt() { _musicType = _buffer.SniffMusicType(); }
 
         protected abstract byte[] Magic();
     }
