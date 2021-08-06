@@ -72,15 +72,14 @@ namespace MusicDecrypto.Library.Vendor
 
             if (_buffer.Length > _mask.Length * 16)
             {
-                Logger.Log($"File is too large and the output would be incomplete. ({_input.FullName})", LogLevel.Warn);
+                Logger.Log("File is too large and the output would be incomplete.", _input.FullName, LogLevel.Warn);
                 _buffer.SetLength(_mask.Length * 16);
             }
 
             _buffer.PerformEach((x, i) =>
             {
-                byte y = (byte)(key[i % 17] ^ x);
-                byte z = (byte)(_root[i % 272] ^ _mask.GetBuffer()[i >> 4]);
-                return (byte)(y ^ ((y & 0x0f) << 4) ^ z ^ ((z & 0x0f) << 4));
+                byte y = (byte)(x ^ key[i % 17] ^ _root[i % 272] ^ _mask.GetBuffer()[i >> 4]);
+                return (byte)(y ^ ((y & 0x0f) << 4));
             });
         }
 
