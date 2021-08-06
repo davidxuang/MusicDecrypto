@@ -80,7 +80,7 @@ Options:");
 
                 if (files.Count == 0)
                 {
-                    Logger.Log("Found no supported file from specified path(s).", LogLevel.Error);
+                    Log("Found no supported file from specified path(s).", LogLevel.Error);
                     return;
                 }
 
@@ -117,15 +117,15 @@ Options:");
                     }
                     catch (Exception e)
                     {
-                        Logger.Log(e.ToString(), LogLevel.Fatal);
+                        Log(e.ToString(), LogLevel.Fatal);
                     }
                 });
 
-                Logger.Log($"Program finished with {Decrypto.DumpCount}/{files.Count} files decrypted successfully.", LogLevel.Info);
+                Log($"Program finished with {Decrypto.DumpCount}/{files.Count} files decrypted successfully.", LogLevel.Info);
             }
             catch (OptionException e)
             {
-                Logger.Log(e.ToString(), LogLevel.Fatal);
+                Log(e.ToString(), LogLevel.Fatal);
             }
         }
 
