@@ -7,6 +7,7 @@ namespace MusicDecrypto.Library.Common
 {
     public enum MusicTypes
     {
+        Undefined,
         Flac,
         Mpeg,
         Mp4,
@@ -18,6 +19,7 @@ namespace MusicDecrypto.Library.Common
 
     public enum ImageTypes
     {
+        Undefined,
         Gif,
         Jpeg,
         Png,
@@ -37,7 +39,7 @@ namespace MusicDecrypto.Library.Common
             _ => throw new InvalidDataException("Undefined music type."),
         };
 
-        public static MusicTypes? ParseMusicType(this byte[] data)
+        public static MusicTypes SniffMusicType(this byte[] data)
         {
             try
             {
@@ -57,7 +59,7 @@ namespace MusicDecrypto.Library.Common
             }
             catch (InvalidOperationException)
             {
-                return null;
+                return MusicTypes.Undefined;
             }
         }
 
@@ -69,7 +71,7 @@ namespace MusicDecrypto.Library.Common
             _ => throw new InvalidDataException("Undefined image type."),
         };
 
-        public static ImageTypes? ParseImageType(this byte[] data)
+        public static ImageTypes SniffImageType(this byte[] data)
         {
             try
             {
@@ -87,7 +89,7 @@ namespace MusicDecrypto.Library.Common
             }
             catch (InvalidOperationException)
             {
-                return null;
+                return ImageTypes.Undefined;
             }
         }
     }

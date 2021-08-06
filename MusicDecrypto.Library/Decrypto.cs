@@ -10,17 +10,17 @@ namespace MusicDecrypto.Library
         protected readonly FileInfo _input;
         protected string _outName;
         protected bool _dumped;
-        protected MusicTypes? _musicType;
+        protected MusicTypes _musicType;
         protected ExtendedMemoryStream _buffer = new ExtendedMemoryStream();
         protected BinaryReader _reader;
-        protected ImageTypes? _coverType;
+        protected ImageTypes _coverType;
         protected byte[] _coverBuffer;
 
         public static bool ForceOverwrite { get; set; }
         public static DirectoryInfo Output { get; set; }
         public static ulong DumpCount { get; private set; }
 
-        protected Decrypto(FileInfo file, MusicTypes? type = null)
+        protected Decrypto(FileInfo file, MusicTypes type = MusicTypes.Undefined)
         {
             _input = file;
             using FileStream stream = file.OpenRead();
@@ -51,12 +51,12 @@ namespace MusicDecrypto.Library
 
         protected virtual void PreDecrypt() { }
         protected abstract void Decrypt();
-        protected virtual void PostDecrypt() { _buffer.Name = "buffer." + _musicType?.GetExtension(); }
+        protected virtual void PostDecrypt() { _buffer.Name = "buffer." + _musicType.GetExtension(); }
 
         protected void Save()
         {
             string extension;
-            extension = _musicType?.GetExtension();
+            extension = _musicType.GetExtension();
 
             string path;
             if (_outName == null) _outName = Path.GetFileNameWithoutExtension(_input.FullName);

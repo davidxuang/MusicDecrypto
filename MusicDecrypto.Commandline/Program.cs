@@ -105,7 +105,7 @@ Options:");
                             ".kgm" or ".kgma"
                                       => new KugouBasicDecrypto(file),
                             ".vpr"    => new KugouVprDecrypto(file),
-                            ".xm"     => new XiamiDecrypto(file, null),
+                            ".xm"     => new XiamiDecrypto(file, MusicTypes.Undefined),
                             ".mp3"    => new XiamiDecrypto(file, MusicTypes.Mpeg),
                             ".m4a"    => new XiamiDecrypto(file, MusicTypes.Mp4),
                             ".wav"    => new XiamiDecrypto(file, MusicTypes.Wav),

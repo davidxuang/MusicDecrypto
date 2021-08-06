@@ -75,7 +75,7 @@ namespace MusicDecrypto.Library.Vendor
                                 metaChunk.Skip(skipCount).ToArray()))
                         .AesEcbDecrypt(_rootMeta).Skip(6).ToArray()));
                 if (_metadata?.Title == null)
-                    _metadata = _metadata = JsonConvert.DeserializeObject<RadioMetadata>(
+                    _metadata = JsonConvert.DeserializeObject<RadioMetadata>(
                         Encoding.UTF8.GetString(
                             Convert.FromBase64String(
                                 Encoding.ASCII.GetString(
@@ -121,8 +121,8 @@ namespace MusicDecrypto.Library.Vendor
                     Logger.Log("Failed to download cover image.", _input.FullName, LogLevel.Fatal);
                 }
             }
-            _coverType = _coverBuffer.ParseImageType();
-            if (_coverType == null)
+            _coverType = _coverBuffer.SniffImageType();
+            if (_coverType == ImageTypes.Undefined)
             {
                 _coverBuffer = null;
             }
@@ -138,7 +138,7 @@ namespace MusicDecrypto.Library.Vendor
 
         protected override void PostDecrypt()
         {
-            _musicType = _buffer.ToArray().ParseMusicType();
+            _musicType = _buffer.ToArray().SniffMusicType();
             base.PostDecrypt();
 
             _buffer.ResetPosition();
@@ -150,12 +150,12 @@ namespace MusicDecrypto.Library.Vendor
                 _ => throw new DecryptoException("Media stream seems corrupted.", _input.FullName),
             };
 
-            if (_coverType != null)
+            if (_coverType != ImageTypes.Undefined)
             {
                 tag.Pictures = new TagLib.IPicture[1] {
                     new TagLib.Picture(new TagLib.ByteVector(_coverBuffer))
                     {
-                        MimeType = _coverType?.GetMime(),
+                        MimeType = _coverType.GetMime(),
                         Type = TagLib.PictureType.FrontCover
                     }
                 };
