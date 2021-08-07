@@ -7,7 +7,7 @@ on:
     tags:
       - '*'
 
-concurrency: 
+concurrency:
   group: ${{ github.sha }}
   cancel-in-progress: true
 
@@ -32,7 +32,7 @@ jobs:
     - name: Publish
       run: |
         dotnet publish MusicDecrypto.Commandline/MusicDecrypto.Commandline.csproj -c Release -r linux-x64 -p:CppCompilerAndLinker=clang-9 -p:IlcInvariantGlobalization=true -p:IlcGenerateCompleteTypeMetadata=false -p:IlcGenerateStackTraceData=false
-        dotnet publish MusicDecrypto.Commandline/MusicDecrypto.Commandline.csproj -c Release -r linux-arm64 -p:CppCompilerAndLinker=clang-9 -p:SysRoot=/crossrootfs/arm64 -p:IlcInvariantGlobalization=true -p:IlcGenerateCompleteTypeMetadata=false -p:IlcGenerateStackTraceData=false  
+        dotnet publish MusicDecrypto.Commandline/MusicDecrypto.Commandline.csproj -c Release -r linux-arm64 -p:CppCompilerAndLinker=clang-9 -p:SysRoot=/crossrootfs/arm64 -p:IlcInvariantGlobalization=true -p:IlcGenerateCompleteTypeMetadata=false -p:IlcGenerateStackTraceData=false
     - name: Extract tag name
       id: tag
       if: startsWith(github.ref, 'refs/tags/')

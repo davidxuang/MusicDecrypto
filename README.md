@@ -112,7 +112,6 @@ This project aims to implement music de-DRM for NetEase Cloud Music and QQ Music
 ### Dependencies
 
 -   [.NET](https://dotnet.microsoft.com) 5
--   [Json.NET](https://www.newtonsoft.com/json)
 -   [Mono.Options](https://github.com/xamarin/XamarinComponents/tree/master/XPlat/Mono.Options)
 -   [TagLib#](https://github.com/mono/taglib-sharp)
 
@@ -120,7 +119,7 @@ This project aims to implement music de-DRM for NetEase Cloud Music and QQ Music
 
 Drag and drop files and/or directories into the executable or run:
 
-`MusicDecrypto [options] [<input>...]`
+`musicdecrypto [options] [<input>...]`
 
 ### Options
 

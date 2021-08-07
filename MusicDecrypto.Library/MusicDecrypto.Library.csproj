@@ -10,7 +10,7 @@
     <None Remove="Properties\KugouMask.br" />
     <EmbeddedResource Include="Properties\KugouMask.br" />
   </ItemGroup>
-  
+
   <ItemGroup>
     <PackageReference Include="System.Text.Json" Version="5.*" />
     <PackageReference Include="TagLibSharp" Version="2.*" />

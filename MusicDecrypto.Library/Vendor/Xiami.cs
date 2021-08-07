@@ -9,7 +9,7 @@ namespace MusicDecrypto.Library.Vendor
         private static readonly byte[] _magic = { 0x69, 0x66, 0x6d, 0x74 };
         private static readonly byte[] _separator = { 0x69, 0x66, 0x6d, 0x74 };
 
-        
+
         public XiamiDecrypto(FileInfo file, MusicTypes type = MusicTypes.Undefined) : base(file, type) { }
 
         protected override void PreDecrypt()
