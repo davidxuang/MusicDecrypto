@@ -1,11 +1,11 @@
 ﻿using MusicDecrypto.Library.Common;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
+using System.Text.Json;
 
 namespace MusicDecrypto.Library.Vendor
 {
@@ -68,19 +68,16 @@ namespace MusicDecrypto.Library.Vendor
                 }
 
                 // Resolve metadata
-                _metadata = JsonConvert.DeserializeObject<Metadata>(
-                    Encoding.UTF8.GetString(
-                        Convert.FromBase64String(
-                            Encoding.ASCII.GetString(
-                                metaChunk.Skip(skipCount).ToArray()))
-                        .AesEcbDecrypt(_rootMeta).Skip(6).ToArray()));
-                if (_metadata?.Title == null)
-                    _metadata = JsonConvert.DeserializeObject<RadioMetadata>(
-                        Encoding.UTF8.GetString(
-                            Convert.FromBase64String(
-                                Encoding.ASCII.GetString(
-                                    metaChunk.Skip(skipCount).ToArray()))
-                            .AesEcbDecrypt(_rootMeta).Skip(6).ToArray())).MainMusic;
+                string meta = Encoding.UTF8.GetString(
+                    Convert.FromBase64String(
+                        Encoding.ASCII.GetString(
+                            metaChunk.Skip(skipCount).ToArray()))
+                    .AesEcbDecrypt(_rootMeta).Skip(6).ToArray());
+                _metadata = JsonSerializer.Deserialize<Metadata>(
+                    meta, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+                if (_metadata?.MusicName == null)
+                    _metadata = JsonSerializer.Deserialize<RadioMetadata>(
+                        meta, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }).MainMusic;
             }
             catch (NullFileChunkException)
             {
@@ -161,8 +158,8 @@ namespace MusicDecrypto.Library.Vendor
                 };
             }
 
-            if (_metadata?.Title != null)
-                tag.Title = _metadata?.Title;
+            if (_metadata?.MusicName != null)
+                tag.Title = _metadata?.MusicName;
             if (_metadata?.Artists?.Count() > 0 && tag.AlbumArtists.Length == 0)
             {
                 tag.Performers = _metadata?.Artists?.ToArray();
@@ -197,12 +194,12 @@ namespace MusicDecrypto.Library.Vendor
 
         private struct Metadata
         {
-            public string Title { get; set; }
-            public IList<IList<string>> Artist { private get; set; }
+            public string MusicName { get; set; }
+            public object[][] Artist { get; set; }
             public string Album { get; set; }
             public string AlbumPic { get; set; }
 
-            public IEnumerable<string> Artists => Artist?.Select(tuple => tuple[0]);
+            public IEnumerable<string> Artists => Artist?.Select(tuple => tuple[0].ToString());
         }
 
         private struct RadioMetadata
