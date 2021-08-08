@@ -131,8 +131,11 @@ namespace MusicDecrypto.Library.Common
         {
             try
             {
-                _isOpen = false;
-                _inst.Dispose();
+                if (disposing)
+                {
+                    _isOpen = false;
+                    _inst.Dispose();
+                }
             }
             finally
             {
