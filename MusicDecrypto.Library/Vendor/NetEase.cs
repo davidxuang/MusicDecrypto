@@ -71,8 +71,8 @@ namespace MusicDecrypto.Library.Vendor
                 string meta = Encoding.UTF8.GetString(
                     Convert.FromBase64String(
                         Encoding.ASCII.GetString(
-                            metaChunk.Skip(skipCount).ToArray()))
-                    .AesEcbDecrypt(_rootMeta).Skip(6).ToArray());
+                            metaChunk[skipCount..]))
+                    .AesEcbDecrypt(_rootMeta)[6..]);
                 _metadata = JsonSerializer.Deserialize<Metadata>(
                     meta, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
                 if (_metadata?.MusicName == null)
