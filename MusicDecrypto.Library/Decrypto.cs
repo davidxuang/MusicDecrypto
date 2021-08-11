@@ -7,20 +7,18 @@ namespace MusicDecrypto.Library
 {
     public abstract class Decrypto : IDisposable
     {
-        protected readonly FileInfo _input;
-        protected string _outName;
-        protected bool _dumped;
-        protected MusicTypes _musicType;
-        protected ExtendedMemoryStream _buffer = new ExtendedMemoryStream();
-        protected BinaryReader _reader;
-        protected ImageTypes _coverType;
-        protected byte[] _coverBuffer;
-
         public static bool ForceOverwrite { get; set; }
         public static DirectoryInfo Output { get; set; }
         public static ulong DumpCount { get; private set; }
 
-        protected Decrypto(FileInfo file, MusicTypes type = MusicTypes.Undefined)
+        protected readonly FileInfo _input;
+        protected string _outName;
+        protected bool _dumped;
+        protected AudioTypes _musicType;
+        protected ExtendedMemoryStream _buffer = new ExtendedMemoryStream();
+        protected BinaryReader _reader;
+
+        protected Decrypto(FileInfo file, AudioTypes type = AudioTypes.Undefined)
         {
             _input = file;
             using FileStream stream = file.OpenRead();

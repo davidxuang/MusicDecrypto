@@ -14,8 +14,12 @@ namespace MusicDecrypto.Library.Vendor
         private static readonly byte[] _magic = { 0x43, 0x54, 0x45, 0x4E, 0x46, 0x44, 0x41, 0x4D };
         private static readonly byte[] _root = { 0x68, 0x7A, 0x48, 0x52, 0x41, 0x6D, 0x73, 0x6F, 0x35, 0x6B, 0x49, 0x6E, 0x62, 0x61, 0x78, 0x57 };
         private static readonly byte[] _rootMeta = { 0x23, 0x31, 0x34, 0x6C, 0x6A, 0x6B, 0x5F, 0x21, 0x5C, 0x5D, 0x26, 0x30, 0x55, 0x3C, 0x27, 0x28 };
+        private static readonly JsonSerializerOptions _serializerOptions = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+
         private readonly byte[] _mask = Enumerable.Range(0, 0x100).Select(x => (byte)x).ToArray();
         private Metadata? _metadata;
+        private ImageTypes _coverType;
+        private byte[] _coverBuffer;
 
         public NetEaseDecrypto(FileInfo file) : base(file) { }
 
@@ -74,10 +78,10 @@ namespace MusicDecrypto.Library.Vendor
                             metaChunk[skipCount..]))
                     .AesEcbDecrypt(_rootMeta)[6..]);
                 _metadata = JsonSerializer.Deserialize<Metadata>(
-                    meta, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+                    meta, _serializerOptions);
                 if (_metadata?.MusicName == null)
                     _metadata = JsonSerializer.Deserialize<RadioMetadata>(
-                        meta, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }).MainMusic;
+                        meta, _serializerOptions).MainMusic;
             }
             catch (NullFileChunkException)
             {
@@ -135,15 +139,15 @@ namespace MusicDecrypto.Library.Vendor
 
         protected override void PostDecrypt()
         {
-            _musicType = _buffer.SniffMusicType();
+            _musicType = _buffer.SniffAudioType();
             base.PostDecrypt();
 
             _buffer.ResetPosition();
             using TagLib.File file = TagLib.File.Create(_buffer);
             TagLib.Tag tag = _musicType switch
             {
-                MusicTypes.Flac => file.Tag,
-                MusicTypes.Mpeg => file.GetTag(TagLib.TagTypes.Id3v2),
+                AudioTypes.Flac => file.Tag,
+                AudioTypes.Mpeg => file.GetTag(TagLib.TagTypes.Id3v2),
                 _ => throw new DecryptoException("Media stream seems corrupted.", _input.FullName),
             };
 

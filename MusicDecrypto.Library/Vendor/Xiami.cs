@@ -9,8 +9,7 @@ namespace MusicDecrypto.Library.Vendor
         private static readonly byte[] _magic = { 0x69, 0x66, 0x6d, 0x74 };
         private static readonly byte[] _separator = { 0x69, 0x66, 0x6d, 0x74 };
 
-
-        public XiamiDecrypto(FileInfo file, MusicTypes type = MusicTypes.Undefined) : base(file, type) { }
+        public XiamiDecrypto(FileInfo file, AudioTypes type = AudioTypes.Undefined) : base(file, type) { }
 
         protected override void PreDecrypt()
         {
@@ -28,12 +27,12 @@ namespace MusicDecrypto.Library.Vendor
         {
             _ = _buffer.Seek(4, SeekOrigin.Begin);
             string identifier = _reader.ReadChars(4).ToString();
-            if (_musicType == MusicTypes.Undefined) _musicType = identifier switch
+            if (_musicType == AudioTypes.Undefined) _musicType = identifier switch
             {
-                " A4M" => MusicTypes.Mp4,
-                "FLAC" => MusicTypes.Flac,
-                " MP3" => MusicTypes.Mpeg,
-                " WAV" => MusicTypes.Wav,
+                " A4M" => AudioTypes.Mp4,
+                "FLAC" => AudioTypes.Flac,
+                " MP3" => AudioTypes.Mpeg,
+                " WAV" => AudioTypes.Wav,
                 _ => throw new DecryptoException("Unable to determine media format.", _input.FullName),
             };
 

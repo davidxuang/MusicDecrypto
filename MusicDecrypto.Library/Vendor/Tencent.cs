@@ -9,7 +9,7 @@ namespace MusicDecrypto.Library.Vendor
     {
         public static bool RenewName { get; set; }
 
-        protected TencentDecrypto(FileInfo file, MusicTypes type) : base(file, type) { }
+        protected TencentDecrypto(FileInfo file, AudioTypes type) : base(file, type) { }
 
         protected override void PostDecrypt()
         {
@@ -19,10 +19,10 @@ namespace MusicDecrypto.Library.Vendor
             using TagLib.File file = TagLib.File.Create(_buffer);
             TagLib.Tag tag = _musicType switch
             {
-                MusicTypes.Flac => file.Tag,
-                MusicTypes.Ogg  => file.Tag,
-                MusicTypes.Mp4  => file.Tag,
-                MusicTypes.Mpeg => file.GetTag(TagLib.TagTypes.Id3v2),
+                AudioTypes.Flac => file.Tag,
+                AudioTypes.Ogg  => file.Tag,
+                AudioTypes.Mp4  => file.Tag,
+                AudioTypes.Mpeg => file.GetTag(TagLib.TagTypes.Id3v2),
                 _ => throw new DecryptoException("File has an unexpected MIME value.", _input.FullName),
             };
             if (tag == null) return;
@@ -48,7 +48,7 @@ namespace MusicDecrypto.Library.Vendor
     {
         private static readonly byte[] _header = { 0x00, 0x00, 0x00, 0x20, 0x66, 0x74, 0x79, 0x70 };
 
-        public TencentSimpleDecrypto(FileInfo file, MusicTypes type) : base(file, type) { }
+        public TencentSimpleDecrypto(FileInfo file, AudioTypes type) : base(file, type) { }
 
         protected override void Decrypt()
         {
@@ -60,7 +60,7 @@ namespace MusicDecrypto.Library.Vendor
     {
         protected int _length;
 
-        protected TencentMaskDecrypto(FileInfo file, MusicTypes type) : base(file, type)
+        protected TencentMaskDecrypto(FileInfo file, AudioTypes type) : base(file, type)
         {
             _length = Convert.ToInt32(_buffer.Length);
         }
@@ -99,7 +99,7 @@ namespace MusicDecrypto.Library.Vendor
                 0xd8, 0x52, 0xf7, 0x67, 0x90, 0xca, 0xd6, 0x4a,
             };
 
-        public TencentStaticDecrypto(FileInfo file, MusicTypes type) : base(file, type) { }
+        public TencentStaticDecrypto(FileInfo file, AudioTypes type) : base(file, type) { }
 
         protected override byte Mask(int index) => _mask[index];
     }
@@ -108,7 +108,7 @@ namespace MusicDecrypto.Library.Vendor
     {
         private byte[] _mask;
 
-        public TencentDynamicDecrypto(FileInfo file, MusicTypes type) : base(file, type) { }
+        public TencentDynamicDecrypto(FileInfo file, AudioTypes type) : base(file, type) { }
 
         protected override void PreDecrypt()
         {
@@ -121,7 +121,7 @@ namespace MusicDecrypto.Library.Vendor
             for (int i = 0; i < Math.Min(0x100, _length / maskSize); i++)
             {
                 byte[] candidate = _reader.ReadBytes(maskSize);
-                if (header.Select((x, i) => (byte)(x ^ candidate[i])).SniffMusicType() == MusicTypes.Flac)
+                if (header.Select((x, i) => (byte)(x ^ candidate[i])).ToArray().SniffAudioType() == AudioTypes.Flac)
                 {
                     _mask = candidate;
                     break;

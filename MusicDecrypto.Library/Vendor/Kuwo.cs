@@ -34,7 +34,7 @@ namespace MusicDecrypto.Library.Vendor
             _buffer.PerformEach((x, i) => (byte)(x ^ mask[i]));
         }
 
-        protected override void PostDecrypt() { _musicType = _buffer.SniffMusicType(); }
+        protected override void PostDecrypt() { _musicType = _buffer.SniffAudioType(); }
 
         private static byte[] PadKey(byte[] key)
         {

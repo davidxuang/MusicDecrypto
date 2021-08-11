@@ -93,23 +93,23 @@ Options:");
                         {
                             ".ncm"    => new NetEaseDecrypto(file),
                             ".tm2" or ".tm6"
-                                      => new TencentSimpleDecrypto(file, MusicTypes.Mp4),
+                                      => new TencentSimpleDecrypto(file, AudioTypes.Mp4),
                             ".qmc0" or ".qmc3" or ".bkcmp3"
-                                      => new TencentStaticDecrypto(file, MusicTypes.Mpeg),
-                            ".qmcogg" => new TencentStaticDecrypto(file, MusicTypes.Ogg),
-                            ".tkm"    => new TencentStaticDecrypto(file, MusicTypes.Mp4),
+                                      => new TencentStaticDecrypto(file, AudioTypes.Mpeg),
+                            ".qmcogg" => new TencentStaticDecrypto(file, AudioTypes.Ogg),
+                            ".tkm"    => new TencentStaticDecrypto(file, AudioTypes.Mp4),
                             ".qmcflac" or ".bkcflac"
-                                      => new TencentStaticDecrypto(file, MusicTypes.Flac),
-                            ".mflac"  => new TencentDynamicDecrypto(file, MusicTypes.Flac),
+                                      => new TencentStaticDecrypto(file, AudioTypes.Flac),
+                            ".mflac"  => new TencentDynamicDecrypto(file, AudioTypes.Flac),
                             ".kwm"    => new KuwoDecrypto(file),
                             ".kgm" or ".kgma"
                                       => new KugouBasicDecrypto(file),
                             ".vpr"    => new KugouVprDecrypto(file),
-                            ".xm"     => new XiamiDecrypto(file, MusicTypes.Undefined),
-                            ".mp3"    => new XiamiDecrypto(file, MusicTypes.Mpeg),
-                            ".m4a"    => new XiamiDecrypto(file, MusicTypes.Mp4),
-                            ".wav"    => new XiamiDecrypto(file, MusicTypes.Wav),
-                            ".flac"   => new XiamiDecrypto(file, MusicTypes.Flac),
+                            ".xm"     => new XiamiDecrypto(file, AudioTypes.Undefined),
+                            ".mp3"    => new XiamiDecrypto(file, AudioTypes.Mpeg),
+                            ".m4a"    => new XiamiDecrypto(file, AudioTypes.Mp4),
+                            ".wav"    => new XiamiDecrypto(file, AudioTypes.Wav),
+                            ".flac"   => new XiamiDecrypto(file, AudioTypes.Flac),
                             _ => throw new DecryptoException("File has an unsupported extension.", file.FullName)
                         };
 
