@@ -4,106 +4,26 @@
 [![GitHub release](https://img.shields.io/github/release/davidxuang/musicdecrypto.svg)](https://GitHub.com/davidxuang/musicdecrypto/releases/)
 [![GitHub license](https://img.shields.io/github/license/davidxuang/musicdecrypto.svg)](https://github.com/davidxuang/musicdecrypto/blob/master/LICENSE)
 
-This project aims to implement music de-DRM for NetEase Cloud Music and QQ Music on .NET, and generate native executable through experimental [Native AOT](https://github.com/dotnet/runtimelab/tree/feature/NativeAOT) feature.
+This project aims to implement music deobfuscation on .NET, and generate native binary through experimental [Native AOT](https://github.com/dotnet/runtimelab/tree/feature/NativeAOT) feature.
 
 ## Supported formats
 
-<table><tbody align="center">
+<table>
+<tbody>
 <tr>
-<th>Format</th>
-<th>Vorbis</th>
-<th>MP3</th>
-<th>Windows<br>Media</th>
-<th>AAC</th>
-<th>PCM</th>
-<th>FLAC</th>
-<th>DSD</th>
+  <th align=left>✔️&nbsp;Supported</th>
+  <td><code>.kgm</code> <code>.kgma</code> <code>.kwm</code> <code>.tm2</code> <code>.tm6</code> <code>.qmcogg</code> <code>.qmc0</code> <code>.qmc3</code> <code>.bkcmp3</code> <code>.tkm</code> <code>.qmcflac</code> <code>.ncm</code> <code>.xm</code></td>
 </tr>
 <tr>
-<td>NetEase</td>
-<td></td>
-<td>✔️<br/><sub>.ncm</sub></td>
-<td></td>
-<td></td>
-<td></td>
-<td>✔️<br/><sub>.ncm</sub></td>
-<td></td>
+  <th align=left>⭕&nbsp;Partially</th>
+  <td><code>.vpr</code> <code>.mflac</code></td>
 </tr>
 <tr>
-<td rowspan="3">QQ<sup>*</sup></td>
-<td></td>
-<td></td>
-<td></td>
-<td>✔️<br/><sub>.tm2/tm6</sub></td>
-<td></td>
-<td></td>
-<td></td>
+  <th align=left>❌&nbsp;Unsupported</th>
+  <td><code>.mgg</code></td>
 </tr>
-<tr>
-<td>✔️<br/><sub>.qmcogg</sub></td>
-<td>✔️<br/><sub>.qmc0/qmc3</sub></td>
-<td></td>
-<td>✔️<br/><sub>.tkm</sub></td>
-<td></td>
-<td>✔️<br/><sub>.qmcflac</sub></td>
-<td></td>
-</tr>
-<tr>
-<td>❌<br/><sub>.mgg</sub></td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
-<td>⭕<br/><sub>.mflac</sub></td>
-<td></td>
-</tr>
-<tr>
-<td>Moo</td>
-<td></td>
-<td>✔️<br/><sub>.bkcmp3</sub></td>
-<td></td>
-<td></td>
-<td></td>
-<td>✔️<br/><sub>.bkcflac</sub></td>
-<td></td>
-</tr>
-<tr>
-<td>Kuwo</td>
-<td></td>
-<td>✔️<br/><sub>.kwm</sub></td>
-<td>✔️<br/><sub>.kwm</sub></td>
-<td></td>
-<td></td>
-<td>✔️<br/><sub>.kwm</sub></td>
-<td></td>
-</tr>
-<tr>
-<td>Kugou</td>
-<td></td>
-<td>✔️<br/><sub>.kgm/kgma</sub></td>
-<td></td>
-<td></td>
-<td></td>
-<td>⭕<br/><sub>.kgm/kgma/vpr**</sub></td>
-<td>⭕<br/><sub>.vpr**</sub></td>
-</tr>
-<tr>
-<td>Xiami</td>
-<td></td>
-<td>✔️<br/><sub>.xm***</sub></td>
-<td></td>
-<td>✔️<br/><sub>.xm***</sub></td>
-<td>✔️<br/><sub>.xm***</sub></td>
-<td>✔️<br/><sub>.xm***</sub></td>
-<td></td>
-</tr>
-<tr>
-<td colspan="8" align="left">
-<sup>*</sup> .tm0/tm3 are just custom MP3 extensions.<br/>
-<sup>**</sup> only for files not larger than ~1.09 GiB.<br/>
-<sup>***</sup> use <code>-x</code> to include files with a “normal” extension.</td>
-</tr>
-</tbody></table>
+</tbody>
+</table>
 
 ## Build
 
