@@ -1,4 +1,5 @@
 using MusicDecrypto.Library.Common;
+using System;
 using System.IO;
 using System.Linq;
 
@@ -14,7 +15,7 @@ namespace MusicDecrypto.Library.Vendor
         protected override void PreDecrypt()
         {
             // Check file header
-            if (!_reader.ReadBytes(8).Take(4).SequenceEqual(_magic) || !_reader.ReadBytes(4).SequenceEqual(_separator))
+            if (!_reader.ReadBytes(8).AsSpan(0, 4).SequenceEqual(_magic) || !_reader.ReadBytes(4).SequenceEqual(_separator))
             {
                 if (_input.Extension.TrimStart('.') == "xm")
                     throw new DecryptoException("File header is unexpected.", _input.FullName);

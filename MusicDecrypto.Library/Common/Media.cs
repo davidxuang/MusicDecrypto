@@ -65,7 +65,7 @@ namespace MusicDecrypto.Library.Common
                 return _audioHeaders.Keys.Single(type =>
                     {
                         byte[] header = _audioHeaders[type];
-                        return data[..header.Length].SequenceEqual(header);
+                        return data.AsSpan(0, header.Length).SequenceEqual(header);
                     });
             }
             catch (InvalidOperationException)
@@ -91,7 +91,7 @@ namespace MusicDecrypto.Library.Common
                 return _imageHeaders.Keys.Single(type =>
                     {
                         byte[] header = _imageHeaders[type];
-                        return data[..header.Length].SequenceEqual(header);
+                        return data.AsSpan(0, header.Length).SequenceEqual(header);
                     });
             }
             catch (InvalidOperationException)
