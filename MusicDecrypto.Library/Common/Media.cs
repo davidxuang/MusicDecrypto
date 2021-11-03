@@ -58,14 +58,14 @@ namespace MusicDecrypto.Library.Common
             _ => throw new InvalidDataException("Undefined music type."),
         };
 
-        public static AudioTypes SniffAudioType(this byte[] data)
+        public static AudioTypes SniffAudioType(this IEnumerable<byte> data)
         {
             try
             {
                 return _audioHeaders.Keys.Single(type =>
                     {
                         byte[] header = _audioHeaders[type];
-                        return data.AsSpan(0, header.Length).SequenceEqual(header);
+                        return data.Take(header.Length).SequenceEqual(header);
                     });
             }
             catch (InvalidOperationException)
@@ -73,8 +73,22 @@ namespace MusicDecrypto.Library.Common
                 return AudioTypes.Undefined;
             }
         }
+
         public static AudioTypes SniffAudioType(this ExtendedMemoryStream data)
-            => data.ToArray(16).SniffAudioType();
+        {
+            try
+            {
+                return _audioHeaders.Keys.Single(type =>
+                {
+                    byte[] header = _audioHeaders[type];
+                    return data.AsSpan(0, header.Length).SequenceEqual(header);
+                });
+            }
+            catch (InvalidOperationException)
+            {
+                return AudioTypes.Undefined;
+            }
+        }
 
         public static string GetMime(this ImageTypes type) => type switch
         {

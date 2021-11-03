@@ -70,15 +70,7 @@ namespace MusicDecrypto.Library.Common
             }
         }
 
-        public byte[] ToArray(int? length)
-        {
-            int count = length ?? Convert.ToInt32(Math.Min(int.MaxValue, Length));
-            if (count <= 0)
-                return Array.Empty<byte>();
-            var copy = new byte[count];
-            Buffer.BlockCopy(_inst.GetBuffer(), _origin, copy, 0, count);
-            return copy;
-        }
+        public Span<byte> AsSpan(int start, int length) => _inst.GetBuffer().AsSpan(start + _origin, length);
 
         // Override Stream
         public override long Position

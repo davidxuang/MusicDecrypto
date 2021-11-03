@@ -121,7 +121,7 @@ namespace MusicDecrypto.Library.Vendor
             for (int i = 0; i < Math.Min(0x100, _length / maskSize); i++)
             {
                 byte[] candidate = _reader.ReadBytes(maskSize);
-                if (header.Select((x, i) => (byte)(x ^ candidate[i])).ToArray().SniffAudioType() == AudioTypes.Flac)
+                if (header.Select((x, i) => (byte)(x ^ candidate[i])).SniffAudioType() == AudioTypes.Flac)
                 {
                     _mask = candidate;
                     break;
