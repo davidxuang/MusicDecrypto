@@ -1,70 +1,82 @@
-﻿using MusicDecrypto.Library.Common;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.IO;
 using System.Linq;
-using System.Net;
+using System.Net.Http;
+using System.Numerics;
 using System.Text;
 using System.Text.Json;
+using MusicDecrypto.Library.Cryptography.Extensions;
+using MusicDecrypto.Library.Media;
+using MusicDecrypto.Library.Media.Extensions;
+using MusicDecrypto.Library.Numerics;
+using TagLib;
 
 namespace MusicDecrypto.Library.Vendor
 {
-    public sealed class NetEaseDecrypto : Decrypto
+    public sealed class NetEase : DecryptoBase
     {
         private static readonly byte[] _magic = { 0x43, 0x54, 0x45, 0x4E, 0x46, 0x44, 0x41, 0x4D };
         private static readonly byte[] _root = { 0x68, 0x7A, 0x48, 0x52, 0x41, 0x6D, 0x73, 0x6F, 0x35, 0x6B, 0x49, 0x6E, 0x62, 0x61, 0x78, 0x57 };
         private static readonly byte[] _rootMeta = { 0x23, 0x31, 0x34, 0x6C, 0x6A, 0x6B, 0x5F, 0x21, 0x5C, 0x5D, 0x26, 0x30, 0x55, 0x3C, 0x27, 0x28 };
-        private static readonly JsonSerializerOptions _serializerOptions = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+        private static readonly byte[] _initBox = Enumerable.Range(0, 0x100).Select(x => (byte)x).ToArray();
+        private static readonly JsonSerializerOptions _serializerOptions = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
 
-        private readonly byte[] _mask = Enumerable.Range(0, 0x100).Select(x => (byte)x).ToArray();
         private Metadata? _metadata;
         private ImageTypes _coverType;
-        private byte[] _coverBuffer;
+        private byte[]? _coverBuffer;
 
-        public NetEaseDecrypto(FileInfo file) : base(file) { }
+        public NetEase(MarshalMemoryStream buffer, string name) : base(buffer, name) { }
 
-        protected override void PreDecrypt()
+        protected override void Process()
         {
             // Check file header
-            if (!_reader.ReadBytes(8).SequenceEqual(_magic))
-                throw new DecryptoException("File header is unexpected.", _input.FullName);
+            if (!Reader.ReadBytes(8).SequenceEqual(_magic))
+                throw new InvalidDataException("File header is unexpected.");
 
             // Skip ahead
             _ = _buffer.Seek(2, SeekOrigin.Current);
-        }
 
-        protected override void Decrypt()
-        {
+            var mask = (stackalloc byte[Simd.GetPaddedLength(0x100)]);
             try
             {
                 // Read key
-                byte[] key = ReadIndexedChunk(0x64).AesEcbDecrypt(_root);
+                var keyChunk = (stackalloc byte[Reader.ReadInt32()]);
+                ReadChunk(keyChunk, 0x64);
+                var key = keyChunk.ToArray().AesEcbDecrypt(_root).AsSpan(0x11);
+                var keyLength = key.Length;
 
-                // Build main key
-                for (uint trgIndex = 0, swpIndex, lastIndex = 0, srcOffset = 17, srcIndex = srcOffset; trgIndex < _mask.Length; trgIndex++)
+                // Build key box
+                var box = (stackalloc byte[0x100]);
+                _initBox.CopyTo(box);
+
+                for (int i = 0, j = 0; i < 0x100; i++)
                 {
-                    byte swap = _mask[trgIndex];
-                    swpIndex = (swap + lastIndex + key[srcIndex++]) & 0xff;
-                    if (srcIndex >= key.Length)
-                        srcIndex = srcOffset;
-                    _mask[trgIndex] = _mask[swpIndex];
-                    _mask[swpIndex] = swap;
-                    lastIndex = swpIndex;
+                    j = (byte)(box[i] + j + key[i % keyLength]);
+                    (box[j], box[i]) = (box[i], box[j]);
                 }
+
+                // Build mask
+                for (int i = 0; i < 0x100; i++)
+                {
+                    var j = (byte)(i + 1);
+                    mask[i] = box[(byte)(box[j] + box[(byte)(box[j] + j)])];
+                }
+                Simd.Align(mask, 0x100);
             }
             catch (NullFileChunkException e)
             {
-                throw new DecryptoException("Key chunk is corrupted.", _input.FullName, e);
+                throw new InvalidDataException("Key chunk is corrupted.", e);
             }
 
             try
             {
                 // Read metadata
-                byte[] metaChunk = ReadIndexedChunk(0x63);
-                int skipCount = 22;
-                for (int i = 0; i < metaChunk.LongLength; i++)
+                var metaChunk = (stackalloc byte[Reader.ReadInt32()]);
+                ReadChunk(metaChunk, 0x63);
+                int skipCount = 0x16;
+                for (int i = 0; i < metaChunk.Length; i++)
                 {
-                    if (metaChunk[i] == 58)
+                    if (metaChunk[i] == 0x3a)
                     {
                         skipCount = i + 1;
                         break;
@@ -75,8 +87,8 @@ namespace MusicDecrypto.Library.Vendor
                 string meta = Encoding.UTF8.GetString(
                     Convert.FromBase64String(
                         Encoding.ASCII.GetString(
-                            metaChunk.AsSpan(skipCount)))
-                    .AesEcbDecrypt(_rootMeta).AsSpan(6));
+                            metaChunk[skipCount..]))
+                    .AesEcbDecrypt(_rootMeta)[6..]);
                 _metadata = JsonSerializer.Deserialize<Metadata>(
                     meta, _serializerOptions);
                 if (_metadata?.MusicName == null)
@@ -85,11 +97,11 @@ namespace MusicDecrypto.Library.Vendor
             }
             catch (NullFileChunkException)
             {
-                Logger.Log("File does not contain metadata.", _input.FullName, LogLevel.Warn);
+                RaiseWarn("File does not contain metadata.");
             }
             catch
             {
-                Logger.Log("Metadata seems corrupted.", _input.FullName, LogLevel.Warn);
+                RaiseWarn("Metadata seems corrupted.");
             }
 
             // Skip ahead
@@ -99,96 +111,123 @@ namespace MusicDecrypto.Library.Vendor
             try
             {
                 // Plan A: Read cover from file
-                _coverBuffer = ReadIndexedChunk(null);
+                _coverBuffer = new byte[Reader.ReadInt32()];
+                ReadChunk(_coverBuffer);
             }
             catch (NullFileChunkException)
             {
-                Logger.Log("File does not contain cover image. Trying to get from server...", _input.FullName, LogLevel.Warn);
+                RaiseWarn("File does not contain cover image. Trying to get from server...");
 
                 // Plan B: get image from server
                 try
                 {
-                    string coverUri = _metadata?.AlbumPic;
+                    var coverUri = _metadata?.AlbumPic;
                     if (!Uri.IsWellFormedUriString(coverUri, UriKind.Absolute))
                     {
-                        Logger.Log("File does not contain cover link.", _input.FullName, LogLevel.Error);
+                        RaiseWarn("File does not contain cover link.");
                         throw;
                     }
-                    using var webClient = new WebClient();
-                    _coverBuffer = webClient.DownloadData(coverUri);
+                    using var httpClient = new HttpClient();
+                    _coverBuffer = httpClient.GetByteArrayAsync(coverUri).Result;
                 }
                 catch
                 {
-                    Logger.Log("Failed to download cover image.", _input.FullName, LogLevel.Fatal);
+                    RaiseWarn("Failed to download cover image.");
                 }
             }
-            _coverType = _coverBuffer.SniffImageType();
-            if (_coverType == ImageTypes.Undefined)
-            {
-                _coverBuffer = null;
-            }
+            _coverType = _coverBuffer?.SniffImageType() ?? ImageTypes.Undefined;
+            if (_coverType == ImageTypes.Undefined) _coverBuffer = null;
 
             // Read music
             _buffer.Origin = _buffer.Position;
-            _buffer.PerformEach((x, i) =>
+            int step = Simd.LaneCount;
+            var data = _buffer.AsSimdPaddedSpan();
+            int i_m;
+            for (int i = 0; i < data.Length; i += step)
             {
-                var offset = (byte)(i + 1);
-                return (byte)(x ^ (_mask[(byte)(_mask[offset] + _mask[(byte)(_mask[offset] + offset)])]));
-            });
+                i_m = i % 0x100;
+                var window = data[i..(i + step)];
+                var v = new Vector<byte>(window);
+                var m = new Vector<byte>(mask[i_m..(i_m + step)]);
+                (m ^ v).CopyTo(window);
+            }
         }
 
-        protected override void PostDecrypt()
+        protected override bool MetadataMisc(Tag tag)
         {
-            _musicType = _buffer.SniffAudioType();
-            base.PostDecrypt();
+            if (tag == null) return false;
 
-            _buffer.ResetPosition();
-            using TagLib.File file = TagLib.File.Create(_buffer);
-            TagLib.Tag tag = _musicType switch
-            {
-                AudioTypes.Flac => file.Tag,
-                AudioTypes.Mpeg => file.GetTag(TagLib.TagTypes.Id3v2),
-                _ => throw new DecryptoException("Media stream seems corrupted.", _input.FullName),
-            };
+            bool modified = false;
 
             if (_coverType != ImageTypes.Undefined)
             {
-                tag.Pictures = new TagLib.IPicture[1] {
-                    new TagLib.Picture(new TagLib.ByteVector(_coverBuffer))
+                if (tag.Pictures.Length > 0)
+                {
+                    if (tag.Pictures[0].Type != PictureType.FrontCover)
                     {
-                        MimeType = _coverType.GetMime(),
-                        Type = TagLib.PictureType.FrontCover
+                        tag.Pictures[0].Type = PictureType.FrontCover;
+                        modified = true;
                     }
-                };
+                }
+                else
+                {
+                    tag.Pictures = new IPicture[] {
+                        new Picture(new ByteVector(_coverBuffer))
+                        {
+                            MimeType = _coverType.GetMime(),
+                            Type = PictureType.FrontCover
+                        }
+                    };
+                    modified = true;
+                }
             }
 
-            if (_metadata?.MusicName != null)
-                tag.Title = _metadata?.MusicName;
-            if (_metadata?.Artists?.Count() > 0 && tag.AlbumArtists.Length == 0)
+            if (_metadata?.MusicName is string name)
             {
-                tag.Performers = _metadata?.Artists?.ToArray();
-                tag.AlbumArtists = new[] { _metadata?.Artists?.First() };
+                if (tag.Title != name)
+                {
+                    tag.Title = name;
+                    modified = true;
+                }
             }
-            if (_metadata?.Album != null)
-                tag.Album = _metadata?.Album;
+            var artists = _metadata?.Artist?.Select(tuple => tuple[0].ToString()!);
+            if (artists?.Count() > 0 && tag.AlbumArtists.Length == 0)
+            {
+                tag.Performers = artists!.ToArray();
+                tag.AlbumArtists = new[] { artists!.First() };
+                modified = true;
+            }
+            if (_metadata?.Album is string album)
+            {
+                if (tag.Album != album)
+                {
+                    tag.Album = album;
+                    modified = true;
+                }
+            }
 
-            file.Save();
+            return modified;
         }
 
-        private byte[] ReadIndexedChunk(byte? obfuscator)
+        private void ReadChunk(Span<byte> chunk, byte obfuscator)
         {
-            int chunkSize = _reader.ReadInt32();
-
-            if (chunkSize > 0)
+            if (chunk.Length > 0)
             {
-                var chunk = new byte[chunkSize];
-                _buffer.Read(chunk, 0, chunkSize);
-                if (obfuscator != null)
-                {
-                    for (int i = 0; i < chunkSize; i++)
-                        chunk[i] ^= obfuscator.Value;
-                }
-                return chunk;
+                _buffer.Read(chunk);
+                for (int i = 0; i < chunk.Length; i++)
+                    chunk[i] ^= obfuscator;
+            }
+            else
+            {
+                throw new NullFileChunkException("Failed to load file chunk.");
+            }
+        }
+
+        private void ReadChunk(Span<byte> chunk)
+        {
+            if (chunk.Length > 0)
+            {
+                _buffer.Read(chunk);
             }
             else
             {
@@ -202,13 +241,17 @@ namespace MusicDecrypto.Library.Vendor
             public object[][] Artist { get; set; }
             public string Album { get; set; }
             public string AlbumPic { get; set; }
-
-            public IEnumerable<string> Artists => Artist?.Select(tuple => tuple[0].ToString());
         }
 
         private struct RadioMetadata
         {
             public Metadata MainMusic { get; set; }
+        }
+
+        public class NullFileChunkException : IOException
+        {
+            public NullFileChunkException(string message)
+                : base(message) { }
         }
     }
 }

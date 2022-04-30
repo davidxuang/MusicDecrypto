@@ -1,0 +1,12 @@
+<Directives xmlns="http://schemas.microsoft.com/netfx/2013/01/metadata">
+  <Application>
+    <Assembly Name="libmusicdecrypto">
+      <Type Name="MusicDecrypto.Library.Vendor.NetEase+Metadata" Dynamic="Required All" />
+      <Type Name="MusicDecrypto.Library.Vendor.NetEase+RadioMetadata" Dynamic="Required All" />
+    </Assembly>
+    <Assembly Name="System.Text.Json">
+      <Type Name="System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1[[MusicDecrypto.Library.Vendor.NetEase+Metadata,libmusicdecrypto]]" Dynamic="Required All" />
+      <Type Name="System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1[[MusicDecrypto.Library.Vendor.NetEase+RadioMetadata,libmusicdecrypto]]" Dynamic="Required All" />
+    </Assembly>
+  </Application>
+</Directives>

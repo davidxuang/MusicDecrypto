@@ -1,0 +1,60 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+			 xmlns:ctrl="using:MusicDecrypto.Avalonia.Controls"
+			 xmlns:vm="using:MusicDecrypto.Avalonia.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="MusicDecrypto.Avalonia.Pages.HomePage">
+
+	<Design.DataContext>
+		<vm:MainViewModel />
+	</Design.DataContext>
+
+	<Grid>
+		<TextBlock Grid.Row="1" Grid.ColumnSpan="3" Padding="16" Opacity=".25"
+				   Classes="SubtitleTextBlockStyle" IsVisible="{Binding IsEmpty}"
+				   HorizontalAlignment="Center" VerticalAlignment="Center">
+			Drag and drop here or use the button above.
+		</TextBlock>
+		
+		<ScrollViewer DragDrop.AllowDrop="True">
+			<ItemsControl Items="{Binding Items}">
+				<ItemsControl.Styles>
+					<Style Selector="TextBlock">
+						<Setter Property="TextWrapping" Value="Wrap" />
+						<Setter Property="TextTrimming" Value="WordEllipsis" />
+					</Style>
+					<Style Selector="TextBlock.CaptionTextBlockStyle">
+						<Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
+					</Style>
+				</ItemsControl.Styles>
+				<ItemsControl.ItemsPanel>
+					<ItemsPanelTemplate>
+						<ctrl:StaggeredPanel Padding="24" DesiredColumnWidth="288"
+											 ColumnSpacing="8" RowSpacing="8" />
+					</ItemsPanelTemplate>
+				</ItemsControl.ItemsPanel>
+				<ItemsControl.ItemTemplate>
+					<DataTemplate>
+						<Border CornerRadius="{DynamicResource ControlCornerRadius}"
+								Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+								BorderThickness="1" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}">
+							<Grid ColumnDefinitions="70,12,*" RowDefinitions="20,16,16,18" Margin="8">
+								<Border Grid.RowSpan="4" CornerRadius="2" ClipToBounds="True"
+										Background="{DynamicResource SolidBackgroundFillColorSecondaryBrush}">
+									<Image Source="{Binding Cover}" Stretch="UniformToFill" />
+								</Border>
+								<TextBlock Grid.Column="2" Grid.Row="0" Classes="BaseTextBlockStyle" Text="{Binding Title}" />
+								<TextBlock Grid.Column="2" Grid.Row="1" Classes="CaptionTextBlockStyle" Text="{Binding Artist}" />
+								<TextBlock Grid.Column="2" Grid.Row="2" Classes="CaptionTextBlockStyle" Text="{Binding Album}" />
+								<TextBlock Grid.Column="2" Grid.Row="3" Classes="CaptionTextBlockStyle" Text="{Binding Info}"
+										   ToolTip.Tip="{Binding Details}" />	
+							</Grid>
+						</Border>
+					</DataTemplate>
+				</ItemsControl.ItemTemplate>
+			</ItemsControl>
+		</ScrollViewer>
+	</Grid>
+</UserControl>

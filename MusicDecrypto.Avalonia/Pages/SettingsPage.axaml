@@ -1,0 +1,130 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+			 xmlns:ctrl="using:MusicDecrypto.Avalonia.Controls"
+			 xmlns:ic="using:FluentIcons.Avalonia"
+			 xmlns:vm="using:MusicDecrypto.Avalonia.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="MusicDecrypto.Avalonia.Pages.SettingsPage">
+	
+	<Design.DataContext>
+		<vm:SettingsViewModel />
+	</Design.DataContext>
+
+	<ScrollViewer>
+		<StackPanel Margin="24" Orientation="Vertical" Spacing="8">
+
+			<Grid ColumnDefinitions="Auto,*,Auto,Auto">
+				<Grid.Styles>
+					<Style Selector="Button.AppBarButton">
+						<Setter Property="Padding" Value="8" />
+						<Setter Property="Margin" Value="8 0 0 0" />
+					</Style>
+					<Style Selector="Button.AppBarButton Image">
+						<Setter Property="Width" Value="36" />
+						<Setter Property="Height" Value="36" />
+					</Style>
+					<Style Selector="Button.AppBarButton TextBlock.CaptionTextBlockStyle">
+						<Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
+					</Style>
+				</Grid.Styles>
+
+				<Image Height="64" Width="64" HorizontalAlignment="Left" Source="/Assets/logo.ico" />
+				
+				<StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="12 0 0 0">
+					<TextBlock Classes="SubtitleTextBlockStyle" Text="MusicDecrypto" />
+					<TextBlock Classes="BodyTextBlockStyle" Text="{Binding Version, StringFormat='Version {0}'}"
+							   Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+				</StackPanel>
+
+				<Button Grid.Column="2" Classes="AppBarButton"
+						Command="{Binding OpenAvaloniaLink}">
+					<Button.Content>
+						<Grid ColumnDefinitions="Auto,8,Auto"
+							  RowDefinitions="Auto,Auto">
+							<Image Grid.RowSpan="2" Source="/Assets/logo-avalonia.ico" />
+							<TextBlock Grid.Column="2" Grid.Row="0"
+									   Classes="CaptionTextBlockStyle"
+									   Text="Powered by" />
+							<TextBlock Grid.Column="2" Grid.Row="1"
+									   Classes="BodyStrongTextBlockStyle"
+									   Text="Avalonia" />
+						</Grid>
+					</Button.Content>
+				</Button>
+
+				<Button Grid.Column="3" Classes="AppBarButton"
+						Command="{Binding OpenFluentAvaloniaLink}">
+					<Button.Content>
+						<Grid ColumnDefinitions="Auto,8,Auto"
+							  RowDefinitions="Auto,Auto">
+							<Image Grid.RowSpan="2" Source="/Assets/logo-fluentavalonia.ico" />
+							<TextBlock Grid.Column="2" Grid.Row="0"
+									   Classes="CaptionTextBlockStyle"
+									   Text="Theme based on" />
+							<TextBlock Grid.Column="2" Grid.Row="1"
+									   Classes="BodyStrongTextBlockStyle"
+									   Text="FluentAvalonia" />
+						</Grid>
+					</Button.Content>
+				</Button>
+
+			</Grid>
+			
+			<TextBlock Classes="BodyStrongTextBlockStyle" Margin="0 20 0 0" Text="Settings" />
+
+			<ctrl:OptionsDisplayItem Icon="PaintBrush" Header="Theme"
+								     Description="Change the current app theme.">
+				<ctrl:OptionsDisplayItem.ActionButton>
+					<ComboBox SelectedItem="{Binding CurrentAppTheme}"
+							  Items="{Binding AppThemes}"
+							  MinWidth="120"/>
+				</ctrl:OptionsDisplayItem.ActionButton>
+			</ctrl:OptionsDisplayItem>
+
+			<TextBlock Classes="BodyStrongTextBlockStyle" Margin="0 20 0 0" Text="About" />
+
+			<ctrl:OptionsDisplayItem Icon="BoxMultiple" Header="Credits" Expands="True"
+									 Description="Third party open-source projects.">
+				<ctrl:OptionsDisplayItem.Content>
+					<ItemsControl Items="{Binding Credits}">
+						<ItemsControl.Styles>
+							<Style Selector="StackPanel.Row">
+								<Setter Property="Orientation" Value="Horizontal" />
+								<Setter Property="Spacing" Value="4" />
+							</Style>
+							<Style Selector="TextBlock.CaptionTextBlockStyle">
+								<Setter Property="VerticalAlignment" Value="Bottom" />
+								<Setter Property="Padding" Value="2" />
+							</Style>
+						</ItemsControl.Styles>
+						<ItemsControl.ItemsPanel>
+							<ItemsPanelTemplate>
+								<StackPanel />
+							</ItemsPanelTemplate>
+						</ItemsControl.ItemsPanel>
+						<ItemsControl.ItemTemplate>
+							<DataTemplate>
+								<StackPanel Classes="Row">
+									<ctrl:UrlTextBlock Text="{Binding Name}" Href="{Binding Url}" />
+									<TextBlock Classes="CaptionTextBlockStyle" Text="{Binding License, StringFormat='({0})'}" />
+								</StackPanel>
+							</DataTemplate>
+						</ItemsControl.ItemTemplate>
+					</ItemsControl>
+				</ctrl:OptionsDisplayItem.Content>
+			</ctrl:OptionsDisplayItem>
+
+			<ctrl:OptionsDisplayItem Icon="DocumentBulletList" Header="License"
+									 Links="True" Href="https://www.gnu.org/licenses/agpl-3.0.html"
+								     Description="This program is distributed under GNU AGPL-3.0." />
+
+			<ctrl:OptionsDisplayItem Icon="Code" Header="GitHub repository"
+									 Links="True" Href="https://github.com/davidxuang/MusicDecrypto"
+								     Description="Check out the source code and get in touch." />
+
+		</StackPanel>
+	</ScrollViewer>
+	
+</UserControl>

@@ -1,40 +1,37 @@
-﻿using Mono.Options;
-using MusicDecrypto.Library;
-using MusicDecrypto.Library.Common;
-using MusicDecrypto.Library.Vendor;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Mono.Options;
+using MusicDecrypto.Library;
 
 namespace MusicDecrypto.Commandline
 {
     public static class Program
     {
         private static ConsoleColor _pushColor;
-        private static readonly HashSet<string> _extension
-            = new() { ".ncm", ".tm2", ".tm6", ".qmc0", ".qmc3", ".bkcmp3", ".qmcogg", ".qmcflac", ".tkm", ".bkcflac", ".mflac", ".kgm", ".kgma", ".vpr", ".kwm", ".xm" };
+        private static readonly string[] _extensive = new[] { ".mp3", ".m4a", ".wav", ".flac" };
+        private static readonly HashSet<string> _extensions = DecryptoBase.KnownExtensions.Keys.Where(e => !_extensive.Contains(e)).ToHashSet();
 
         public static void Main(string[] args)
         {
             _pushColor = Console.ForegroundColor;
             AppDomain.CurrentDomain.ProcessExit += new EventHandler(OnProcessExit);
 
-            // Register log event
-            Logger.LogEvent += new Logger.LogHandler(Log);
+            bool help = args.Length == 0;
 
             List<string> input;
+
             SearchOption search = SearchOption.TopDirectoryOnly;
-            bool help = args.Length == 0;
+            bool overwrite = false;
+            string? outDir = default;
             var options = new OptionSet
             {
-                { "f|force-overwrite", "Overwrite existing files.", f => Decrypto.ForceOverwrite = f != null },
-                { "n|renew-name", "Renew Hash-like names basing on metadata.", n => TencentDecrypto.RenewName = n != null },
+                { "f|force-overwrite", "Overwrite existing files.", f => overwrite = f != null },
                 { "r|recursive", "Search files recursively.", r => { if (r != null) search = SearchOption.AllDirectories; } },
-                { "x|extensive", "Extend range of extensions to be detected.", x => { if (x != null) _extension.UnionWith(new []{ ".mp3", ".m4a", ".wav", ".flac" }); } },
-                { "o|output=", "Output directory", o => { if (o != null) Decrypto.Output = new DirectoryInfo(o); } },
+                { "x|extensive", "Extend range of extensions to be detected.", x => { if (x != null) _extensions.UnionWith(_extensive); } },
+                { "o|output=", "Output directory", o => { if (o != null) outDir = o; } },
                 { "h|help", "Show help.", h => help = h != null },
             };
 
@@ -47,7 +44,7 @@ namespace MusicDecrypto.Commandline
                     Console.ForegroundColor = ConsoleColor.White;
                     Console.WriteLine(@"
 Usage:
-  MusicDecrypto [options] [<input>...]
+  musicdecrypto [options] [<input>...]
 
 Arguments:
   <input>    Input files/directories.
@@ -57,24 +54,24 @@ Options:");
                     return;
                 }
 
-                if (Decrypto.Output?.Exists == false)
+                if (outDir != null && !Directory.Exists(outDir))
                 {
-                    Logger.Log("Ignore output directory which does not exist.", Decrypto.Output.FullName, LogLevel.Error);
+                    outDir = null;
+                    Log($"Ignoring output directory which does not exist. ({outDir})", LogLevel.Error);
                 }
 
                 // Search for files
-                var files = new HashSet<FileInfo>(new FileInfoComparer());
+                var files = new HashSet<string>();
                 foreach (string item in input)
                 {
                     if (Directory.Exists(item))
                     {
                         files.UnionWith(Directory.GetFiles(item, "*", search)
-                                                 .Where(path => _extension.Contains(Path.GetExtension(path).ToLowerInvariant()))
-                                                 .Select(path => new FileInfo(path)));
+                                                 .Where(path => _extensions.Contains(Path.GetExtension(path).ToLowerInvariant())));
                     }
                     else if (File.Exists(item))
                     {
-                        files.Add(new FileInfo(item));
+                        files.Add(Path.GetFullPath(item));
                     }
                 }
 
@@ -85,43 +82,47 @@ Options:");
                 }
 
                 // Decrypt and dump
-                _ = Parallel.ForEach(files, file =>
+                int succeeded = 0, saved = 0;
+
+                _ = Parallel.ForEach(files, f =>
                 {
                     try
                     {
-                        using Decrypto decrypto = file.Extension switch
+                        using var buffer = new MarshalMemoryStream();
+                        using (var file = new FileStream(f, FileMode.Open, FileAccess.Read, FileShare.Read))
                         {
-                            ".ncm"    => new NetEaseDecrypto(file),
-                            ".tm2" or ".tm6"
-                                      => new TencentSimpleDecrypto(file, AudioTypes.Mp4),
-                            ".qmc0" or ".qmc3" or ".bkcmp3"
-                                      => new TencentStaticDecrypto(file, AudioTypes.Mpeg),
-                            ".qmcogg" => new TencentStaticDecrypto(file, AudioTypes.Ogg),
-                            ".tkm"    => new TencentStaticDecrypto(file, AudioTypes.Mp4),
-                            ".qmcflac" or ".bkcflac"
-                                      => new TencentStaticDecrypto(file, AudioTypes.Flac),
-                            ".mflac"  => new TencentDynamicDecrypto(file, AudioTypes.Flac),
-                            ".kwm"    => new KuwoDecrypto(file),
-                            ".kgm" or ".kgma"
-                                      => new KugouBasicDecrypto(file),
-                            ".vpr"    => new KugouVprDecrypto(file),
-                            ".xm"     => new XiamiDecrypto(file, AudioTypes.Undefined),
-                            ".mp3"    => new XiamiDecrypto(file, AudioTypes.Mpeg),
-                            ".m4a"    => new XiamiDecrypto(file, AudioTypes.Mp4),
-                            ".wav"    => new XiamiDecrypto(file, AudioTypes.Wav),
-                            ".flac"   => new XiamiDecrypto(file, AudioTypes.Flac),
-                            _ => throw new DecryptoException("File has an unsupported extension.", file.FullName)
-                        };
+                            buffer.SetLengthWithPadding(file.Length);
+                            file.CopyTo(buffer);
+                        }
 
-                        decrypto?.Dump();
+                        using var decrypto = DecryptoBase.Create(buffer, Path.GetFileName(f));
+                        decrypto.Warn += (m) => Log($"{f} - {m}", LogLevel.Warn);
+
+                        var outName = decrypto.Decrypt().NewName;
+                        var outPath = Path.Combine(Path.GetDirectoryName(outDir ?? f)!, outName);
+
+                        succeeded++;
+
+                        if (!File.Exists(outPath) || overwrite)
+                        {
+                            using var file = new FileStream(
+                                outPath,
+                                FileMode.Create,
+                                FileAccess.Write,
+                                FileShare.None);
+                            buffer.CopyTo(file);
+                            Log($"{f} decrypted.", LogLevel.Info);
+                            saved++;
+                        }
+                        else Log($"{f} skipped.", LogLevel.Info);
                     }
                     catch (Exception e)
                     {
-                        Log(e.ToString(), LogLevel.Fatal);
+                        Log($"{f}\n{e}", LogLevel.Fatal);
                     }
                 });
 
-                Log($"Program finished with {Decrypto.DumpCount}/{files.Count} files decrypted successfully.", LogLevel.Info);
+                Log($"Program complete. ({files.Count} total, {succeeded} succeeded, {saved} saved)", LogLevel.Info);
             }
             catch (OptionException e)
             {
@@ -129,9 +130,17 @@ Options:");
             }
         }
 
-        private static void OnProcessExit(object sender, EventArgs e)
+        private static void OnProcessExit(object? sender, EventArgs e)
         {
             Console.ForegroundColor = _pushColor;
+        }
+
+        private enum LogLevel
+        {
+            Info,
+            Warn,
+            Error,
+            Fatal,
         }
 
         private static void Log(string message, LogLevel level)
@@ -147,11 +156,5 @@ Options:");
             Console.WriteLine(DateTimeOffset.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ") + '|'
                             + level.ToString().ToUpperInvariant() + '|' + message);
         }
-    }
-
-    internal class FileInfoComparer : IEqualityComparer<FileInfo>
-    {
-        public bool Equals(FileInfo x, FileInfo y) => Equals(x.FullName, y.FullName);
-        public int GetHashCode([DisallowNull] FileInfo obj) => obj.FullName.GetHashCode();
     }
 }

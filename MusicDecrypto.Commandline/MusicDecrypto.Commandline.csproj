@@ -1,10 +1,15 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <AssemblyName>musicdecrypto</AssemblyName>
     <OutputType>Exe</OutputType>
-    <Version>3.3.1</Version>
+    <Version>2.0.0</Version>
+	<Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+    <DebugType>None</DebugType>
   </PropertyGroup>
 
   <ItemGroup>
@@ -13,6 +18,11 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MusicDecrypto.Library\MusicDecrypto.Library.csproj" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <RdXmlFile Include="rd.xml" />
+    <IlcArg Include="--instructionset:avx,avx2,aes,bmi,bmi2,fma,lzcnt,pclmul,popcnt,-avxvnni" Condition=" $(RuntimeIdentifier.EndsWith('x64')) " />
   </ItemGroup>
 
 </Project>

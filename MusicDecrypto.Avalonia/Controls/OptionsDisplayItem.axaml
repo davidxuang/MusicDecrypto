@@ -1,0 +1,182 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ic="using:FluentIcons.Avalonia"
+        xmlns:local="using:MusicDecrypto.Avalonia.Controls">
+
+    <Design.PreviewWith>
+        <Border Padding="20" MinHeight="300" MinWidth="400">
+            <StackPanel>
+                <local:OptionsDisplayItem Header="Header"
+                                          Description="This is a description of whatver this does"
+                                          Icon="Save"
+                                          Navigates="True"/>
+
+                <local:OptionsDisplayItem Header="Header"
+                                          Description="This is a description of whatver this does"
+                                          Icon="Save"
+                                          Expands="True"
+                                          Content="Hello World"/>
+
+                <local:OptionsDisplayItem Header="Header" Classes="Vertical"
+                                          Description="This is a description of whatver this does"
+                                          Icon="Save"
+                                          Expands="True"
+                                          Content="Hello World" />
+            </StackPanel>
+        </Border>
+    </Design.PreviewWith>
+
+    <Style Selector="local|OptionsDisplayItem">
+        <Setter Property="Background" Value="{DynamicResource ControlFillColorDefaultBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource CardStrokeColorDefaultBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Padding" Value="{StaticResource ButtonPadding}" />
+        <Setter Property="CornerRadius" Value="{StaticResource ControlCornerRadius}" />
+        <Setter Property="Template">
+            <ControlTemplate>
+                <StackPanel>
+                    <Border Name="LayoutRoot"
+                        Background="{TemplateBinding Background}"
+                        BorderBrush="{TemplateBinding BorderBrush}"
+                        BorderThickness="{TemplateBinding BorderThickness}"
+                        Padding="16"
+                        CornerRadius="{TemplateBinding CornerRadius}">
+                        <Grid ColumnDefinitions="Auto,*,Auto,Auto">
+                            <Viewbox Name="IconHost"
+                                     Grid.RowSpan="2"
+                                     Width="24" Height="24"
+                                     Margin="0 6 12 6"
+                                     VerticalAlignment="Center">
+                                <ContentPresenter Content="{TemplateBinding Icon}" />
+                            </Viewbox>
+
+                            <StackPanel Grid.Column="1" Margin="4 0 0 0" VerticalAlignment="Center">
+                                <TextBlock Grid.Column="2"
+                                           Classes="BodyTextBlockStyle"
+                                           Text="{TemplateBinding Header}"
+                                           TextTrimming="WordEllipsis"/>
+
+                                <TextBlock Grid.Column="2"
+                                           Classes="CaptionTextBlockStyle"
+                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                           Text="{TemplateBinding Description}"
+                                           TextWrapping="Wrap"/>
+                            </StackPanel>
+
+                            <ContentPresenter Grid.Column="2"
+                                              Content="{TemplateBinding ActionButton}"
+                                              VerticalAlignment="Center" />
+
+                            <ic:SymbolIcon Name="Chevron"
+                                           Grid.Column="3"
+                                           Margin="12 0 0 0"
+                                           VerticalAlignment="Center"
+                                           FontSize="18" />
+                        </Grid>
+                    </Border>
+
+                    <ContentPresenter Name="ExpandedContentPresenter"
+                                      Content="{TemplateBinding Content}"
+                                      VerticalContentAlignment="Stretch"
+                                      HorizontalContentAlignment="Stretch"
+                                      VerticalAlignment="Stretch"
+                                      HorizontalAlignment="Stretch"
+                                      Grid.Row="2"
+                                      Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+                                      BorderBrush="{TemplateBinding BorderBrush}"
+                                      BorderThickness="1 0 1 1"
+                                      Grid.ColumnSpan="4"
+                                      Padding="16"/>
+                </StackPanel>
+            </ControlTemplate>
+        </Setter>
+    </Style>
+
+
+    <Style Selector="local|OptionsDisplayItem /template/ Viewbox#IconHost">
+        <Setter Property="IsVisible" Value="False" />
+    </Style>
+    <Style Selector="local|OptionsDisplayItem /template/ ic|SymbolIcon#Chevron">
+        <Setter Property="IsVisible" Value="False" />
+    </Style>
+    <Style Selector="local|OptionsDisplayItem /template/ ContentPresenter#ExpandedContentPresenter">
+        <Setter Property="IsVisible" Value="False" />
+    </Style>
+
+    <Style Selector="local|OptionsDisplayItem /template/ Border#LayoutRoot:pointerover">
+        <Setter Property="Background" Value="{DynamicResource ControlFillColorSecondaryBrush}" />
+    </Style>
+    <Style Selector="local|OptionsDisplayItem:pressed /template/ Border#LayoutRoot:pointerover">
+        <Setter Property="Background" Value="{DynamicResource ControlFillColorTertiaryBrush}" />
+    </Style>
+
+    <Style Selector="local|OptionsDisplayItem:icon /template/ Viewbox#IconHost">
+        <Setter Property="IsVisible" Value="True" />
+    </Style>
+
+    <Style Selector="local|OptionsDisplayItem:navigates /template/ ic|SymbolIcon#Chevron">
+        <Setter Property="IsVisible" Value="True" />
+        <Setter Property="Symbol" Value="ChevronRight" />
+    </Style>
+
+	<Style Selector="local|OptionsDisplayItem:links /template/ ic|SymbolIcon#Chevron">
+		<Setter Property="IsVisible" Value="True" />
+		<Setter Property="Symbol" Value="Open" />
+	</Style>
+
+    <Style Selector="local|OptionsDisplayItem:expands /template/ ic|SymbolIcon#Chevron">
+        <Setter Property="IsVisible" Value="True" />
+        <Setter Property="Symbol" Value="ChevronDown" />
+    </Style>
+    <Style Selector="local|OptionsDisplayItem:expanded /template/ ic|SymbolIcon#Chevron">
+        <Setter Property="Symbol" Value="ChevronUp" />
+    </Style>
+    <Style Selector="local|OptionsDisplayItem:expanded /template/ ContentPresenter#ExpandedContentPresenter">
+        <Setter Property="IsVisible" Value="True" />
+        <Setter Property="CornerRadius" Value="{Binding CornerRadius, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource BottomCornerRadiusFilterConverter}}" />
+    </Style>
+    <Style Selector="local|OptionsDisplayItem:expanded /template/ Border#LayoutRoot">
+        <Setter Property="CornerRadius" Value="{Binding CornerRadius, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource TopCornerRadiusFilterConverter}}" />
+    </Style>
+    <Style Selector="local|OptionsDisplayItem:not(:expands):expanded /template/ ContentPresenter#ExpandedContentPresenter">
+        <Setter Property="IsVisible" Value="False" />
+    </Style>
+
+
+    <!-- Vertical Style -->
+    <Style Selector="local|OptionsDisplayItem.Vertical">
+        <Setter Property="Template">
+            <ControlTemplate>
+                <Border Name="LayoutRoot"
+                        Background="{TemplateBinding Background}"
+                        BorderBrush="{TemplateBinding BorderBrush}"
+                        BorderThickness="{TemplateBinding BorderThickness}"
+                        Padding="16"
+                        CornerRadius="{TemplateBinding CornerRadius}">
+                    <Grid RowDefinitions="*,*,*">
+                        <Border Width="72" Height="72"
+                                Margin="8"
+                                CornerRadius="{StaticResource OverlayCornerRadius}"
+                                ClipToBounds="True"
+                                Background="Transparent">
+                            <Viewbox Name="IconHost">
+                                <ContentPresenter Content="{TemplateBinding Icon}" />
+                            </Viewbox>
+                        </Border>
+
+                        <TextBlock Grid.Row="1"
+                                   Classes="BaseTextBlockStyle"
+                                   Text="{TemplateBinding Header}"
+                                   TextTrimming="WordEllipsis" />
+
+                        <TextBlock Grid.Row="2"
+                                   Classes="CaptionTextBlockStyle"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                   Text="{TemplateBinding Description}"
+                                   TextWrapping="Wrap" />
+                    </Grid>
+                </Border>
+            </ControlTemplate>
+        </Setter>
+    </Style>
+</Styles>

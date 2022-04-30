@@ -1,48 +1,56 @@
-using MusicDecrypto.Library.Common;
 using System;
 using System.IO;
 using System.Linq;
+using System.Numerics;
+using System.Text;
+using MusicDecrypto.Library.Media;
+using MusicDecrypto.Library.Numerics;
 
 namespace MusicDecrypto.Library.Vendor
 {
-    public sealed class XiamiDecrypto : Decrypto
+    public sealed class Xiami : DecryptoBase
     {
         private static readonly byte[] _magic = { 0x69, 0x66, 0x6d, 0x74 };
-        private static readonly byte[] _separator = { 0x69, 0x66, 0x6d, 0x74 };
+        private static readonly byte[] _separator = { 0xfe, 0xfe, 0xfe, 0xfe };
 
-        public XiamiDecrypto(FileInfo file, AudioTypes type = AudioTypes.Undefined) : base(file, type) { }
+        public Xiami(MarshalMemoryStream buffer, string name, AudioTypes type = AudioTypes.Undefined) : base(buffer, name, type) { }
 
-        protected override void PreDecrypt()
+        protected override void Process()
         {
             // Check file header
-            if (!_reader.ReadBytes(8).AsSpan(0, 4).SequenceEqual(_magic) || !_reader.ReadBytes(4).SequenceEqual(_separator))
+            if (!Reader.ReadBytes(8).AsSpan(0, 4).SequenceEqual(_magic) || !Reader.ReadBytes(4).SequenceEqual(_separator))
             {
-                if (_input.Extension.TrimStart('.') == "xm")
-                    throw new DecryptoException("File header is unexpected.", _input.FullName);
-                else
-                    throw new DecryptoException("File seems unencrypted.", _input.FullName);
+                throw new InvalidDataException(
+                    Path.GetExtension(Name).TrimStart('.') == "xm"
+                    ? "File header is unexpected."
+                    : "File seems unencrypted.");
             }
-        }
 
-        protected override void Decrypt()
-        {
             _ = _buffer.Seek(4, SeekOrigin.Begin);
-            string identifier = _reader.ReadChars(4).ToString();
-            if (_musicType == AudioTypes.Undefined) _musicType = identifier switch
+            var identifier = Encoding.ASCII.GetString(Reader.ReadBytes(4));
+            if (_audioType == AudioTypes.Undefined) _audioType = identifier switch
             {
                 " A4M" => AudioTypes.Mp4,
                 "FLAC" => AudioTypes.Flac,
                 " MP3" => AudioTypes.Mpeg,
-                " WAV" => AudioTypes.Wav,
-                _ => throw new DecryptoException("Unable to determine media format.", _input.FullName),
+                " WAV" => AudioTypes.XWav,
+                _ => throw new InvalidDataException("Unable to determine media format."),
             };
 
-            int offset = _reader.ReadByte() | _reader.ReadByte() << 8 | _reader.ReadByte() << 16;
-            byte key = _reader.ReadByte();
-            _buffer.Origin = 0x10 + offset;
-            _buffer.PerformEach(x => (byte)((x - key) ^ 0xff));
-        }
+            _ = _buffer.Seek(12, SeekOrigin.Begin);
+            int offset = Reader.ReadByte() | Reader.ReadByte() << 8 | Reader.ReadByte() << 16;
+            byte key = Reader.ReadByte();
+            _buffer.Origin = 0x10;
 
-        protected override void PostDecrypt() { }
+            int step = Simd.LaneCount;
+            var k = new Vector<byte>(key);
+            var data = _buffer.AsSimdPaddedSpan(offset);
+            for (int i = 0; i < data.Length; i += step)
+            {
+                var window = data[i..(i + step)];
+                var v = new Vector<byte>(window);
+                (~(v - k)).CopyTo(window);
+            }
+        }
     }
 }

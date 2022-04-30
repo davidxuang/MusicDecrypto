@@ -1,11 +1,15 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.31129.286
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.32014.148
 MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MusicDecrypto.Library", "MusicDecrypto.Library\MusicDecrypto.Library.csproj", "{8BF0E789-51D5-4146-9AAC-D46D1B6FA92E}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MusicDecrypto.Library.Tests", "MusicDecrypto.Library.Tests\MusicDecrypto.Library.Tests.csproj", "{24471CC3-62AD-469C-AA61-5422EFAAE31F}"
+EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MusicDecrypto.Commandline", "MusicDecrypto.Commandline\MusicDecrypto.Commandline.csproj", "{9D8BECD7-5D5B-4886-9444-25A6DBAC68B7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MusicDecrypto.Library", "MusicDecrypto.Library\MusicDecrypto.Library.csproj", "{8BF0E789-51D5-4146-9AAC-D46D1B6FA92E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MusicDecrypto.Avalonia", "MusicDecrypto.Avalonia\MusicDecrypto.Avalonia.csproj", "{9D9680FF-66ED-4753-8540-CE1C5A48F4B4}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -13,14 +17,22 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{9D8BECD7-5D5B-4886-9444-25A6DBAC68B7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{9D8BECD7-5D5B-4886-9444-25A6DBAC68B7}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{9D8BECD7-5D5B-4886-9444-25A6DBAC68B7}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{9D8BECD7-5D5B-4886-9444-25A6DBAC68B7}.Release|Any CPU.Build.0 = Release|Any CPU
 		{8BF0E789-51D5-4146-9AAC-D46D1B6FA92E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{8BF0E789-51D5-4146-9AAC-D46D1B6FA92E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8BF0E789-51D5-4146-9AAC-D46D1B6FA92E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8BF0E789-51D5-4146-9AAC-D46D1B6FA92E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{24471CC3-62AD-469C-AA61-5422EFAAE31F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{24471CC3-62AD-469C-AA61-5422EFAAE31F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{24471CC3-62AD-469C-AA61-5422EFAAE31F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{24471CC3-62AD-469C-AA61-5422EFAAE31F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9D8BECD7-5D5B-4886-9444-25A6DBAC68B7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9D8BECD7-5D5B-4886-9444-25A6DBAC68B7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9D8BECD7-5D5B-4886-9444-25A6DBAC68B7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9D8BECD7-5D5B-4886-9444-25A6DBAC68B7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9D9680FF-66ED-4753-8540-CE1C5A48F4B4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9D9680FF-66ED-4753-8540-CE1C5A48F4B4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9D9680FF-66ED-4753-8540-CE1C5A48F4B4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9D9680FF-66ED-4753-8540-CE1C5A48F4B4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
