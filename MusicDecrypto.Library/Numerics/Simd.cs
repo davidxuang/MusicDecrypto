@@ -26,13 +26,19 @@ namespace MusicDecrypto.Library.Numerics
             return a | b;
         }
 
-        internal static void Align(Span<byte> buffer, int length)
+        internal static void Align(Span<byte> buffer, int length, bool strict = true)
         {
             if (length % LaneCount == 0)
                 return;
 
-            if (buffer.Length != GetPaddedLength(length))
-                throw new ArgumentException("Length of array alignment buffer is incorrect.", nameof(buffer));
+            if (strict)
+            {
+                if (buffer.Length != GetPaddedLength(length))
+                    throw new ArgumentException("Length of buffer is incorrect.", nameof(buffer));
+            }
+            else if (buffer.Length < GetPaddedLength(length))
+                throw new ArgumentException("Length of buffer is too short.", nameof(buffer));
+                
 
             var copied = length;
             while (buffer.Length > copied)

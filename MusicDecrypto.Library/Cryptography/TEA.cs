@@ -3,7 +3,7 @@ using System.Buffers.Binary;
 
 namespace MusicDecrypto.Library.Cryptography
 {
-    internal sealed class TEA
+    internal struct Tea
     {
         private const int _sizeBlock = 8;
         private const int _sizeKey = 16;
@@ -13,7 +13,7 @@ namespace MusicDecrypto.Library.Cryptography
         private readonly uint _rounds;
 
         /// <exception cref="ArgumentException">Thrown when any of the arguments is illegal.</exception>
-        internal TEA(ReadOnlySpan<byte> key, uint rounds = 64)
+        internal Tea(ReadOnlySpan<byte> key, uint rounds = 64)
         {
             if (key.Length != _sizeKey)
                 throw new ArgumentException($"Length of TEA key should be {_sizeKey}.", nameof(key));
@@ -31,25 +31,25 @@ namespace MusicDecrypto.Library.Cryptography
         }
 
         /// <exception cref="ArgumentException">Thown when buffer length is insufficient.</exception>
-        internal void Decrypt(ReadOnlySpan<byte> src, Span<byte> dst)
+        internal void DecryptBlock(Span<byte> buffer)
         {
-            if (src.Length < _sizeBlock || dst.Length < _sizeBlock)
-                throw new ArgumentException("Decrypt buffer is too small.", nameof(dst));
+            if (buffer.Length < _sizeBlock)
+                throw new ArgumentException("Decrypt buffer is too small.", nameof(buffer));
 
-            uint vl = BinaryPrimitives.ReadUInt32BigEndian(src[..4]);
-            uint vh = BinaryPrimitives.ReadUInt32BigEndian(src[4..8]);
+            uint vl = BinaryPrimitives.ReadUInt32BigEndian(buffer[..4]);
+            uint vh = BinaryPrimitives.ReadUInt32BigEndian(buffer[4..8]);
 
             uint sum = _delta * (_rounds / 2);
 
-            for (var i = 0; i < _rounds / 2; i++)
+            for (int i = 0; i < _rounds / 2; i++)
             {
                 vh -= ((vl << 4) + _key[2]) ^ (vl + sum) ^ ((vl >> 5) + _key[3]);
                 vl -= ((vh << 4) + _key[0]) ^ (vh + sum) ^ ((vh >> 5) + _key[1]);
                 sum -= _delta;
             }
 
-            BinaryPrimitives.WriteUInt32BigEndian(dst[..4], vl);
-            BinaryPrimitives.WriteUInt32BigEndian(dst[4..8], vh);
+            BinaryPrimitives.WriteUInt32BigEndian(buffer[..4], vl);
+            BinaryPrimitives.WriteUInt32BigEndian(buffer[4..8], vh);
         }
     }
 }

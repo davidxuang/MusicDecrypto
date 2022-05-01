@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Buffers.Binary;
 using System.IO;
+using System.Numerics;
 using System.Text;
 using MusicDecrypto.Library.Cryptography;
 using MusicDecrypto.Library.Media;
+using MusicDecrypto.Library.Numerics;
 using MusicDecrypto.Library.Vendor.Tencent;
 
 namespace MusicDecrypto.Library.Vendor
@@ -19,12 +21,21 @@ namespace MusicDecrypto.Library.Vendor
             const int saltLength = 2;
             const int zeroLength = 7;
 
-            var raw = Convert.FromBase64String(value).AsSpan();
+            if (Simd.LaneCount % 8 != 0 || Simd.LaneCount <= 0)
+                throw new InvalidOperationException("SIMD width should be at a multiple of 8.");
 
-            if (raw.Length < 24)
+            var data = Convert.FromBase64String(value).AsSpan();
+            int length = data.Length, step = Simd.LaneCount;
+
+            if (length < 24)
                 throw new InvalidDataException("Key is too small.");
-            else if (raw.Length % 8 != 0)
+            else if (length % 8 != 0)
                 throw new InvalidDataException("Key is not in blocks of 8.");
+
+            var raw = (stackalloc byte[length + step - 8]);
+            var dst = (stackalloc byte[length + step - 8]);
+            data.CopyTo(raw);
+            data[8..].CopyTo(dst);
 
             var teaKey = (stackalloc byte[16]);
             for (int i = 0; i < 8; i++)
@@ -33,66 +44,47 @@ namespace MusicDecrypto.Library.Vendor
                 teaKey[2 * i + 1] = raw[i];
             }
 
-            var tea = new TEA(teaKey, 32);
-            var dest = (stackalloc byte[8]);
-            tea.Decrypt(raw[8..], dest);
+            var tea = new Tea(teaKey, 32);
 
-            int padLength = dest[0] & 0x7;
-            int keyLength = raw.Length - 1 - padLength - saltLength - zeroLength;
+            tea.DecryptBlock(dst[..8]);
+            int padLength = dst[0] & 0x7;
 
             if (padLength + saltLength != 8)
                 throw new InvalidDataException("Invalid padding length.");
 
-            var preIV = (stackalloc byte[8]);
-            var curIV = raw[8..16];
-            var key = (stackalloc byte[keyLength]);
-
-            var rawIndex = 16;
-            var destIndex = padLength + 1;
-
-            for (int i = 0; i < saltLength; i++)
             {
-                if (destIndex == 8)
+                var buf = (stackalloc byte[Simd.LaneCount]);
+
+                for (int i = 8; i < length - 8; i += 8)
                 {
-                    preIV = curIV;
-                    curIV = raw[rawIndex..(rawIndex + 8)];
+                    var pre = dst[(i - 8)..];
+                    var cur = dst[i..];
 
-                    for (int j = 0; j < 8; j++)
-                        dest[j] ^= raw[rawIndex + j];
-                    tea.Decrypt(dest, dest);
+                    var x = new Vector<byte>(pre);
+                    var y = new Vector<byte>(cur);
+                    (x ^ y).CopyTo(buf);
+                    buf[..8].CopyTo(cur);
 
-                    rawIndex += 8;
-                    destIndex = 0;
+                    tea.DecryptBlock(cur);
                 }
-
-                destIndex++;
             }
 
-            for (int i = 8; i < keyLength; i++)
+            for (int i = 8; i < length - 8; i += step)
             {
-                if (destIndex == 8)
-                {
-                    preIV = curIV;
-                    curIV = raw[rawIndex..(rawIndex + 8)];
+                var window = dst[i..(i + step)];
 
-                    for (int j = 0; j < 8; j++)
-                        dest[j] ^= raw[rawIndex + j];
-                    tea.Decrypt(dest, dest);
-
-                    rawIndex += 8;
-                    destIndex = 0;
-                }
-
-                key[i] = (byte)(dest[destIndex] ^ preIV[destIndex]);
-                destIndex++;
+                var w = new Vector<byte>(window);
+                var s = new Vector<byte>(raw[i..(i + step)]);
+                (w ^ s).CopyTo(window);
             }
 
-            for (int i = 0; i <= zeroLength; i++)
+            foreach (var b in dst[(length - zeroLength)..length])
             {
-                if (dest[destIndex] != preIV[destIndex])
-                    throw new InvalidDataException("Zero check failed");
+                if (b != 0x00)
+                    throw new InvalidDataException("Zero check failed.");
             }
 
+            var key = dst[1..(length - padLength - saltLength - zeroLength)];
             raw[..8].CopyTo(key);
             return key.ToArray();
         }
