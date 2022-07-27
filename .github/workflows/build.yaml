@@ -16,99 +16,101 @@ jobs:
     runs-on: ubuntu-18.04
     container: mcr.microsoft.com/dotnet-buildtools/prereqs:ubuntu-18.04-cross-arm64-20220427171722-6e40d49 # https://github.com/dotnet/versions/blob/main/build-info/docker/image-info.dotnet-dotnet-buildtools-prereqs-docker-main.json
     steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v2
-      with:
-        dotnet-version: '6.0.x'
-    - name: Publish
-      run: |
-        dotnet publish MusicDecrypto.Commandline/MusicDecrypto.Commandline.csproj -c Release -o ./generic
-        dotnet publish MusicDecrypto.Avalonia/MusicDecrypto.Avalonia.csproj -c Release -o ./generic
-        dotnet publish MusicDecrypto.Avalonia/MusicDecrypto.Avalonia.csproj -c Release -r linux-x64 --sc -p:PublishSingleFile=true -p:PublishTrimmed=true -p:TrimMode=copyused -o ./gui-x64
-        dotnet publish MusicDecrypto.Avalonia/MusicDecrypto.Avalonia.csproj -c Release -r linux-arm64 --sc -p:PublishSingleFile=true -p:PublishTrimmed=true -p:TrimMode=copyused -o ./gui-arm64
-    - name: Publish with NativeAOT
-      run: |
-        dotnet add MusicDecrypto.Commandline/MusicDecrypto.Commandline.csproj package Microsoft.DotNet.ILCompiler -v 7.0.0-*
-        dotnet publish MusicDecrypto.Commandline/MusicDecrypto.Commandline.csproj -c Release -r linux-x64 --sc -p:CppCompilerAndLinker=clang-9 -p:IlcInvariantGlobalization=true -p:IlcGenerateStackTraceData=false -p:IlcTrimMetadata=true -o ./cli-x64
-        dotnet add MusicDecrypto.Commandline/MusicDecrypto.Commandline.csproj package runtime.linux-x64.Microsoft.DotNet.ILCompiler -v 7.0.0-*
-        dotnet publish MusicDecrypto.Commandline/MusicDecrypto.Commandline.csproj -c Release -r linux-arm64 --sc -p:CppCompilerAndLinker=clang-9 -p:SysRoot=/crossrootfs/arm64 -p:IlcInvariantGlobalization=true -p:IlcGenerateStackTraceData=false -p:IlcTrimMetadata=true -o ./cli-arm64
-    - name: Extract tag name
-      id: tag
-      if: startsWith(github.ref, 'refs/tags/')
-      uses: olegtarasov/get-tag@v2.1.1
-    - name: Pack
-      if: startsWith(github.ref, 'refs/tags/')
-      run: |
-        tar cavf musicdecrypto-all-$GIT_TAG_NAME-net6.0-noarch.tar.xz -C ./generic/ $(cd ./generic/ && echo *)
-        sha256sum musicdecrypto-all-$GIT_TAG_NAME-net6.0-noarch.tar.xz > musicdecrypto-all-$GIT_TAG_NAME-net6.0-noarch.tar.xz.sha256
-        strip ./cli-x64/musicdecrypto
-        aarch64-linux-gnu-strip ./cli-arm64/musicdecrypto
-        tar cavf musicdecrypto-gui-$GIT_TAG_NAME-linux-x64.tar.xz -C ./gui-x64/ $(cd ./gui-x64/ && echo *)
-        tar cavf musicdecrypto-gui-$GIT_TAG_NAME-linux-arm64.tar.xz -C ./gui-arm64/ $(cd ./gui-arm64/ && echo *)
-        tar cavf musicdecrypto-cli-$GIT_TAG_NAME-linux-x64.tar.xz -C ./cli-x64/ musicdecrypto
-        tar cavf musicdecrypto-cli-$GIT_TAG_NAME-linux-arm64.tar.xz -C ./cli-arm64/ musicdecrypto
-        sha256sum musicdecrypto-gui-$GIT_TAG_NAME-linux-x64.tar.xz > musicdecrypto-gui-$GIT_TAG_NAME-linux-x64.tar.xz.sha256
-        sha256sum musicdecrypto-gui-$GIT_TAG_NAME-linux-arm64.tar.xz > musicdecrypto-gui-$GIT_TAG_NAME-linux-arm64.tar.xz.sha256
-        sha256sum musicdecrypto-cli-$GIT_TAG_NAME-linux-x64.tar.xz > musicdecrypto-cli-$GIT_TAG_NAME-linux-x64.tar.xz.sha256
-        sha256sum musicdecrypto-cli-$GIT_TAG_NAME-linux-arm64.tar.xz > musicdecrypto-cli-$GIT_TAG_NAME-linux-arm64.tar.xz.sha256
-    - name: Release
-      if: startsWith(github.ref, 'refs/tags/')
-      uses: softprops/action-gh-release@v1
-      with:
-        files: |
-          musicdecrypto-all-${{ steps.tag.outputs.tag }}-net6.0-noarch.tar.xz
-          musicdecrypto-all-${{ steps.tag.outputs.tag }}-net6.0-noarch.tar.xz.sha256
-          musicdecrypto-gui-${{ steps.tag.outputs.tag }}-linux-x64.tar.xz
-          musicdecrypto-gui-${{ steps.tag.outputs.tag }}-linux-x64.tar.xz.sha256
-          musicdecrypto-gui-${{ steps.tag.outputs.tag }}-linux-arm64.tar.xz
-          musicdecrypto-gui-${{ steps.tag.outputs.tag }}-linux-arm64.tar.xz.sha256
-          musicdecrypto-cli-${{ steps.tag.outputs.tag }}-linux-x64.tar.xz
-          musicdecrypto-cli-${{ steps.tag.outputs.tag }}-linux-x64.tar.xz.sha256
-          musicdecrypto-cli-${{ steps.tag.outputs.tag }}-linux-arm64.tar.xz
-          musicdecrypto-cli-${{ steps.tag.outputs.tag }}-linux-arm64.tar.xz.sha256
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v2
+        with:
+          dotnet-version: '6.0.x'
+      - name: Publish
+        run: |
+          dotnet publish MusicDecrypto.Commandline/MusicDecrypto.Commandline.csproj -c Release -o ./generic
+          dotnet publish MusicDecrypto.Avalonia/MusicDecrypto.Avalonia.csproj -c Release -o ./generic
+          dotnet publish MusicDecrypto.Avalonia/MusicDecrypto.Avalonia.csproj -c Release -r linux-x64 --sc -p:PublishSingleFile=true -p:PublishTrimmed=true -p:TrimMode=copyused -o ./gui-x64
+          dotnet publish MusicDecrypto.Avalonia/MusicDecrypto.Avalonia.csproj -c Release -r linux-arm64 --sc -p:PublishSingleFile=true -p:PublishTrimmed=true -p:TrimMode=copyused -o ./gui-arm64
+      - name: Publish with NativeAOT
+        run: |
+          dotnet add MusicDecrypto.Commandline/MusicDecrypto.Commandline.csproj package Microsoft.DotNet.ILCompiler -v 7.0.0-*
+          dotnet publish MusicDecrypto.Commandline/MusicDecrypto.Commandline.csproj -c Release -r linux-x64 --sc -p:CppCompilerAndLinker=clang-9 -p:IlcInvariantGlobalization=true -p:IlcGenerateStackTraceData=false -p:IlcTrimMetadata=true -o ./cli-x64
+          dotnet add MusicDecrypto.Commandline/MusicDecrypto.Commandline.csproj package runtime.linux-x64.Microsoft.DotNet.ILCompiler -v 7.0.0-*
+          dotnet publish MusicDecrypto.Commandline/MusicDecrypto.Commandline.csproj -c Release -r linux-arm64 --sc -p:CppCompilerAndLinker=clang-9 -p:SysRoot=/crossrootfs/arm64 -p:IlcInvariantGlobalization=true -p:IlcGenerateStackTraceData=false -p:IlcTrimMetadata=true -o ./cli-arm64
+      - name: Extract tag name
+        id: tag
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: olegtarasov/get-tag@v2.1.1
+      - name: Pack
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          tar cavf musicdecrypto-all-$GIT_TAG_NAME-net6.0-noarch.tar.xz -C ./generic/ $(cd ./generic/ && echo *)
+          sha256sum musicdecrypto-all-$GIT_TAG_NAME-net6.0-noarch.tar.xz > musicdecrypto-all-$GIT_TAG_NAME-net6.0-noarch.tar.xz.sha256
+          strip ./cli-x64/musicdecrypto
+          aarch64-linux-gnu-strip ./cli-arm64/musicdecrypto
+          tar cavf musicdecrypto-gui-$GIT_TAG_NAME-linux-x64.tar.xz -C ./gui-x64/ $(cd ./gui-x64/ && echo *)
+          tar cavf musicdecrypto-gui-$GIT_TAG_NAME-linux-arm64.tar.xz -C ./gui-arm64/ $(cd ./gui-arm64/ && echo *)
+          tar cavf musicdecrypto-cli-$GIT_TAG_NAME-linux-x64.tar.xz -C ./cli-x64/ musicdecrypto
+          tar cavf musicdecrypto-cli-$GIT_TAG_NAME-linux-arm64.tar.xz -C ./cli-arm64/ musicdecrypto
+          sha256sum musicdecrypto-gui-$GIT_TAG_NAME-linux-x64.tar.xz > musicdecrypto-gui-$GIT_TAG_NAME-linux-x64.tar.xz.sha256
+          sha256sum musicdecrypto-gui-$GIT_TAG_NAME-linux-arm64.tar.xz > musicdecrypto-gui-$GIT_TAG_NAME-linux-arm64.tar.xz.sha256
+          sha256sum musicdecrypto-cli-$GIT_TAG_NAME-linux-x64.tar.xz > musicdecrypto-cli-$GIT_TAG_NAME-linux-x64.tar.xz.sha256
+          sha256sum musicdecrypto-cli-$GIT_TAG_NAME-linux-arm64.tar.xz > musicdecrypto-cli-$GIT_TAG_NAME-linux-arm64.tar.xz.sha256
+      - name: Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            musicdecrypto-all-${{ steps.tag.outputs.tag }}-net6.0-noarch.tar.xz
+            musicdecrypto-all-${{ steps.tag.outputs.tag }}-net6.0-noarch.tar.xz.sha256
+            musicdecrypto-gui-${{ steps.tag.outputs.tag }}-linux-x64.tar.xz
+            musicdecrypto-gui-${{ steps.tag.outputs.tag }}-linux-x64.tar.xz.sha256
+            musicdecrypto-gui-${{ steps.tag.outputs.tag }}-linux-arm64.tar.xz
+            musicdecrypto-gui-${{ steps.tag.outputs.tag }}-linux-arm64.tar.xz.sha256
+            musicdecrypto-cli-${{ steps.tag.outputs.tag }}-linux-x64.tar.xz
+            musicdecrypto-cli-${{ steps.tag.outputs.tag }}-linux-x64.tar.xz.sha256
+            musicdecrypto-cli-${{ steps.tag.outputs.tag }}-linux-arm64.tar.xz
+            musicdecrypto-cli-${{ steps.tag.outputs.tag }}-linux-arm64.tar.xz.sha256
   win:
     runs-on: windows-latest
     steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-    - name: Publish
-      run: |
-        dotnet publish MusicDecrypto.Avalonia/MusicDecrypto.Avalonia.csproj -c Release -r win-x64 --sc -p:PublishSingleFile=true -p:PublishTrimmed=true -p:TrimMode=copyused -o ./gui-x64
-        dotnet publish MusicDecrypto.Avalonia/MusicDecrypto.Avalonia.csproj -c Release -r win-arm64 --sc -p:PublishSingleFile=true -p:PublishTrimmed=true -p:TrimMode=copyused -o ./gui-arm64
-    - name: Publish with NativeAOT
-      run: |
-        dotnet add MusicDecrypto.Commandline/MusicDecrypto.Commandline.csproj package Microsoft.DotNet.ILCompiler -v 7.0.0-*
-        dotnet publish MusicDecrypto.Commandline/MusicDecrypto.Commandline.csproj -c Release -r win-x64 --sc -p:IlcInvariantGlobalization=true -p:IlcGenerateStackTraceData=false -p:IlcTrimMetadata=true -o ./cli-x64
-        dotnet add MusicDecrypto.Commandline/MusicDecrypto.Commandline.csproj package runtime.win-x64.Microsoft.DotNet.ILCompiler -v 7.0.0-*
-        dotnet publish MusicDecrypto.Commandline/MusicDecrypto.Commandline.csproj -c Release -r win-arm64 --sc -p:IlcInvariantGlobalization=true -p:IlcGenerateStackTraceData=false -p:IlcTrimMetadata=true -o ./cli-arm64
-    - name: Extract tag name
-      id: tag
-      if: startsWith(github.ref, 'refs/tags/')
-      uses: olegtarasov/get-tag@v2.1.1
-    - name: Pack
-      if: startsWith(github.ref, 'refs/tags/')
-      run: |
-        7z a musicdecrypto-gui-$env:GIT_TAG_NAME-win-x64.7z .\gui-x64\*
-        7z a musicdecrypto-gui-$env:GIT_TAG_NAME-win-arm64.7z .\gui-arm64\*
-        7z a musicdecrypto-cli-$env:GIT_TAG_NAME-win-x64.7z .\cli-x64\musicdecrypto.exe
-        7z a musicdecrypto-cli-$env:GIT_TAG_NAME-win-arm64.7z .\cli-arm64\musicdecrypto.exe
-        (Get-FileHash musicdecrypto-gui-$env:GIT_TAG_NAME-win-x64.7z SHA256).Hash + " musicdecrypto-gui-$env:GIT_TAG_NAME-win-x64.7z" > musicdecrypto-gui-$env:GIT_TAG_NAME-win-x64.7z.sha256
-        (Get-FileHash musicdecrypto-gui-$env:GIT_TAG_NAME-win-arm64.7z SHA256).Hash + " musicdecrypto-gui-$env:GIT_TAG_NAME-win-arm64.7z" > musicdecrypto-gui-$env:GIT_TAG_NAME-win-arm64.7z.sha256
-        (Get-FileHash musicdecrypto-cli-$env:GIT_TAG_NAME-win-x64.7z SHA256).Hash + " musicdecrypto-cli-$env:GIT_TAG_NAME-win-x64.7z" > musicdecrypto-cli-$env:GIT_TAG_NAME-win-x64.7z.sha256
-        (Get-FileHash musicdecrypto-cli-$env:GIT_TAG_NAME-win-arm64.7z SHA256).Hash + " musicdecrypto-cli-$env:GIT_TAG_NAME-win-arm64.7z" > musicdecrypto-cli-$env:GIT_TAG_NAME-win-arm64.7z.sha256
-    - name: Release
-      if: startsWith(github.ref, 'refs/tags/')
-      uses: softprops/action-gh-release@v1
-      with:
-        files: |
-          musicdecrypto-gui-${{ steps.tag.outputs.tag }}-win-x64.7z
-          musicdecrypto-gui-${{ steps.tag.outputs.tag }}-win-x64.7z.sha256
-          musicdecrypto-gui-${{ steps.tag.outputs.tag }}-win-arm64.7z
-          musicdecrypto-gui-${{ steps.tag.outputs.tag }}-win-arm64.7z.sha256
-          musicdecrypto-cli-${{ steps.tag.outputs.tag }}-win-x64.7z
-          musicdecrypto-cli-${{ steps.tag.outputs.tag }}-win-x64.7z.sha256
-          musicdecrypto-cli-${{ steps.tag.outputs.tag }}-win-arm64.7z
-          musicdecrypto-cli-${{ steps.tag.outputs.tag }}-win-arm64.7z.sha256
-        body: '*x64 variant of CLI was built targeting x86-64-v3 (AVX2)*'
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Publish
+        run: |
+          dotnet publish MusicDecrypto.Avalonia/MusicDecrypto.Avalonia.csproj -c Release -r win-x64 --sc -p:PublishSingleFile=true -p:PublishTrimmed=true -p:TrimMode=copyused -o ./gui-x64
+          dotnet publish MusicDecrypto.Avalonia/MusicDecrypto.Avalonia.csproj -c Release -r win-arm64 --sc -p:PublishSingleFile=true -p:PublishTrimmed=true -p:TrimMode=copyused -o ./gui-arm64
+      - name: Publish with NativeAOT
+        run: |
+          dotnet add MusicDecrypto.Commandline/MusicDecrypto.Commandline.csproj package Microsoft.DotNet.ILCompiler -v 7.0.0-*
+          dotnet publish MusicDecrypto.Commandline/MusicDecrypto.Commandline.csproj -c Release -r win-x64 --sc -p:IlcInvariantGlobalization=true -p:IlcGenerateStackTraceData=false -p:IlcTrimMetadata=true -o ./cli-x64
+          dotnet add MusicDecrypto.Commandline/MusicDecrypto.Commandline.csproj package runtime.win-x64.Microsoft.DotNet.ILCompiler -v 7.0.0-*
+          dotnet publish MusicDecrypto.Commandline/MusicDecrypto.Commandline.csproj -c Release -r win-arm64 --sc -p:IlcInvariantGlobalization=true -p:IlcGenerateStackTraceData=false -p:IlcTrimMetadata=true -o ./cli-arm64
+      - name: Extract tag name
+        id: tag
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: olegtarasov/get-tag@v2.1.1
+      - name: Pack
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          7z a musicdecrypto-gui-$env:GIT_TAG_NAME-win-x64.7z .\gui-x64\*
+          7z a musicdecrypto-gui-$env:GIT_TAG_NAME-win-arm64.7z .\gui-arm64\*
+          7z a musicdecrypto-cli-$env:GIT_TAG_NAME-win-x64.7z .\cli-x64\musicdecrypto.exe
+          7z a musicdecrypto-cli-$env:GIT_TAG_NAME-win-arm64.7z .\cli-arm64\musicdecrypto.exe
+          (Get-FileHash musicdecrypto-gui-$env:GIT_TAG_NAME-win-x64.7z SHA256).Hash + " musicdecrypto-gui-$env:GIT_TAG_NAME-win-x64.7z" > musicdecrypto-gui-$env:GIT_TAG_NAME-win-x64.7z.sha256
+          (Get-FileHash musicdecrypto-gui-$env:GIT_TAG_NAME-win-arm64.7z SHA256).Hash + " musicdecrypto-gui-$env:GIT_TAG_NAME-win-arm64.7z" > musicdecrypto-gui-$env:GIT_TAG_NAME-win-arm64.7z.sha256
+          (Get-FileHash musicdecrypto-cli-$env:GIT_TAG_NAME-win-x64.7z SHA256).Hash + " musicdecrypto-cli-$env:GIT_TAG_NAME-win-x64.7z" > musicdecrypto-cli-$env:GIT_TAG_NAME-win-x64.7z.sha256
+          (Get-FileHash musicdecrypto-cli-$env:GIT_TAG_NAME-win-arm64.7z SHA256).Hash + " musicdecrypto-cli-$env:GIT_TAG_NAME-win-arm64.7z" > musicdecrypto-cli-$env:GIT_TAG_NAME-win-arm64.7z.sha256
+      - name: Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            musicdecrypto-gui-${{ steps.tag.outputs.tag }}-win-x64.7z
+            musicdecrypto-gui-${{ steps.tag.outputs.tag }}-win-x64.7z.sha256
+            musicdecrypto-gui-${{ steps.tag.outputs.tag }}-win-arm64.7z
+            musicdecrypto-gui-${{ steps.tag.outputs.tag }}-win-arm64.7z.sha256
+            musicdecrypto-cli-${{ steps.tag.outputs.tag }}-win-x64.7z
+            musicdecrypto-cli-${{ steps.tag.outputs.tag }}-win-x64.7z.sha256
+            musicdecrypto-cli-${{ steps.tag.outputs.tag }}-win-arm64.7z
+            musicdecrypto-cli-${{ steps.tag.outputs.tag }}-win-arm64.7z.sha256
+          body: |-
+            - `noarch` variant depends on [.NET Runtime](https://dotnet.microsoft.com/en-us/download);
+            - `x64` variant of CLI was built targeting `x86-64-v3` (AVX2).
