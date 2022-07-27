@@ -8,29 +8,29 @@
   </PropertyGroup>
 
   <ItemGroup>
-	<None Remove="DataSets\mflac0_rc4.bin" />
-	<None Remove="DataSets\mflac0_rc4_enc.bin" />
-	<None Remove="DataSets\mflac0_rc4_key.bin" />
-	<None Remove="DataSets\mflac0_rc4_key_enc.bin" />
-	<None Remove="DataSets\mflac0_rc4_suffix.bin" />
-	<None Remove="DataSets\mflac_map.bin" />
-	<None Remove="DataSets\mflac_map_enc.bin" />
-	<None Remove="DataSets\mflac_map_key.bin" />
-	<None Remove="DataSets\mflac_map_key_enc.bin" />
-	<None Remove="DataSets\mflac_map_suffix.bin" />
-	<None Remove="DataSets\mflac_rc4.bin" />
-	<None Remove="DataSets\mflac_rc4_enc.bin" />
-	<None Remove="DataSets\mflac_rc4_key.bin" />
-	<None Remove="DataSets\mflac_rc4_key_enc.bin" />
-	<None Remove="DataSets\mflac_rc4_suffix.bin" />
-	<None Remove="DataSets\mgg_map.bin" />
-	<None Remove="DataSets\mgg_map_enc.bin" />
-	<None Remove="DataSets\mgg_map_key.bin" />
-	<None Remove="DataSets\mgg_map_key_enc.bin" />
-	<None Remove="DataSets\mgg_map_suffix.bin" />
-	<None Remove="DataSets\qmc0_static.bin" />
-	<None Remove="DataSets\qmc0_static_enc.bin" />
-	<None Remove="DataSets\qmc0_static_suffix.bin" />
+    <None Remove="DataSets\mflac0_rc4.bin" />
+    <None Remove="DataSets\mflac0_rc4_enc.bin" />
+    <None Remove="DataSets\mflac0_rc4_key.bin" />
+    <None Remove="DataSets\mflac0_rc4_key_enc.bin" />
+    <None Remove="DataSets\mflac0_rc4_suffix.bin" />
+    <None Remove="DataSets\mflac_map.bin" />
+    <None Remove="DataSets\mflac_map_enc.bin" />
+    <None Remove="DataSets\mflac_map_key.bin" />
+    <None Remove="DataSets\mflac_map_key_enc.bin" />
+    <None Remove="DataSets\mflac_map_suffix.bin" />
+    <None Remove="DataSets\mflac_rc4.bin" />
+    <None Remove="DataSets\mflac_rc4_enc.bin" />
+    <None Remove="DataSets\mflac_rc4_key.bin" />
+    <None Remove="DataSets\mflac_rc4_key_enc.bin" />
+    <None Remove="DataSets\mflac_rc4_suffix.bin" />
+    <None Remove="DataSets\mgg_map.bin" />
+    <None Remove="DataSets\mgg_map_enc.bin" />
+    <None Remove="DataSets\mgg_map_key.bin" />
+    <None Remove="DataSets\mgg_map_key_enc.bin" />
+    <None Remove="DataSets\mgg_map_suffix.bin" />
+    <None Remove="DataSets\qmc0_static.bin" />
+    <None Remove="DataSets\qmc0_static_enc.bin" />
+    <None Remove="DataSets\qmc0_static_suffix.bin" />
     <EmbeddedResource Include="DataSets\mflac0_rc4.bin" />
     <EmbeddedResource Include="DataSets\mflac0_rc4_enc.bin" />
     <EmbeddedResource Include="DataSets\mflac0_rc4_key.bin" />
@@ -57,7 +57,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.1.*" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.2.*" />
     <PackageReference Include="MSTest.TestAdapter" Version="2.2.*" />
     <PackageReference Include="MSTest.TestFramework" Version="2.2.*" />
     <PackageReference Include="coverlet.collector" Version="3.1.*" />
