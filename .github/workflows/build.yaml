@@ -14,7 +14,7 @@ concurrency:
 jobs:
   linux:
     runs-on: ubuntu-18.04
-    container: mcr.microsoft.com/dotnet-buildtools/prereqs:ubuntu-18.04-cross-arm64-20220427171722-6e40d49 # https://github.com/dotnet/versions/blob/main/build-info/docker/image-info.dotnet-dotnet-buildtools-prereqs-docker-main.json
+    container: mcr.microsoft.com/dotnet-buildtools/prereqs:ubuntu-18.04-cross-arm64-staging # https://github.com/dotnet/versions/blob/main/build-info/docker/image-info.dotnet-dotnet-buildtools-prereqs-docker-main.json
     steps:
       - name: Checkout
         uses: actions/checkout@v2

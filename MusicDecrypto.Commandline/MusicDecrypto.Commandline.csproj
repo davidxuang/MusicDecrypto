@@ -4,7 +4,7 @@
     <TargetFramework>net6.0</TargetFramework>
     <AssemblyName>musicdecrypto</AssemblyName>
     <OutputType>Exe</OutputType>
-    <Version>2.0.1</Version>
+    <Version>2.1.0</Version>
 	<Nullable>enable</Nullable>
   </PropertyGroup>
 
@@ -22,7 +22,7 @@
   
   <ItemGroup>
     <RdXmlFile Include="rd.xml" />
-    <IlcArg Include="--instructionset:avx,avx2,aes,bmi,bmi2,fma,lzcnt,pclmul,popcnt,-avxvnni" Condition=" $(RuntimeIdentifier.EndsWith('x64')) " />
+    <IlcArg Include="--instruction-set:avx,avx2,aes,bmi,bmi2,fma,lzcnt,pclmul,popcnt,-avxvnni" Condition=" $(RuntimeIdentifier.EndsWith('x64')) " />
   </ItemGroup>
 
 </Project>

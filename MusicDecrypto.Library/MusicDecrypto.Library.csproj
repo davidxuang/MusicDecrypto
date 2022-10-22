@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
     <AssemblyName>libmusicdecrypto</AssemblyName>
-    <Version>2.0.1</Version>
+    <Version>2.1.0</Version>
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
@@ -14,7 +14,7 @@
   <ItemGroup>
     <PackageReference Include="NativeMemoryArray" Version="1.2.*" />
     <PackageReference Include="System.Text.Json" Version="6.0.*" />
-    <PackageReference Include="TagLibSharp" Version="2.2.*" />
+    <PackageReference Include="TagLibSharp" Version="2.3.*" />
   </ItemGroup>
 
 </Project>

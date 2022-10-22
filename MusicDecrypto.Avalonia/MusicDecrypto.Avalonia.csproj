@@ -1,10 +1,10 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 	
     <PropertyGroup>
       <TargetFramework>net6.0</TargetFramework>
       <AssemblyName>musicdecrypto-avalonia</AssemblyName>
       <OutputType>WinExe</OutputType>
-      <VersionPrefix>2.0.1</VersionPrefix>
+      <VersionPrefix>2.1.0</VersionPrefix>
       <Nullable>enable</Nullable>
       <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
     </PropertyGroup>
