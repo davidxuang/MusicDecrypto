@@ -33,3 +33,4 @@ Drag and drop files and/or directories on the CLI program or run:
 
 - [ncmdump](https://github.com/anonymous5l/ncmdump)
 - [unlock-music](https://github.com/ix64/unlock-music)
+- [unlock-mflac](https://github.com/zeroclear/unlock-mflac-20220931)

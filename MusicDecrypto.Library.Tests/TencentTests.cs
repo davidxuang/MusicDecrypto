@@ -45,13 +45,14 @@ namespace MusicDecrypto.Library.Tests
         private static (string, byte[]) LoadKeyDataSet(string name)
         {
             MemoryStream enc = new(), plain = new();
-            Assembly.GetExecutingAssembly().GetManifestResourceStream($"MusicDecrypto.Library.Tests.DataSets.{name}_key_enc.bin")!.CopyTo(enc);
-            Assembly.GetExecutingAssembly().GetManifestResourceStream($"MusicDecrypto.Library.Tests.DataSets.{name}_key.bin")!.CopyTo(plain);
+            Assembly.GetExecutingAssembly().GetManifestResourceStream($"MusicDecrypto.Library.Tests.DataSets.{name}.key.enc")!.CopyTo(enc);
+            Assembly.GetExecutingAssembly().GetManifestResourceStream($"MusicDecrypto.Library.Tests.DataSets.{name}.key")!.CopyTo(plain);
             return (Encoding.ASCII.GetString(enc.GetBuffer()), plain.GetBuffer());
         }
 
         [TestMethod]
         [DataRow("mflac", "map")]
+        [DataRow("mflac_v2", "map")]
         [DataRow("mgg", "map")]
         [DataRow("mflac", "rc4")]
         [DataRow("mflac0", "rc4")]
@@ -59,7 +60,7 @@ namespace MusicDecrypto.Library.Tests
         {
             string enc;
             byte[] plain;
-            (enc, plain) = LoadKeyDataSet($"{extension}_{type}");
+            (enc, plain) = LoadKeyDataSet($"{extension}-{type}");
             CollectionAssert.AreEqual(
                 TencentKey.DecryptKey(enc),
                 plain);
@@ -70,9 +71,9 @@ namespace MusicDecrypto.Library.Tests
         {
             MemoryStream key = new(), plain = new();
             MarshalMemoryStream enc = new();
-            Assembly.GetExecutingAssembly().GetManifestResourceStream($"MusicDecrypto.Library.Tests.DataSets.{name}_key.bin")?.CopyTo(key);
-            Assembly.GetExecutingAssembly().GetManifestResourceStream($"MusicDecrypto.Library.Tests.DataSets.{name}_enc.bin")!.CopyTo(enc);
-            Assembly.GetExecutingAssembly().GetManifestResourceStream($"MusicDecrypto.Library.Tests.DataSets.{name}.bin")!.CopyTo(plain);
+            Assembly.GetExecutingAssembly().GetManifestResourceStream($"MusicDecrypto.Library.Tests.DataSets.{name}.key")?.CopyTo(key);
+            Assembly.GetExecutingAssembly().GetManifestResourceStream($"MusicDecrypto.Library.Tests.DataSets.{name}.payload.enc")!.CopyTo(enc);
+            Assembly.GetExecutingAssembly().GetManifestResourceStream($"MusicDecrypto.Library.Tests.DataSets.{name}.payload")!.CopyTo(plain);
             return (key.GetBuffer(), enc, plain.GetBuffer());
         }
 
@@ -85,7 +86,7 @@ namespace MusicDecrypto.Library.Tests
         public void FileTest(string extension, string type)
         {
             byte[] key, plain;
-            (key, var stream, plain) = LoadFileDataSet($"{extension}_{type}");
+            (key, var stream, plain) = LoadFileDataSet($"{extension}-{type}");
             IStreamCipher cipher = type switch
             {
                 "static" => new StaticCipher(),

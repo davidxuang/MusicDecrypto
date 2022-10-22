@@ -12,81 +12,108 @@ namespace MusicDecrypto.Library.Vendor
 {
     public sealed class TencentKey : TencentBase
     {
+        private static readonly byte[] _v2Magic = Encoding.ASCII.GetBytes("QQMusic EncV2,Key:");
+        private static readonly byte[] _v2TeaKey1 = new byte[] { 0x33, 0x38, 0x36, 0x5A, 0x4A, 0x59, 0x21, 0x40, 0x23, 0x2A, 0x24, 0x25, 0x5E, 0x26, 0x29, 0x28 };
+        private static readonly byte[] _v2TeaKey2 = new byte[] { 0x2A, 0x2A, 0x23, 0x21, 0x28, 0x23, 0x24, 0x25, 0x26, 0x5E, 0x61, 0x31, 0x63, 0x5A, 0x2C, 0x54 };
+
         private IStreamCipher? _cipher;
 
         public TencentKey(MarshalMemoryStream buffer, string name, AudioTypes type) : base(buffer, name, type) { }
 
-        public static byte[] DecryptKey(string value)
+        private static void DecryptTeaCbc(ReadOnlySpan<byte> teaKey, Span<byte> buffer, out int length)
         {
             const int saltLength = 2;
             const int zeroLength = 7;
+            var step = Simd.LaneCount;
 
-            if (Simd.LaneCount % 8 != 0 || Simd.LaneCount <= 0)
-                throw new InvalidOperationException("SIMD width should be at a multiple of 8.");
-
-            var data = Convert.FromBase64String(value).AsSpan();
-            int length = data.Length, step = Simd.LaneCount;
-
-            if (length < 24)
-                throw new InvalidDataException("Key is too small.");
-            else if (length % 8 != 0)
-                throw new InvalidDataException("Key is not in blocks of 8.");
+            length = buffer.Length;
+            if (length % 8 != 0)
+                throw new InvalidDataException("TEA cipher text is not in blocks of 8.");
 
             var raw = (stackalloc byte[length + step - 8]);
-            var dst = (stackalloc byte[length + step - 8]);
-            data.CopyTo(raw);
-            data[8..].CopyTo(dst);
-
-            var teaKey = (stackalloc byte[16]);
-            for (int i = 0; i < 8; i++)
-            {
-                teaKey[2 * i] = (byte)(Math.Abs(Math.Tan(106 + i * 0.1)) * 100);
-                teaKey[2 * i + 1] = raw[i];
-            }
+            var res = (stackalloc byte[length + step - 8]);
+            buffer.CopyTo(raw);
+            buffer.CopyTo(res);
 
             var tea = new Tea(teaKey, 32);
 
-            tea.DecryptBlock(dst[..8]);
-            int padLength = dst[0] & 0x7;
+            tea.DecryptBlock(res[..8]);
+            int padLength = res[0] & 0x7;
 
-            if (padLength + saltLength != 8)
-                throw new InvalidDataException("Invalid padding length.");
+            var reg = (stackalloc byte[Simd.LaneCount]);
 
+            var pre = res;
+            for (int i = 8; i < length; i += 8)
             {
-                var buf = (stackalloc byte[Simd.LaneCount]);
+                var cur = res[i..];
 
-                for (int i = 8; i < length - 8; i += 8)
-                {
-                    var pre = dst[(i - 8)..];
-                    var cur = dst[i..];
+                var x = new Vector<byte>(pre);
+                var y = new Vector<byte>(cur);
+                (x ^ y).CopyTo(reg);
+                reg[..8].CopyTo(cur);
 
-                    var x = new Vector<byte>(pre);
-                    var y = new Vector<byte>(cur);
-                    (x ^ y).CopyTo(buf);
-                    buf[..8].CopyTo(cur);
-
-                    tea.DecryptBlock(cur);
-                }
+                pre = cur;
+                tea.DecryptBlock(cur);
             }
 
-            for (int i = 8; i < length - 8; i += step)
+            for (int i = 8; i < length; i += step)
             {
-                var window = dst[i..(i + step)];
+                var window = res[i..(i + step)];
 
                 var w = new Vector<byte>(window);
-                var s = new Vector<byte>(raw[i..(i + step)]);
+                var s = new Vector<byte>(raw[(i - 8)..(i - 8 + step)]);
                 (w ^ s).CopyTo(window);
             }
 
-            foreach (var b in dst[(length - zeroLength)..length])
+            foreach (var b in res[(length - zeroLength)..length])
             {
                 if (b != 0x00)
                     throw new InvalidDataException("Zero check failed.");
             }
 
-            var key = dst[1..(length - padLength - saltLength - zeroLength)];
-            raw[..8].CopyTo(key);
-            return key.ToArray();
+            var data = res[(1 + padLength + saltLength)..(length - zeroLength)];
+            data.CopyTo(buffer);
+
+            length = data.Length;
+        }
+
+        public static byte[] DecryptKey(string value)
+        {
+            if (Simd.LaneCount % 8 != 0 || Simd.LaneCount <= 0)
+                throw new InvalidOperationException("SIMD width should be a multiple of 8.");
+
+            var key = Convert.FromBase64String(value.TrimEnd('\0')).AsSpan();
+            int length = key.Length, step = Simd.LaneCount;
+
+            if (length < 24)
+                throw new InvalidDataException("Key is too short.");
+
+            if (key[..18].SequenceEqual(_v2Magic))
+            {
+                key = key[18..];
+
+                DecryptTeaCbc(_v2TeaKey1, key, out length);
+                DecryptTeaCbc(_v2TeaKey2, key[..length], out length);
+
+                key = Convert.FromBase64String(Encoding.ASCII.GetString(key[..length])).AsSpan();
+                length = key.Length;
+
+                if (length < 8)
+                    throw new InvalidDataException("Key is too short.");
+            }
+
+            if (length % 8 != 0)
+                throw new InvalidDataException("Key length is not a multiple of 8.");
+
+            var teaKey = (stackalloc byte[16]);
+            for (int i = 0; i < 8; i++)
+            {
+                teaKey[2 * i] = (byte)(Math.Abs(Math.Tan(106 + i * 0.1)) * 100);
+                teaKey[2 * i + 1] = key[i];
+            }
+
+            DecryptTeaCbc(teaKey, key[8..], out length);
+            return key[..(length + 8)].ToArray();
         }
 
         protected override void Process()
@@ -105,7 +132,7 @@ namespace MusicDecrypto.Library.Vendor
                 key = DecryptKey(metas[0]);
                 // var id = ulong.Parse(metas[1]);
             }
-            else if (indicator > 0 && indicator < 0x300)
+            else if (indicator > 0 && indicator < 0x400)
             {
                 length = _buffer.Length - 4 - indicator;
                 try
