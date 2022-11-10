@@ -39,8 +39,8 @@ jobs:
       - name: Pack
         if: startsWith(github.ref, 'refs/tags/')
         run: |
-          tar cavf musicdecrypto-all-$GIT_TAG_NAME-net6.0-noarch.tar.xz -C ./generic/ $(cd ./generic/ && echo *)
-          sha256sum musicdecrypto-all-$GIT_TAG_NAME-net6.0-noarch.tar.xz > musicdecrypto-all-$GIT_TAG_NAME-net6.0-noarch.tar.xz.sha256
+          tar cavf musicdecrypto-all-$GIT_TAG_NAME-net7.0-noarch.tar.xz -C ./generic/ $(cd ./generic/ && echo *)
+          sha256sum musicdecrypto-all-$GIT_TAG_NAME-net7.0-noarch.tar.xz > musicdecrypto-all-$GIT_TAG_NAME-net7.0-noarch.tar.xz.sha256
           strip ./cli-x64/musicdecrypto
           aarch64-linux-gnu-strip ./cli-arm64/musicdecrypto
           tar cavf musicdecrypto-gui-$GIT_TAG_NAME-linux-x64.tar.xz -C ./gui-x64/ $(cd ./gui-x64/ && echo *)
@@ -56,8 +56,8 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            musicdecrypto-all-${{ steps.tag.outputs.tag }}-net6.0-noarch.tar.xz
-            musicdecrypto-all-${{ steps.tag.outputs.tag }}-net6.0-noarch.tar.xz.sha256
+            musicdecrypto-all-${{ steps.tag.outputs.tag }}-net7.0-noarch.tar.xz
+            musicdecrypto-all-${{ steps.tag.outputs.tag }}-net7.0-noarch.tar.xz.sha256
             musicdecrypto-gui-${{ steps.tag.outputs.tag }}-linux-x64.tar.xz
             musicdecrypto-gui-${{ steps.tag.outputs.tag }}-linux-x64.tar.xz.sha256
             musicdecrypto-gui-${{ steps.tag.outputs.tag }}-linux-arm64.tar.xz
