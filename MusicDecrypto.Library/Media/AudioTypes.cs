@@ -1,16 +1,15 @@
-﻿namespace MusicDecrypto.Library.Media
+﻿namespace MusicDecrypto.Library.Media;
+
+public enum AudioTypes
 {
-    public enum AudioTypes
-    {
-        Undefined,
-        Aac,
-        Flac,
-        Mpeg,
-        Mp4,
-        Ogg,
-        XApe,
-        XDff,
-        XWav,
-        XWma,
-    }
+    Undefined,
+    Aac,
+    Flac,
+    Mpeg,
+    Mp4,
+    Ogg,
+    XApe,
+    XDff,
+    XWav,
+    XWma,
 }

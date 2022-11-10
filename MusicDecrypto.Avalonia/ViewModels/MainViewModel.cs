@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
@@ -28,7 +29,7 @@ namespace MusicDecrypto.Avalonia.ViewModels
 
         public void AddFile(string path)
         {
-            if (File.Exists(path) && DecryptoBase.KnownExtensions.ContainsKey(Path.GetExtension(path)))
+            if (File.Exists(path) && DecryptoFactory.KnownExtensions.ContainsKey(Path.GetExtension(path)))
             {
                 var item = new Item(path);
                 Items.Add(item);
@@ -59,12 +60,10 @@ namespace MusicDecrypto.Avalonia.ViewModels
                 }
                 item.Size = buffer.Length;
 
-                using var decrypto = DecryptoBase.Create(buffer, Path.GetFileName(item.FilePath));
-                decrypto.Warn += (m) =>
-                {
-                    if (item.Details is null) item.Details = m;
-                    else                      item.Details += $"\n{m}";
-                };
+                using var decrypto = DecryptoFactory.Create(
+                    buffer,
+                    Path.GetFileName(item.FilePath),
+                    m => item.AddMessage(m));
 
                 item.State = Item.States.Working;
                 var info = decrypto.Decrypt();
@@ -87,12 +86,12 @@ namespace MusicDecrypto.Avalonia.ViewModels
                     buffer.CopyTo(file);
                 }
 
-                item.State = item.Details == null ? Item.States.Finished : Item.States.Warn;
+                item.State = string.IsNullOrEmpty(item.Messages) ? Item.States.Finished : Item.States.Warn;
             }
             catch (Exception e)
             {
                 item.State = Item.States.Error;
-                item.Details = $"{e.GetType().FullName}\n{e.Message}";
+                item.AddMessage($"{e.GetType().FullName}\n{e.Message}");
             }
         }
 
@@ -194,15 +193,12 @@ namespace MusicDecrypto.Avalonia.ViewModels
                 }
             }
 
-            private string? _details;
-            public string? Details
+            private readonly LinkedList<string> _messages = new();
+            public string? Messages => _messages.Any() ? string.Join('\n', _messages) : null;
+            public void AddMessage(string message)
             {
-                get => _details;
-                set
-                {
-                    _details = value;
-                    PropertyHasChanged(nameof(Details));
-                }
+                _messages.AddLast(message);
+                PropertyHasChanged(nameof(Messages));
             }
 
             public enum States : byte

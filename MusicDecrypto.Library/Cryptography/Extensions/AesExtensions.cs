@@ -10,7 +10,7 @@ namespace MusicDecrypto.Library.Cryptography.Extensions
             aes.Key = key;
             aes.Mode = CipherMode.ECB;
             aes.Padding = PaddingMode.PKCS7;
-            using ICryptoTransform decryptor = aes.CreateDecryptor();
+            using var decryptor = aes.CreateDecryptor();
             return decryptor.TransformFinalBlock(cipher, 0, cipher.Length);
         }
     }

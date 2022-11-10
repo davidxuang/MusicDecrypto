@@ -1,112 +1,111 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Runtime.CompilerServices;
 
-namespace MusicDecrypto.Library.Vendor.Tencent
+namespace MusicDecrypto.Library.Vendor.Tencent;
+
+internal sealed class RC4Cipher : IDecryptor, IEncryptor
 {
-    public sealed class RC4Cipher : IStreamCipher
+    private readonly byte[] _key;
+    private readonly byte[] _box;
+    private readonly int _size;
+    private readonly int _headerSize;
+    private readonly int _blockSize;
+    private readonly uint _hash;
+
+    public RC4Cipher(byte[] key, int headerSize, int blockSize)
     {
-        private readonly byte[] _key;
-        private readonly byte[] _box;
-        private readonly int _blockSize;
-        private readonly int _headerSize;
-        private readonly int _keySize;
-        private readonly uint _hash;
+        _key = key;
+        _size = _key.Length;
+        _blockSize = blockSize;
+        _headerSize = headerSize;
 
-        public RC4Cipher(byte[] key, int blockSize, int headerSize)
+        if (_size == 0)
+            throw new ArgumentException("Key should not be empty.", nameof(key));
+
+        _box = Enumerable.Range(0, _size).Select(x => (byte)x).ToArray();
+
+        int j = 0;
+        for (int i = 0; i < _size; i++)
         {
-            _key = key;
-            _keySize = _key.Length;
-            _blockSize = blockSize;
-            _headerSize = headerSize;
-
-            if (_keySize == 0)
-                throw new ArgumentException("Key is empty.");
-
-            _box = Enumerable.Range(0, _keySize).Select(x => (byte)x).ToArray();
-
-            int j = 0;
-            for (int i = 0; i < _keySize; i++)
-            {
-                j = (j + _box[i] + _key[i]) % _keySize;
-                (_box[i], _box[j]) = (_box[j], _box[i]);
-            }
-
-            _hash = 1;
-            for (int i = 0; j < _keySize; i++)
-            {
-                if (key[i] == 0)
-                    continue;
-                uint next = _hash * key[i];
-                if (next == 0 || next <= _hash)
-                    break;
-                _hash = next;
-            }
+            j = (j + _box[i] + _key[i]) % _size;
+            (_box[i], _box[j]) = (_box[j], _box[i]);
         }
 
-        public void Decrypt(MarshalMemoryStream buffer)
-            => Encrypt(buffer);
-
-        public void Encrypt(MarshalMemoryStream buffer)
+        _hash = 1;
+        for (int i = 0; j < _size; i++)
         {
-            int offset = 0;
-            int ahead = (int)buffer.Length;
+            if (key[i] == 0)
+                continue;
+            uint next = _hash * key[i];
+            if (next == 0 || next <= _hash)
+                break;
+            _hash = next;
+        }
+    }
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            bool UpdateStats(int size)
-            {
-                offset += size;
-                ahead -= size;
-                return ahead == 0;
-            };
+    public void Decrypt(Span<byte> data, long offset)
+    {
+        int behind = 0;
+        int ahead = data.Length;
 
-            int blockLength = Math.Min(_headerSize, ahead);
-            EncryptHeader(buffer.AsSpan(0, blockLength));
-            if (UpdateStats(blockLength))
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        bool UpdateStats(int size)
+        {
+            behind += size;
+            ahead -= size;
+            return ahead == 0;
+        };
+
+        if (offset < _headerSize)
+        {
+            int size = Math.Min(_headerSize - (int)offset, ahead);
+            DecryptHeader(data[..size], offset);
+            if (UpdateStats(size))
                 return;
-
-            if (offset % _blockSize != 0)
-            {
-                blockLength = Math.Min(_blockSize - offset % _blockSize, ahead);
-                EncryptBlock(buffer.AsSpan(offset, blockLength), offset);
-                if (UpdateStats(blockLength))
-                    return;
-            }
-
-            while (ahead > 0)
-            {
-                var size = Math.Min(_blockSize, ahead);
-                EncryptBlock(buffer.AsSpan(offset, size), offset);
-                UpdateStats(size);
-            }
         }
 
-        private void EncryptHeader(Span<byte> buffer)
+        if ((offset + behind) % _blockSize != 0)
         {
-            for (int i = 0; i < buffer.Length; i++)
-                buffer[i] ^= _key[GetOffset(i)];
+            int size = Math.Min(_blockSize - (int)((offset + behind) % _blockSize), ahead);
+            DecryptBlock(data[behind..(behind + size)], offset + behind);
+            if (UpdateStats(size))
+                return;
         }
 
-        private void EncryptBlock(Span<byte> buffer, int offset)
+        while (ahead > 0)
         {
-            var box = (stackalloc byte[_box.Length]);
-            _box.CopyTo(box);
-            int j = 0, k = 0;
-            int skipLength = (offset % _blockSize) + GetOffset(offset / _blockSize);
-
-            for (int i = -skipLength; i < buffer.Length; i++)
-            {
-                j = (j + 1) % _keySize;
-                k = (box[j] + k) % _keySize;
-                (box[j], box[k]) = (box[k], box[j]);
-                if (i >= 0) buffer[i] ^= box[(box[j] + box[k]) % _keySize];
-            }
+            int size = Math.Min(_blockSize, ahead);
+            DecryptBlock(data[behind..(behind + size)], offset + behind);
+            UpdateStats(size);
         }
+    }
 
-        private int GetOffset(int index)
+    public void Encrypt(Span<byte> data, long offset) => Decrypt(data, offset);
+
+    private void DecryptHeader(Span<byte> buffer, long offset)
+    {
+        for (int i = 0; i < buffer.Length; i++)
+            buffer[i] ^= _key[GetOffset(offset + i)];
+    }
+
+    private void DecryptBlock(Span<byte> buffer, long offset)
+    {
+        int j = 0, k = 0;
+        int skipLength = (int)(offset % _blockSize) + GetOffset(offset / _blockSize);
+
+        for (int i = -skipLength; i < buffer.Length; i++)
         {
-            long sum = (long)(_hash / (double)((index + 1) * _key[index % _keySize]) * 100);
-            return (int)(sum % _keySize);
+            j = (j + 1) % _size;
+            k = (_box[j] + k) % _size;
+            (_box[j], _box[k]) = (_box[k], _box[j]);
+            if (i >= 0) buffer[i] ^= _box[(_box[j] + _box[k]) % _size];
         }
+    }
+
+    private int GetOffset(long index)
+    {
+        long sum = (long)(_hash / (double)((index + 1) * _key[index % _size]) * 100);
+        return (int)(sum % _size);
     }
 }

@@ -1,15 +1,23 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net7.0</TargetFramework>
     <AssemblyName>musicdecrypto</AssemblyName>
     <OutputType>Exe</OutputType>
     <Version>2.1.0</Version>
-	<Nullable>enable</Nullable>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
     <DebugType>None</DebugType>
+    <PublishAot>true</PublishAot>
+    <!-- <StripSymbols>true</StripSymbols> -->
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <IlcOptimizationPreference>Speed</IlcOptimizationPreference>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release' And $(RuntimeIdentifier.EndsWith('x64')) ">
+    <IlcInstructionSet>x86-x64-v3</IlcInstructionSet>
   </PropertyGroup>
 
   <ItemGroup>
@@ -19,10 +27,9 @@
   <ItemGroup>
     <ProjectReference Include="..\MusicDecrypto.Library\MusicDecrypto.Library.csproj" />
   </ItemGroup>
-  
+
   <ItemGroup>
     <RdXmlFile Include="rd.xml" />
-    <IlcArg Include="--instruction-set:avx,avx2,aes,bmi,bmi2,fma,lzcnt,pclmul,popcnt,-avxvnni" Condition=" $(RuntimeIdentifier.EndsWith('x64')) " />
   </ItemGroup>
 
 </Project>

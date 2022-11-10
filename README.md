@@ -12,7 +12,7 @@ The core library is distributed under [GNU LGPL v3](./MusicDecrypto.Library/LICE
 
 ## Supported formats
 
-You may refer to [the full list](./MusicDecrypto.Library/DecryptoBase.cs#L26). Please notice that support for `.mgg` and `.mflac` series are partial.
+You may refer to [the full list](./MusicDecrypto.Library/DecryptoFactory.cs#L23). Please notice that support for `.mgg` and `.mflac` series are partial.
 
 ## CLI usage
 

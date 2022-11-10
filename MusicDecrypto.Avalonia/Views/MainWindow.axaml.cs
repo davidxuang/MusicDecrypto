@@ -61,7 +61,7 @@ namespace MusicDecrypto.Avalonia.Views
                             }
                             else if (File.Exists(path))
                                 vm.AddFile(path);
-                        }                        
+                        }
                     }
                 }
                 else e.DragEffects = DragDropEffects.None;

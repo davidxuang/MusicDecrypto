@@ -1,10 +1,10 @@
-﻿using System;
+using System;
 
-namespace MusicDecrypto.Library.Vendor.Tencent
+namespace MusicDecrypto.Library.Vendor.Tencent;
+
+internal sealed class StaticCipher : MaskCipherBase
 {
-    public class StaticCipher : MaskCipherBase
-    {
-        private static readonly byte[] _box = new byte[]
+    private static readonly byte[] _box = new byte[]
         {
             0x77, 0x48, 0x32, 0x73, 0xde, 0xf2, 0xc0, 0xc8, //0x00
 			0x95, 0xec, 0x30, 0xb2, 0x51, 0xc3, 0xe1, 0xa0, //0x08
@@ -40,13 +40,12 @@ namespace MusicDecrypto.Library.Vendor.Tencent
 			0xa5, 0x47, 0xf7, 0xf6, 0x00, 0x79, 0x4a, 0x11, //0xf8
         };
 
-        protected override void GetMask(Span<byte> buffer, long indexOffset)
+    protected override void GetMask(Span<byte> buffer, long offset)
+    {
+        for (int i = 0; i < buffer.Length; i++)
         {
-            for (int i = 0; i < buffer.Length; i++)
-            {
-                var index = indexOffset + i;
-                buffer[i] = _box[(byte)(index * index + 0x1b)];
-            }
+            var index = offset + i;
+            buffer[i] = _box[(byte)(index * index + 0x1b)];
         }
     }
 }

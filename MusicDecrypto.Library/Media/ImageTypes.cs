@@ -1,10 +1,9 @@
-﻿namespace MusicDecrypto.Library.Media
+﻿namespace MusicDecrypto.Library.Media;
+
+public enum ImageTypes
 {
-    public enum ImageTypes
-    {
-        Undefined,
-        Gif,
-        Jpeg,
-        Png,
-    }
+    Undefined,
+    Gif,
+    Jpeg,
+    Png,
 }

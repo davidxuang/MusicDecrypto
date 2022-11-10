@@ -13,7 +13,6 @@
 
   <ItemGroup>
     <PackageReference Include="NativeMemoryArray" Version="1.2.*" />
-    <PackageReference Include="System.Text.Json" Version="6.0.*" />
     <PackageReference Include="TagLibSharp" Version="2.3.*" />
   </ItemGroup>
 
