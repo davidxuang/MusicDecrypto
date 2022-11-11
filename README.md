@@ -32,5 +32,6 @@ Drag and drop files and/or directories on the CLI program or run:
 ## References
 
 - [ncmdump](https://github.com/anonymous5l/ncmdump)
-- [unlock-music](https://github.com/ix64/unlock-music)
+- [unlock-music](https://git.unlock-music.dev/um/web)
 - [unlock-mflac](https://github.com/zeroclear/unlock-mflac-20220931)
+- [parakeet-rs](https://github.com/parakeet-rs/parakeet-crypto-rs)
