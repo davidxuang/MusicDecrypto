@@ -27,6 +27,15 @@ internal static class SimdHelper
         return a | b;
     }
 
+    public static byte[] Pad(ReadOnlySpan<byte> data)
+    {
+        var length = GetPaddedLength(data.Length);
+        var array = new byte[length];
+        data.CopyTo(array);
+
+        return array;
+    }
+
     public static NativeMemoryArray<byte> PadCircularly(ReadOnlySpan<byte> data)
     {
         var length = GetPaddedLength(data.Length);
