@@ -13,9 +13,9 @@ namespace MusicDecrypto.Library.Vendor.Tencent;
 
 internal sealed partial class QmcDecrypto : DecryptoBase
 {
-    private static readonly byte[] _v2Magic = Encoding.ASCII.GetBytes("QQMusic EncV2,Key:");
-    private static readonly byte[] _v2TeaKey1 = new byte[] { 0x33, 0x38, 0x36, 0x5A, 0x4A, 0x59, 0x21, 0x40, 0x23, 0x2A, 0x24, 0x25, 0x5E, 0x26, 0x29, 0x28 };
-    private static readonly byte[] _v2TeaKey2 = new byte[] { 0x2A, 0x2A, 0x23, 0x21, 0x28, 0x23, 0x24, 0x25, 0x26, 0x5E, 0x61, 0x31, 0x63, 0x5A, 0x2C, 0x54 };
+    private static readonly byte[] _v2Magic = "QQMusic EncV2,Key:"u8.ToArray();
+    private static readonly byte[] _v2TeaKey1 = "386ZJY!@#*$%^&)("u8.ToArray();
+    private static readonly byte[] _v2TeaKey2 = "**#!(#$%&^a1cZ,T"u8.ToArray();
     private static readonly Regex _regex = new("^[0-9A-F]{16,}$");
 
     private readonly IDecryptor _cipher;
