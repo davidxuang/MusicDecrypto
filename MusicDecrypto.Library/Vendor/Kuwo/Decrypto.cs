@@ -8,8 +8,8 @@ namespace MusicDecrypto.Library.Vendor.Kuwo
 {
     internal sealed class Decrypto : DecryptoBase
     {
-        private static readonly byte[] _magic = { 0x79, 0x65, 0x65, 0x6c, 0x69, 0x6f, 0x6e, 0x2d, 0x6b, 0x75, 0x77, 0x6f, 0x2d, 0x74, 0x6d, 0x65 };
-        private static readonly byte[] _root = Encoding.ASCII.GetBytes("MoOtOiTvINGwd2E6n0E1i7L5t2IoOoNk");
+        private static readonly byte[] _magic = "yeelion-kuwo"u8.ToArray(); // "yeelion-kuwo-tme"
+        private static readonly byte[] _root = "MoOtOiTvINGwd2E6n0E1i7L5t2IoOoNk"u8.ToArray();
         private static readonly int _paddedMaskSize = SimdHelper.GetPaddedLength(0x20);
 
         private readonly IDecryptor _cipher;
@@ -19,7 +19,7 @@ namespace MusicDecrypto.Library.Vendor.Kuwo
         {
             if (_buffer.Length < 1024)
                 throw new InvalidDataException("File is too small.");
-            if (!Reader.ReadBytes(16).SequenceEqual(_magic))
+            if (!Reader.ReadBytes(16)[..12].SequenceEqual(_magic))
                 throw new InvalidDataException("File header is unexpected.");
 
             _ = _buffer.Seek(8, SeekOrigin.Current);
