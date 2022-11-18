@@ -1,38 +1,38 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-    <PropertyGroup>
-      <TargetFramework>net6.0</TargetFramework>
-      <AssemblyName>musicdecrypto-avalonia</AssemblyName>
-      <OutputType>WinExe</OutputType>
-      <VersionPrefix>2.1.1</VersionPrefix>
-      <Nullable>enable</Nullable>
-      <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
-    </PropertyGroup>
+  <PropertyGroup>
+    <TargetFramework>net7.0</TargetFramework>
+    <AssemblyName>musicdecrypto-avalonia</AssemblyName>
+    <OutputType>WinExe</OutputType>
+    <VersionPrefix>2.1.1</VersionPrefix>
+    <Nullable>enable</Nullable>
+    <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+  </PropertyGroup>
 
-    <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
-      <DebugType>None</DebugType>
-    </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+    <DebugType>None</DebugType>
+  </PropertyGroup>
 
-    <ItemGroup>
-      <PackageReference Include="Avalonia" Version="0.10.*" />
-      <PackageReference Include="Avalonia.Desktop" Version="0.10.*" />
-      <PackageReference Include="Avalonia.Diagnostics" Version="0.10.*" Condition=" '$(Configuration)' == 'Debug' " />
-      <PackageReference Include="ByteSize" Version="2.1.*" />
-      <PackageReference Include="FluentAvaloniaUI" Version="1.4.*" />
-      <PackageReference Include="FluentIcons.Avalonia" Version="1.1.*" />
-    </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Avalonia" Version="0.10.*" />
+    <PackageReference Include="Avalonia.Desktop" Version="0.10.*" />
+    <PackageReference Include="Avalonia.Diagnostics" Version="0.10.*" Condition=" '$(Configuration)' == 'Debug' " />
+    <PackageReference Include="ByteSize" Version="2.1.*" />
+    <PackageReference Include="FluentAvaloniaUI" Version="1.4.*" />
+    <PackageReference Include="FluentIcons.Avalonia" Version="1.1.*" />
+  </ItemGroup>
 
-    <ItemGroup>
-      <ProjectReference Include="..\MusicDecrypto.Library\MusicDecrypto.Library.csproj" />
-    </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\MusicDecrypto.Library\MusicDecrypto.Library.csproj" />
+  </ItemGroup>
 
-    <ItemGroup>
-      <AvaloniaResource Include="Assets\**" />
-    </ItemGroup>
+  <ItemGroup>
+    <AvaloniaResource Include="Assets\**" />
+  </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="Assets\" />
-    </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Assets\" />
+  </ItemGroup>
 
-  </Project>
+</Project>
   
