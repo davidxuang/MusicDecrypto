@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>net7.0</TargetFramework>
     <AssemblyName>libmusicdecrypto</AssemblyName>
-    <Version>2.1.1</Version>
+    <Version>2.1.2</Version>
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
