@@ -231,8 +231,9 @@ internal sealed partial class Decrypto : DecryptoBase
     {
         public string? MusicName { get; set; }
         [JsonInclude]
-        public IEnumerable<IEnumerable<object>>? Artist
+        public IEnumerable<IEnumerable<object?>>? Artist
         {
+            get => Artists?.Select(x => new[] { x, null }); // should not be used
             set
             {
                 Artists = value?.Select(x => x?.FirstOrDefault()?.ToString());
