@@ -16,4 +16,14 @@
     <PackageReference Include="TagLibSharp" Version="2.3.*" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Remove="Vendor\Ximalaya\x2m_map.bin" />
+    <None Remove="Vendor\Ximalaya\x3m_map.bin" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Vendor\Ximalaya\x2m_map.bin" />
+    <EmbeddedResource Include="Vendor\Ximalaya\x3m_map.bin" />
+  </ItemGroup>
+
 </Project>
