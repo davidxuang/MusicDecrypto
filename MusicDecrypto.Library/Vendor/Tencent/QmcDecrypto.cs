@@ -18,13 +18,12 @@ internal sealed partial class QmcDecrypto : DecryptoBase
     private static readonly byte[] _v2TeaKey2 = "**#!(#$%&^a1cZ,T"u8.ToArray();
     private static readonly Regex _regex = new("^[0-9A-F]{16,}$");
 
-    private readonly IDecryptor _cipher;
-    protected override IDecryptor Decryptor => _cipher;
+    protected override IDecryptor Decryptor { get; init; }
 
     public QmcDecrypto(MarshalMemoryStream buffer, string name, WarnHandler? warn, AudioTypes type) : base(buffer, name, warn, type)
     {
         _ = _buffer.Seek(-4, SeekOrigin.End);
-        int indicator = Reader.ReadInt32();
+        int indicator = _reader.ReadInt32();
 
         byte[]? key = null;
         long length;
@@ -33,7 +32,7 @@ internal sealed partial class QmcDecrypto : DecryptoBase
         {
             case 0x67615451:
                 {
-                    int chunkLength = BinaryPrimitives.ReadInt32BigEndian(Reader.ReadBytes(4));
+                    int chunkLength = BinaryPrimitives.ReadInt32BigEndian(_reader.ReadBytes(4));
                     length = _buffer.Length - 8 - chunkLength;
                     var metas = Encoding.ASCII.GetString(_buffer.AsSpan((int)length, chunkLength)).Split(',');
                     key = DecryptKey(metas[0]);
@@ -60,17 +59,17 @@ internal sealed partial class QmcDecrypto : DecryptoBase
 
         _buffer.SetLength(length);
 
-        _cipher = key is null
-                ? new StaticCipher()
-                : key.Length > 300
-                ? new RC4Cipher(key, 128, 5120)
-                : new MapCipher(key);
+        Decryptor = key is null
+                  ? new StaticCipher()
+                  : key.Length > 300
+                  ? new RC4Cipher(key, 128, 5120)
+                  : new MapCipher(key);
     }
     protected override bool ProcessMetadataOverride(Tag tag)
     {
         if (tag == null) return false;
 
-        var baseName = Path.GetFileNameWithoutExtension(Name);
+        var baseName = Path.GetFileNameWithoutExtension(_oldName);
 
         if (_regex.IsMatch(baseName))
         {

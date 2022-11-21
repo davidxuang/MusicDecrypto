@@ -25,8 +25,7 @@ internal sealed partial class Decrypto : DecryptoBase
         VPR
     }
 
-    private readonly IDecryptor _decryptor;
-    protected override IDecryptor Decryptor => _decryptor;
+    protected override IDecryptor Decryptor { get; init; }
 
     public Decrypto(MarshalMemoryStream buffer, string name, WarnHandler? warn) : base(buffer, name, warn)
     {
@@ -38,18 +37,18 @@ internal sealed partial class Decrypto : DecryptoBase
         };
 
         _ = buffer.Seek(0x10, SeekOrigin.Begin);
-        var offset = Reader.ReadInt32();
-        var type = Reader.ReadInt32();
+        var offset = _reader.ReadInt32();
+        var type = _reader.ReadInt32();
 
-        var slot = Reader.ReadInt32();
+        var slot = _reader.ReadInt32();
         if (slot != 1)
             throw new NotImplementedException();
         var slotKey = "l,/'"u8;
 
-        var signature = SimdHelper.Pad(Reader.ReadBytes(0x10));
-        var fileKey = Reader.ReadBytes(0x10);
+        var signature = SimdHelper.Pad(_reader.ReadBytes(0x10));
+        var fileKey = _reader.ReadBytes(0x10);
 
-        _decryptor = type switch
+        Decryptor = type switch
         {
             2 => new T2Cipher(slotKey),
             3 => new T3Cipher(slotKey, fileKey),
@@ -57,7 +56,7 @@ internal sealed partial class Decrypto : DecryptoBase
             _ => throw new NotSupportedException(),
         };
 
-        _decryptor.Decrypt(signature, 0);
+        Decryptor.Decrypt(signature, 0);
         switch (subtype)
         {
             case Subtypes.KGM:

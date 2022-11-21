@@ -23,14 +23,13 @@ internal sealed partial class Decrypto : DecryptoBase
     private readonly Metadata? _metadata;
     private readonly ImageTypes _coverType;
     private readonly byte[]? _coverBuffer;
-    private readonly IDecryptor _cipher;
-    protected override IDecryptor Decryptor => _cipher;
+
+    protected override IDecryptor Decryptor { get; init; }
 
     public Decrypto(MarshalMemoryStream buffer, string name, WarnHandler? warn) : base(buffer, name, warn)
     {
-
         // Check file header
-        if (!Reader.ReadBytes(8).SequenceEqual(_magic))
+        if (!_reader.ReadBytes(8).SequenceEqual(_magic))
             throw new InvalidDataException("File header is unexpected.");
 
         // Skip ahead
@@ -40,7 +39,7 @@ internal sealed partial class Decrypto : DecryptoBase
         try
         {
             // Read key
-            var keyChunk = (stackalloc byte[Reader.ReadInt32()]);
+            var keyChunk = (stackalloc byte[_reader.ReadInt32()]);
             ReadChunk(keyChunk, 0x64);
             var key = keyChunk.ToArray().AesEcbDecrypt(_root).AsSpan(0x11);
             var keyLength = key.Length;
@@ -61,7 +60,7 @@ internal sealed partial class Decrypto : DecryptoBase
                 var j = (byte)(i + 1);
                 mask[i] = box[(byte)(box[j] + box[(byte)(box[j] + j)])];
             }
-            _cipher = new Cipher(mask);
+            Decryptor = new Cipher(mask);
         }
         catch (NullFileChunkException e)
         {
@@ -71,7 +70,7 @@ internal sealed partial class Decrypto : DecryptoBase
         try
         {
             // Read metadata
-            var metaChunk = (stackalloc byte[Reader.ReadInt32()]);
+            var metaChunk = (stackalloc byte[_reader.ReadInt32()]);
             ReadChunk(metaChunk, 0x63);
             int skipCount = 0x16;
             for (int i = 0; i < metaChunk.Length; i++)
@@ -109,7 +108,7 @@ internal sealed partial class Decrypto : DecryptoBase
         try
         {
             // Plan A: Read cover from file
-            _coverBuffer = new byte[Reader.ReadInt32()];
+            _coverBuffer = new byte[_reader.ReadInt32()];
             ReadChunk(_coverBuffer);
         }
         catch (NullFileChunkException)

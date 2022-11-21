@@ -5,8 +5,7 @@ namespace MusicDecrypto.Library.Vendor.Tencent;
 
 internal sealed class TmDecrypto : DecryptoBase
 {
-    private readonly static IDecryptor _cipher = new Cipher();
-    protected override IDecryptor Decryptor => _cipher;
+    protected override IDecryptor Decryptor { get; init; } = new Cipher();
 
     public TmDecrypto(MarshalMemoryStream buffer, string name, WarnHandler? warn, AudioTypes type) : base(buffer, name, warn, type) { }
 

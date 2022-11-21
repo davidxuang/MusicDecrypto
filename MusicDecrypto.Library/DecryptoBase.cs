@@ -9,39 +9,31 @@ namespace MusicDecrypto.Library;
 public abstract class DecryptoBase : IDisposable
 {
     protected MarshalMemoryStream _buffer;
+    protected BinaryReader _reader;
     protected AudioTypes _audioType;
+    protected string _oldName;
     protected string? _newBaseName;
     protected long _startOffset = 0;
     protected bool _decrypted;
 
-    public string Name { get; protected set; }
-
-    protected BinaryReader? _reader;
-    protected BinaryReader Reader
-    {
-        get
-        {
-            _reader ??= new(_buffer);
-            return _reader;
-        }
-    }
-
-    protected abstract IDecryptor Decryptor { get; }
-
     protected DecryptoBase(MarshalMemoryStream buffer, string name, WarnHandler? warn, AudioTypes type = AudioTypes.Undefined)
     {
         _buffer = buffer;
-        Name = name;
+        _reader = new(buffer);
+        _oldName = name;
         if (warn != null) Warn += warn;
         _audioType = type;
         _buffer.ResetPosition();
     }
 
+    protected abstract IDecryptor Decryptor { get; init; }
+
     public void Dispose()
     {
         _reader?.Dispose();
         _buffer.Dispose();
-        if (Decryptor is IDisposable cipher) { cipher.Dispose(); }
+        if (Decryptor is IDisposable decryptor) { decryptor.Dispose(); }
+        GC.SuppressFinalize(this);
     }
 
     public Info Decrypt()
@@ -100,7 +92,7 @@ public abstract class DecryptoBase : IDisposable
             }
 
             return new Info(
-                (_newBaseName ?? Path.GetFileNameWithoutExtension(Name)) + _audioType.GetExtension(),
+                (_newBaseName ?? Path.GetFileNameWithoutExtension(_oldName)) + _audioType.GetExtension(),
                 tag.Title,
                 tag.Performers.Length > 0 ? tag.Performers[0] : null,
                 tag.Album,
@@ -108,9 +100,13 @@ public abstract class DecryptoBase : IDisposable
         }
         else RaiseWarn("Reading tags from DFF files is not supported.");
 
-        return new Info((_newBaseName ?? Path.GetFileNameWithoutExtension(Name)) + _audioType.GetExtension());
+        return new Info((_newBaseName ?? Path.GetFileNameWithoutExtension(_oldName)) + _audioType.GetExtension());
     }
     protected virtual bool ProcessMetadataOverride(Tag tag) { return false; } // return whether metadata is modified
+
+    public delegate void WarnHandler(string message);
+    public event WarnHandler? Warn;
+    public void RaiseWarn(string message) => Warn?.Invoke(message);
 
     public record class Info(
         string NewName,
@@ -118,8 +114,4 @@ public abstract class DecryptoBase : IDisposable
         string? Artist = null,
         string? Album = null,
         byte[]? Cover = null);
-
-    public delegate void WarnHandler(string message);
-    public event WarnHandler? Warn;
-    public void RaiseWarn(string message) => Warn?.Invoke(message);
 }
