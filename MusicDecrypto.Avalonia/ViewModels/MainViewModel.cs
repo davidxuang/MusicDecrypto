@@ -29,7 +29,7 @@ namespace MusicDecrypto.Avalonia.ViewModels
 
         public void AddFile(string path)
         {
-            if (File.Exists(path) && DecryptoFactory.KnownExtensions.ContainsKey(Path.GetExtension(path)))
+            if (File.Exists(path) && DecryptoFactory.KnownExtensions.Contains(Path.GetExtension(path)))
             {
                 var item = new Item(path);
                 Items.Add(item);
@@ -63,7 +63,7 @@ namespace MusicDecrypto.Avalonia.ViewModels
                 using var decrypto = DecryptoFactory.Create(
                     buffer,
                     Path.GetFileName(item.FilePath),
-                    m => item.AddMessage(m));
+                    item.AddMessage);
 
                 item.State = Item.States.Working;
                 var info = decrypto.Decrypt();

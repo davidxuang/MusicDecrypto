@@ -12,7 +12,7 @@ public static class Program
 {
     private static ConsoleColor _pushColor;
     private static readonly string[] _extensive = new[] { ".mp3", ".m4a", ".wav", ".flac" };
-    private static readonly HashSet<string> _extensions = DecryptoFactory.KnownExtensions.Keys.Where(e => !_extensive.Contains(e)).ToHashSet();
+    private static readonly HashSet<string> _extensions = DecryptoFactory.KnownExtensions.Where(e => !_extensive.Contains(e)).ToHashSet();
 
     public static void Main(string[] args)
     {
