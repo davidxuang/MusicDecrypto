@@ -28,17 +28,18 @@ internal sealed partial class QmcDecrypto : DecryptoBase
         byte[]? key = null;
         long length;
 
-        switch (indicator) // "QTag"
+        switch (indicator)
         {
-            case 0x67615451:
-                {
-                    int chunkLength = BinaryPrimitives.ReadInt32BigEndian(_reader.ReadBytes(4));
-                    length = _buffer.Length - 8 - chunkLength;
-                    var metas = Encoding.ASCII.GetString(_buffer.AsSpan((int)length, chunkLength)).Split(',');
-                    key = DecryptKey(metas[0]);
-                    // var id = ulong.Parse(metas[1]);
-                    break;
-                }
+            case 0x67615451: // "QTag"
+                int chunkLength = BinaryPrimitives.ReadInt32BigEndian(_reader.ReadBytes(4));
+                length = _buffer.Length - 8 - chunkLength;
+                var metas = Encoding.ASCII.GetString(_buffer.AsSpan((int)length, chunkLength)).Split(',');
+                key = DecryptKey(metas[0]);
+                // var id = ulong.Parse(metas[1]);
+                break;
+
+            case 0x67615453: // "STag"
+                throw new NotSupportedException("Unsupported new format.");
 
             case > 0 and < 0x400:
                 length = _buffer.Length - 4 - indicator;
