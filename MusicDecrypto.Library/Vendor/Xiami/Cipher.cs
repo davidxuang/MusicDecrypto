@@ -13,7 +13,7 @@ internal sealed class Cipher : IDecryptor
         _key = key;
     }
 
-    public void Decrypt(Span<byte> data, long offset)
+    public long Decrypt(Span<byte> data, long offset)
     {
         int step = SimdHelper.LaneCount;
         var k = new Vector<byte>(_key);
@@ -23,5 +23,6 @@ internal sealed class Cipher : IDecryptor
             var v = new Vector<byte>(window);
             (~(v - k)).CopyTo(window);
         }
+        return offset + data.Length;
     }
 }

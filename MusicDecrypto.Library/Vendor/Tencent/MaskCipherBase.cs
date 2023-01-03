@@ -6,7 +6,7 @@ namespace MusicDecrypto.Library.Vendor.Tencent;
 
 internal abstract class MaskCipherBase : IDecryptor
 {
-    public void Decrypt(Span<byte> data, long offset)
+    public long Decrypt(Span<byte> data, long offset)
     {
         var step = SimdHelper.LaneCount;
         var mask = (stackalloc byte[step]);
@@ -18,6 +18,7 @@ internal abstract class MaskCipherBase : IDecryptor
             var m = new Vector<byte>(mask);
             (m ^ v).CopyTo(window);
         }
+        return offset + data.Length;
     }
 
     protected abstract void GetMask(Span<byte> buffer, long offset);

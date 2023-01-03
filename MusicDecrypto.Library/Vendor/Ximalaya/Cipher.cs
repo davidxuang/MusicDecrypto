@@ -23,7 +23,7 @@ internal sealed class Cipher : IDecryptor, IDisposable
         _key.Dispose();
     }
 
-    public void Decrypt(Span<byte> data, long offset)
+    public long Decrypt(Span<byte> data, long offset)
     {
         if (offset == 0)
         {
@@ -47,5 +47,6 @@ internal sealed class Cipher : IDecryptor, IDisposable
 
             buffer[.._map.Length].CopyTo(data);
         }
+        return offset + data.Length;
     }
 }

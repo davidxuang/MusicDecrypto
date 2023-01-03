@@ -20,7 +20,7 @@ internal sealed class Cipher : IDecryptor, IDisposable
         _mask.Dispose();
     }
 
-    public void Decrypt(Span<byte> data, long offset)
+    public long Decrypt(Span<byte> data, long offset)
     {
         int step = SimdHelper.LaneCount;
         int i_m;
@@ -32,5 +32,6 @@ internal sealed class Cipher : IDecryptor, IDisposable
             var m = new Vector<byte>(_mask.AsSpan(i_m, step));
             (v ^ m).CopyTo(window);
         }
+        return offset + data.Length;
     }
 }

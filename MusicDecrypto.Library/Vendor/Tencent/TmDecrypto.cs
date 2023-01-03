@@ -13,12 +13,13 @@ internal sealed class TmDecrypto : DecryptoBase
     {
         private static readonly byte[] _header = { 0x00, 0x00, 0x00, 0x20, 0x66, 0x74, 0x79, 0x70 };
 
-        public void Decrypt(Span<byte> data, long offset)
+        public long Decrypt(Span<byte> data, long offset)
         {
             if (offset == 0)
             {
                 _header.CopyTo(data);
             }
+            return offset + data.Length;
         }
     }
 }

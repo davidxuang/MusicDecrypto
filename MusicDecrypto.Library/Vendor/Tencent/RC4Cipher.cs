@@ -8,6 +8,7 @@ internal sealed class RC4Cipher : IDecryptor, IEncryptor
 {
     private readonly byte[] _key;
     private readonly byte[] _box;
+    private readonly int[] _offsetCache;
     private readonly int _size;
     private readonly int _headerSize;
     private readonly int _blockSize;
@@ -42,9 +43,15 @@ internal sealed class RC4Cipher : IDecryptor, IEncryptor
                 break;
             _hash = next;
         }
+
+        _offsetCache = new int[_blockSize];
+        for (int i = 0; i < _blockSize; i++)
+        {
+            _offsetCache[i] = GetOffset(i);
+        }
     }
 
-    public void Decrypt(Span<byte> data, long offset)
+    public long Decrypt(Span<byte> data, long offset)
     {
         int behind = 0;
         int ahead = data.Length;
@@ -57,12 +64,12 @@ internal sealed class RC4Cipher : IDecryptor, IEncryptor
             return ahead == 0;
         };
 
-        if (offset < _headerSize)
+        if (offset == 0)
         {
             int size = Math.Min(_headerSize - (int)offset, ahead);
             DecryptHeader(data[..size], offset);
             if (UpdateStats(size))
-                return;
+                return offset + behind;
         }
 
         if ((offset + behind) % _blockSize != 0)
@@ -70,29 +77,39 @@ internal sealed class RC4Cipher : IDecryptor, IEncryptor
             int size = Math.Min(_blockSize - (int)((offset + behind) % _blockSize), ahead);
             DecryptBlock(data[behind..(behind + size)], offset + behind);
             if (UpdateStats(size))
-                return;
+                return offset + behind;
         }
 
-        while (ahead > 0)
+        while (ahead >= _blockSize)
         {
-            int size = Math.Min(_blockSize, ahead);
-            DecryptBlock(data[behind..(behind + size)], offset + behind);
-            UpdateStats(size);
+            DecryptBlock(data[behind..(behind + _blockSize)], offset + behind);
+            UpdateStats(_blockSize);
+        }
+
+        if (ahead == 0 || data.Length > int.MaxValue / 2)
+        {
+            return offset + behind;
+        }
+        else
+        {
+            DecryptBlock(data[behind..], offset + behind);
+            UpdateStats(ahead);
+            return offset + behind;
         }
     }
 
-    public void Encrypt(Span<byte> data, long offset) => Decrypt(data, offset);
+    public long Encrypt(Span<byte> data, long offset) => Decrypt(data, offset);
 
     private void DecryptHeader(Span<byte> buffer, long offset)
     {
         for (int i = 0; i < buffer.Length; i++)
-            buffer[i] ^= _key[GetOffset(offset + i)];
+            buffer[i] ^= _key[GetCachedOffset(offset + i)];
     }
 
     private void DecryptBlock(Span<byte> buffer, long offset)
     {
         int j = 0, k = 0;
-        int skipLength = (int)(offset % _blockSize) + GetOffset(offset / _blockSize);
+        int skipLength = (int)(offset % _blockSize) + GetCachedOffset(offset / _blockSize);
 
         for (int i = -skipLength; i < buffer.Length; i++)
         {
@@ -101,6 +118,11 @@ internal sealed class RC4Cipher : IDecryptor, IEncryptor
             (_box[j], _box[k]) = (_box[k], _box[j]);
             if (i >= 0) buffer[i] ^= _box[(_box[j] + _box[k]) % _size];
         }
+    }
+
+    private int GetCachedOffset(long index)
+    {
+        return index < _blockSize ? _offsetCache[index] : GetOffset(index);
     }
 
     private int GetOffset(long index)

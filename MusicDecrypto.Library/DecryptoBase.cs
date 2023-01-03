@@ -45,8 +45,7 @@ public abstract class DecryptoBase : IDisposable
             while (offset < _buffer.Length)
             {
                 var block = _buffer.AsPaddedSpan(offset);
-                Decryptor.Decrypt(block, offset);
-                offset += block.Length;
+                offset += Decryptor.Decrypt(block, offset);
             }
             _decrypted = true;
             return GetMetadata();

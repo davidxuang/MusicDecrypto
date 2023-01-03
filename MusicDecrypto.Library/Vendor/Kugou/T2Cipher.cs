@@ -21,7 +21,7 @@ internal sealed class T2Cipher : IDecryptor, IEncryptor, IDisposable
         _slotKey.Dispose();
     }
 
-    public void Decrypt(Span<byte> data, long offset)
+    public long Decrypt(Span<byte> data, long offset)
     {
         var step = SimdHelper.LaneCount;
         int i_s;
@@ -34,9 +34,10 @@ internal sealed class T2Cipher : IDecryptor, IEncryptor, IDisposable
             // blocked by upstream: (x * 0x10) -> (x << 4)
             (v ^ (v * 0x10) ^ s).CopyTo(window);
         }
+        return offset + data.Length;
     }
 
-    public void Encrypt(Span<byte> data, long offset)
+    public long Encrypt(Span<byte> data, long offset)
     {
         var step = SimdHelper.LaneCount;
         int i_s;
@@ -50,5 +51,6 @@ internal sealed class T2Cipher : IDecryptor, IEncryptor, IDisposable
             // blocked by upstream: (x * 0x10) -> (x << 4)
             (x ^ (x * 0x10)).CopyTo(window);
         }
+        return offset + data.Length;
     }
 }

@@ -39,7 +39,7 @@ internal sealed class T3Cipher : IDecryptor, IEncryptor, IDisposable
         return digest;
     }
 
-    public void Decrypt(Span<byte> data, long offset)
+    public long Decrypt(Span<byte> data, long offset)
     {
         var step = SimdHelper.LaneCount;
         var mask = (stackalloc byte[step]);
@@ -58,9 +58,10 @@ internal sealed class T3Cipher : IDecryptor, IEncryptor, IDisposable
             // blocked by upstream: (x * 0x10) -> (x << 4)
             (x ^ (x * 0x10) ^ s ^ m).CopyTo(window);
         }
+        return offset + data.Length;
     }
 
-    public void Encrypt(Span<byte> data, long offset)
+    public long Encrypt(Span<byte> data, long offset)
     {
         var step = SimdHelper.LaneCount;
         var mask = (stackalloc byte[step]);
@@ -79,6 +80,7 @@ internal sealed class T3Cipher : IDecryptor, IEncryptor, IDisposable
             // blocked by upstream: (x * 0x10) -> (x << 4)
             (x ^ (x * 0x10) ^ f).CopyTo(window);
         }
+        return offset + data.Length;
     }
 
     private static void GetOffsetMask(Span<byte> mask, long offset)

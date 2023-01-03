@@ -10,10 +10,11 @@ internal static class MediaExtensions
         AudioTypes.Aac  => ".aac",
         AudioTypes.Flac => ".flac",
         AudioTypes.Mpeg => ".mp3",
-        AudioTypes.Mp4  => ".m4a",
+        AudioTypes.Mp4  => ".mp4",
         AudioTypes.Ogg  => ".ogg",
         AudioTypes.XApe => ".ape",
         AudioTypes.XDff => ".dff",
+        AudioTypes.XM4a => ".m4a",
         AudioTypes.XWav => ".wav",
         AudioTypes.XWma => ".wma",
         _ => throw new InvalidDataException("Undefined music type."),
@@ -34,7 +35,10 @@ internal static class MediaExtensions
             [0x49, 0x44, 0x33, ..]
                 => AudioTypes.Mpeg,
             //             f     t     y     p     M     4     A
-            [_, _, _, _, 0x66, 0x74, 0x79, 0x70/*0x4d, 0x34, 0x41, 0x20*/, ..]
+            [_, _, _, _, 0x66, 0x74, 0x79, 0x70, 0x4d, 0x34, 0x41, 0x20, ..]
+                => AudioTypes.XM4a,
+            //             f     t     y     p
+            [_, _, _, _, 0x66, 0x74, 0x79, 0x70, ..]
                 => AudioTypes.Mp4,
             // O     g     g     S
             [0x4f, 0x67, 0x67, 0x53, ..]
