@@ -145,7 +145,7 @@ internal sealed partial class QmcDecrypto : DecryptoBase
             throw new InvalidDataException($"Cipher text length should be a multiple of 8. (got {length})");
 
         var raw = (stackalloc byte[SimdHelper.GetPaddedLength(length)]);
-        var res = (stackalloc byte[SimdHelper.GetPaddedLength(length)]);
+        var res = (stackalloc byte[Math.Max(SimdHelper.GetPaddedLength(length), length + SimdHelper.LaneCount - 8)]);
         buffer.CopyTo(raw);
         buffer.CopyTo(res);
 

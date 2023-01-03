@@ -109,14 +109,16 @@ internal sealed class RC4Cipher : IDecryptor, IEncryptor
     private void DecryptBlock(Span<byte> buffer, long offset)
     {
         int j = 0, k = 0;
+        var box = (stackalloc byte[_box.Length]);
+        _box.CopyTo(box);
         int skipLength = (int)(offset % _blockSize) + GetCachedOffset(offset / _blockSize);
 
         for (int i = -skipLength; i < buffer.Length; i++)
         {
             j = (j + 1) % _size;
-            k = (_box[j] + k) % _size;
-            (_box[j], _box[k]) = (_box[k], _box[j]);
-            if (i >= 0) buffer[i] ^= _box[(_box[j] + _box[k]) % _size];
+            k = (box[j] + k) % _size;
+            (box[j], box[k]) = (box[k], box[j]);
+            if (i >= 0) buffer[i] ^= box[(box[j] + box[k]) % _size];
         }
     }
 
