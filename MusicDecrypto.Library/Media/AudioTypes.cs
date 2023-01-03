@@ -10,6 +10,7 @@ public enum AudioTypes
     Ogg,
     XApe,
     XDff,
+    XM4a,
     XWav,
     XWma,
 }

@@ -29,7 +29,7 @@ internal sealed class Decrypto : DecryptoBase
         var identifier = Encoding.ASCII.GetString(_reader.ReadBytes(4));
         if (_audioType == AudioTypes.Undefined) _audioType = identifier switch
         {
-            " A4M" => AudioTypes.Mp4,
+            " A4M" => AudioTypes.XM4a,
             "FLAC" => AudioTypes.Flac,
             " MP3" => AudioTypes.Mpeg,
             " WAV" => AudioTypes.XWav,
