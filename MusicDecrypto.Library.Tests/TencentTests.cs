@@ -40,21 +40,13 @@ public class TencentTests
             }));
     }
 
-    private static (string, byte[]) LoadKeyDataSet(string name)
-    {
-        MemoryStream enc = new(), plain = new();
-        Assembly.GetExecutingAssembly().GetManifestResourceStream($"MusicDecrypto.Library.Tests.DataSets.{name}.key.enc")!.CopyTo(enc);
-        Assembly.GetExecutingAssembly().GetManifestResourceStream($"MusicDecrypto.Library.Tests.DataSets.{name}.key")!.CopyTo(plain);
-        return (Encoding.ASCII.GetString(enc.GetBuffer()), plain.GetBuffer());
-    }
-
     [TestMethod]
     [DataRow("mflac", "map")]
     [DataRow("mflac_v2", "map")]
     [DataRow("mgg", "map")]
     [DataRow("mflac", "rc4")]
     [DataRow("mflac0", "rc4")]
-    public void FileKeyTest(string extension, string type)
+    public void KeyTest(string extension, string type)
     {
         string enc;
         byte[] plain;
@@ -64,14 +56,12 @@ public class TencentTests
             plain);
         ;
     }
-
-    private static (byte[], byte[], byte[]) LoadFileDataSet(string name)
+    private static (string, byte[]) LoadKeyDataSet(string name)
     {
-        MemoryStream key = new(), enc = new(), plain = new();
-        Assembly.GetExecutingAssembly().GetManifestResourceStream($"MusicDecrypto.Library.Tests.DataSets.{name}.key")?.CopyTo(key);
-        Assembly.GetExecutingAssembly().GetManifestResourceStream($"MusicDecrypto.Library.Tests.DataSets.{name}.payload.enc")!.CopyTo(enc);
-        Assembly.GetExecutingAssembly().GetManifestResourceStream($"MusicDecrypto.Library.Tests.DataSets.{name}.payload")!.CopyTo(plain);
-        return (key.GetBuffer(), enc.GetBuffer(), plain.GetBuffer());
+        MemoryStream enc = new(), plain = new();
+        Assembly.GetExecutingAssembly().GetManifestResourceStream($"MusicDecrypto.Library.Tests.DataSets.{name}.key.enc")!.CopyTo(enc);
+        Assembly.GetExecutingAssembly().GetManifestResourceStream($"MusicDecrypto.Library.Tests.DataSets.{name}.key")!.CopyTo(plain);
+        return (Encoding.ASCII.GetString(enc.GetBuffer()), plain.GetBuffer());
     }
 
     [TestMethod]
@@ -80,20 +70,31 @@ public class TencentTests
     [DataRow("mgg", "map")]
     [DataRow("mflac", "rc4")]
     [DataRow("mflac0", "rc4")]
-    public void FileTest(string extension, string type)
+    public void PayloadTest(string extension, string type)
     {
-        byte[] key, enc, plain;
-        (key, enc, plain) = LoadFileDataSet($"{extension}-{type}");
+        byte[] key, buffer, plain;
+        (key, buffer, plain) = LoadPayloadDataSet($"{extension}-{type}");
+
         IDecryptor cipher = type switch
         {
             "static" => new StaticCipher(),
             "map" => new MapCipher(key),
-            "rc4" => new RC4Cipher(key, 5120, 128),
+            "rc4" => new RC4Cipher(key, 128, 5120),
             _ => throw new ArgumentException("Invalid cipher type.")
         };
-        cipher.Decrypt(enc, 0);
+        _ = cipher.Decrypt(buffer, 0);
+
         CollectionAssert.AreEqual(
-            plain.AsSpan().ToArray(),
+            buffer,
             plain);
+    }
+
+    private static (byte[], byte[], byte[]) LoadPayloadDataSet(string name)
+    {
+        MemoryStream key = new(), enc = new(), plain = new();
+        Assembly.GetExecutingAssembly().GetManifestResourceStream($"MusicDecrypto.Library.Tests.DataSets.{name}.key")?.CopyTo(key);
+        Assembly.GetExecutingAssembly().GetManifestResourceStream($"MusicDecrypto.Library.Tests.DataSets.{name}.payload.enc")!.CopyTo(enc);
+        Assembly.GetExecutingAssembly().GetManifestResourceStream($"MusicDecrypto.Library.Tests.DataSets.{name}.payload")!.CopyTo(plain);
+        return (key.GetBuffer(), enc.GetBuffer(), plain.GetBuffer());
     }
 }
