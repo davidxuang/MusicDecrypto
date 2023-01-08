@@ -3,13 +3,25 @@
   <PropertyGroup>
     <TargetFramework>net7.0</TargetFramework>
     <AssemblyName>libmusicdecrypto</AssemblyName>
-    <Version>2.1.2</Version>
     <Nullable>enable</Nullable>
+    <PackageId>$(MSBuildProjectName.Replace(" ", "_"))</PackageId>
+    <Version>2.2.0</Version>
+    <Description>Music de-obfuscation on .NET</Description>
+    <Authors>davidxuang</Authors>
+    <PackageLicenseExpression>LGPL-3.0-or-later</PackageLicenseExpression>
+    <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
+    <PackageIcon>Logo.png</PackageIcon>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryUrl>https://github.com/davidxuang/MusicDecrypto</RepositoryUrl>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
     <DebugType>None</DebugType>
   </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="MusicDecrypto.Library.Tests" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="NativeMemoryArray" Version="1.2.*" />
@@ -24,6 +36,20 @@
   <ItemGroup>
     <EmbeddedResource Include="Vendor\Ximalaya\x2m_map.bin" />
     <EmbeddedResource Include="Vendor\Ximalaya\x3m_map.bin" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Logo.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
   </ItemGroup>
 
 </Project>

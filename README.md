@@ -1,6 +1,7 @@
 # MusicDecrypto
 
 [![Build](https://github.com/davidxuang/MusicDecrypto/actions/workflows/build.yaml/badge.svg)](https://github.com/davidxuang/MusicDecrypto/actions/workflows/build.yaml)
+[![NuGet](https://badgen.net/nuget/v/MusicDecrypto.Library)](https://www.nuget.org/packages/MusicDecrypto.Library/)
 [![GitHub release](https://img.shields.io/github/release/davidxuang/musicdecrypto.svg)](https://GitHub.com/davidxuang/musicdecrypto/releases/)
 [![GitHub license](https://img.shields.io/github/license/davidxuang/musicdecrypto.svg)](https://github.com/davidxuang/musicdecrypto/blob/master/LICENSE)
 
