@@ -1,5 +1,7 @@
 <Directives xmlns="http://schemas.microsoft.com/netfx/2013/01/metadata">
   <Application>
+    <Assembly Name="musicdecrypto" Dynamic="Required All" />
+    <Assembly Name="Spectre.Console.Cli" Dynamic="Required All" />
     <Assembly Name="TagLibSharp">
       <Type Name="TagLib.Aac.File" Dynamic="Required All" />
       <Type Name="TagLib.Ape.File" Dynamic="Required All" />

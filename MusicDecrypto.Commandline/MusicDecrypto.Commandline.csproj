@@ -21,7 +21,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Mono.Options" Version="6.*" />
+    <PackageReference Include="Spectre.Console.Cli" Version="0.45.*" />
   </ItemGroup>
 
   <ItemGroup>

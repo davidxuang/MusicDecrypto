@@ -67,19 +67,23 @@ public static class DecryptoFactory
 
     public static HashSet<string> KnownExtensions => _extensionMap.Keys.ToHashSet();
 
-    public static DecryptoBase Create(MarshalMemoryStream buffer, string name, DecryptoBase.WarnHandler? warn = null)
+    public static DecryptoBase Create(
+        MarshalMemoryStream buffer,
+        string name,
+        DecryptoBase.WarnHandler? warn = null,
+        DecryptoBase.MatchRequestHandler? matchConfirm = null)
     {
         (var cipher, var format) = _extensionMap[Path.GetExtension(name)];
         return cipher switch
         {
             Vendors.NetEase    => new Vendor.NetEase.Decrypto(buffer, name, warn),
             Vendors.TencentTm  => new TmDecrypto(buffer, name, warn, format),
-            Vendors.TencentQmc => new QmcDecrypto(buffer, name, warn, format),
+            Vendors.TencentQmc => new QmcDecrypto(buffer, name, warn, matchConfirm, format),
             Vendors.Kugou      => new Vendor.Kugou.Decrypto(buffer, name, warn),
             Vendors.Kuwo       => new Vendor.Kuwo.Decrypto(buffer, name, warn),
             Vendors.Xiami      => new Vendor.Xiami.Decrypto(buffer, name, warn, format),
             Vendors.Ximalaya   => new Vendor.Ximalaya.Decrypto(buffer, name, warn),
-            _                  => throw new NotSupportedException(), // should not be accessed
+            _                  => throw new NotSupportedException(),
         };
     }
 }

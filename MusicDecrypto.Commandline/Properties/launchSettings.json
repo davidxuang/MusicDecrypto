@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "MusicDecrypto.Commandline": {
+      "commandName": "Project",
+      "commandLineArgs": "D:\\Downloads\\Music -f"
+    }
+  }
+}

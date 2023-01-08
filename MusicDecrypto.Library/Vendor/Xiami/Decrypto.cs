@@ -14,7 +14,7 @@ internal sealed class Decrypto : DecryptoBase
     protected override IDecryptor Decryptor { get; init; }
 
     public Decrypto(MarshalMemoryStream buffer, string name, WarnHandler? warn, AudioTypes type = AudioTypes.Undefined)
-        : base(buffer, name, warn, type)
+        : base(buffer, name, warn, null, type)
     {
         // Check file header
         if (!_reader.ReadBytes(8).AsSpan(0, 4).SequenceEqual(_magic) || !_reader.ReadBytes(4).SequenceEqual(_separator))

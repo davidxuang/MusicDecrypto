@@ -12,127 +12,126 @@ using FluentAvalonia.UI.Controls;
 using FluentAvalonia.UI.Media;
 using MusicDecrypto.Avalonia.ViewModels;
 
-namespace MusicDecrypto.Avalonia.Views
+namespace MusicDecrypto.Avalonia.Views;
+
+public partial class MainWindow : CoreWindow
 {
-    public partial class MainWindow : CoreWindow
+    public MainWindow()
     {
-        public MainWindow()
-        {
-            DataContext = new MainViewModel();
+        DataContext = new MainViewModel();
 
-            InitializeComponent();
+        InitializeComponent();
 
-            SetupDnd();
+        SetupDnd();
 #if DEBUG
-            this.AttachDevTools();
+        this.AttachDevTools();
 #endif
+    }
+
+    private void InitializeComponent()
+    {
+        AvaloniaXamlLoader.Load(this);
+    }
+
+    private void SetupDnd()
+    {
+        void DragOver(object? sender, DragEventArgs e)
+        {
+            e.DragEffects &= DragDropEffects.Copy;
+
+            if (!e.Data.Contains(DataFormats.FileNames))
+                e.DragEffects = DragDropEffects.None;
         }
 
-        private void InitializeComponent()
+        void Drop(object? sender, DragEventArgs e)
         {
-            AvaloniaXamlLoader.Load(this);
-        }
+            e.DragEffects &= DragDropEffects.Copy;
 
-        private void SetupDnd()
-        {
-            void DragOver(object? sender, DragEventArgs e)
+            if (e.Data.Contains(DataFormats.FileNames))
             {
-                e.DragEffects &= DragDropEffects.Copy;
-
-                if (!e.Data.Contains(DataFormats.FileNames))
-                    e.DragEffects = DragDropEffects.None;
-            }
-
-            void Drop(object? sender, DragEventArgs e)
-            {
-                e.DragEffects &= DragDropEffects.Copy;
-
-                if (e.Data.Contains(DataFormats.FileNames))
+                if (DataContext is MainViewModel vm)
                 {
-                    if (DataContext is MainViewModel vm)
+                    foreach (var path in e.Data.GetFileNames()!)
                     {
-                        foreach (var path in e.Data.GetFileNames()!)
+                        if (Directory.Exists(path))
                         {
-                            if (Directory.Exists(path))
-                            {
-                                Array.ForEach(
-                                    Directory.GetFiles(path, "*", SearchOption.AllDirectories),
-                                    f => vm.AddFile(f));
-                            }
-                            else if (File.Exists(path))
-                                vm.AddFile(path);
+                            Array.ForEach(
+                                Directory.GetFiles(path, "*", SearchOption.AllDirectories),
+                                f => vm.AddFile(f));
                         }
+                        else if (File.Exists(path))
+                            vm.AddFile(path);
                     }
                 }
-                else e.DragEffects = DragDropEffects.None;
             }
-
-            AddHandler(DragDrop.DragOverEvent, DragOver);
-            AddHandler(DragDrop.DropEvent, Drop);
+            else e.DragEffects = DragDropEffects.None;
         }
 
-        protected override void OnOpened(EventArgs e)
+        AddHandler(DragDrop.DragOverEvent, DragOver);
+        AddHandler(DragDrop.DropEvent, Drop);
+    }
+
+    protected override void OnOpened(EventArgs e)
+    {
+        base.OnOpened(e);
+
+        if (AvaloniaLocator.Current.GetService<FluentAvaloniaTheme>() is FluentAvaloniaTheme thm)
         {
-            base.OnOpened(e);
+            thm.RequestedThemeChanged += OnRequestedThemeChanged;
 
-            if (AvaloniaLocator.Current.GetService<FluentAvaloniaTheme>() is FluentAvaloniaTheme thm)
-            {
-                thm.RequestedThemeChanged += OnRequestedThemeChanged;
-
-                // Enable Mica on Windows 11
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                {
-                    if (IsWindows11 && thm.RequestedTheme != FluentAvaloniaTheme.HighContrastModeString)
-                    {
-                        TransparencyBackgroundFallback = Brushes.Transparent;
-                        TransparencyLevelHint = WindowTransparencyLevel.Mica;
-
-                        TryEnableMicaEffect(thm);
-                    }
-                }
-
-                thm.ForceWin32WindowToTheme(this);
-            }
-        }
-
-        private void OnRequestedThemeChanged(FluentAvaloniaTheme sender, RequestedThemeChangedEventArgs args)
-        {
+            // Enable Mica on Windows 11
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                // TODO: add Windows version to CoreWindow
-                if (IsWindows11 && args.NewTheme != FluentAvaloniaTheme.HighContrastModeString)
+                if (IsWindows11 && thm.RequestedTheme != FluentAvaloniaTheme.HighContrastModeString)
                 {
-                    TryEnableMicaEffect(sender);
-                }
-                else if (args.NewTheme == FluentAvaloniaTheme.HighContrastModeString)
-                {
-                    // Clear the local value here, and let the normal styles take over for HighContrast theme
-                    SetValue(BackgroundProperty, AvaloniaProperty.UnsetValue);
+                    TransparencyBackgroundFallback = Brushes.Transparent;
+                    TransparencyLevelHint = WindowTransparencyLevel.Mica;
+
+                    TryEnableMicaEffect(thm);
                 }
             }
-        }
 
-        private void TryEnableMicaEffect(FluentAvaloniaTheme thm)
+            thm.ForceWin32WindowToTheme(this);
+        }
+    }
+
+    private void OnRequestedThemeChanged(FluentAvaloniaTheme sender, RequestedThemeChangedEventArgs args)
+    {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-#pragma warning disable CS8605 // Unboxing possibly null value.
-            if (thm.RequestedTheme == FluentAvaloniaTheme.DarkModeString)
+            // TODO: add Windows version to CoreWindow
+            if (IsWindows11 && args.NewTheme != FluentAvaloniaTheme.HighContrastModeString)
             {
-                var color = this.TryFindResource("SolidBackgroundFillColorBase", out var value) ? (Color2)(Color)value : new Color2(32, 32, 32);
-
-                color = color.LightenPercent(-0.8f);
-
-                Background = new ImmutableSolidColorBrush(color, 0.78);
+                TryEnableMicaEffect(sender);
             }
-            else if (thm.RequestedTheme == FluentAvaloniaTheme.LightModeString)
+            else if (args.NewTheme == FluentAvaloniaTheme.HighContrastModeString)
             {
-                // Similar effect here
-                var color = this.TryFindResource("SolidBackgroundFillColorBase", out var value) ? (Color2)(Color)value : new Color2(243, 243, 243);
-
-                color = color.LightenPercent(0.5f);
-
-                Background = new ImmutableSolidColorBrush(color, 0.9);
+                // Clear the local value here, and let the normal styles take over for HighContrast theme
+                SetValue(BackgroundProperty, AvaloniaProperty.UnsetValue);
             }
-#pragma warning restore CS8605
         }
+    }
+
+    private void TryEnableMicaEffect(FluentAvaloniaTheme thm)
+    {
+#pragma warning disable CS8605 // Unboxing possibly null value.
+        if (thm.RequestedTheme == FluentAvaloniaTheme.DarkModeString)
+        {
+            var color = this.TryFindResource("SolidBackgroundFillColorBase", out var value) ? (Color2)(Color)value : new Color2(32, 32, 32);
+
+            color = color.LightenPercent(-0.8f);
+
+            Background = new ImmutableSolidColorBrush(color, 0.78);
+        }
+        else if (thm.RequestedTheme == FluentAvaloniaTheme.LightModeString)
+        {
+            // Similar effect here
+            var color = this.TryFindResource("SolidBackgroundFillColorBase", out var value) ? (Color2)(Color)value : new Color2(243, 243, 243);
+
+            color = color.LightenPercent(0.5f);
+
+            Background = new ImmutableSolidColorBrush(color, 0.9);
+        }
+#pragma warning restore CS8605
     }
 }

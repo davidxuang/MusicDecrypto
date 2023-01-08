@@ -49,7 +49,7 @@
                                 <TextBlock Grid.Row="0" Grid.Column="2"
                                            Classes="BaseTextBlockStyle" Text="{Binding Title}" />
                                 <TextBlock Grid.Row="1" Grid.Column="2"
-                                           Classes="CaptionTextBlockStyle" Text="{Binding Artist}" />
+                                           Classes="CaptionTextBlockStyle" Text="{Binding Performers}" />
                                 <TextBlock Grid.Row="2" Grid.Column="2"
                                            Classes="CaptionTextBlockStyle" Text="{Binding Album}" />
                                 <TextBlock Grid.Row="3" Grid.Column="2"

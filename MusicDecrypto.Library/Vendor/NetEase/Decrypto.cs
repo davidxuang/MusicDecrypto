@@ -6,6 +6,7 @@ using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Threading.Tasks;
 using MusicDecrypto.Library.Cryptography.Extensions;
 using MusicDecrypto.Library.Media;
 using MusicDecrypto.Library.Media.Extensions;
@@ -21,8 +22,7 @@ internal sealed partial class Decrypto : DecryptoBase
     private static readonly byte[] _initBox = Enumerable.Range(0, 0x100).Select(x => (byte)x).ToArray();
 
     private readonly Metadata? _metadata;
-    private readonly ImageTypes _coverType;
-    private readonly byte[]? _coverBuffer;
+    private byte[]? _coverBuffer;
 
     protected override IDecryptor Decryptor { get; init; }
 
@@ -88,9 +88,9 @@ internal sealed partial class Decrypto : DecryptoBase
                     Encoding.ASCII.GetString(
                         metaChunk[skipCount..]))
                 .AesEcbDecrypt(_rootMeta)[6..]);
-            _metadata = JsonSerializer.Deserialize(meta, SerializerContext.Default.Metadata);
+            _metadata = JsonSerializer.Deserialize(meta, NetEaseSerializerContext.Default.Metadata);
             if (_metadata?.MusicName == null)
-                _metadata = JsonSerializer.Deserialize(meta, SerializerContext.Default.RadioMetadata)?.MainMusic;
+                _metadata = JsonSerializer.Deserialize(meta, NetEaseSerializerContext.Default.RadioMetadata)?.MainMusic;
         }
         catch (NullFileChunkException)
         {
@@ -104,48 +104,49 @@ internal sealed partial class Decrypto : DecryptoBase
         // Skip ahead
         _ = _buffer.Seek(9, SeekOrigin.Current);
 
-        // Get cover data
+        // Read cover data
         try
         {
-            // Plan A: Read cover from file
             _coverBuffer = new byte[_reader.ReadInt32()];
             ReadChunk(_coverBuffer);
         }
         catch (NullFileChunkException)
         {
-            RaiseWarn("File does not contain cover image. Trying to get from server...");
+            RaiseWarn("File does not contain cover image. Will try to get from server.");
+        }
 
-            // Plan B: get image from server
+        // Set offset
+        _buffer.Origin = _buffer.Position;
+    }
+
+    protected override async ValueTask<bool> ProcessMetadataOverrideAsync(Tag tag)
+    {
+        if (tag == null) return false;
+
+        bool modified = false;
+
+        if (_coverBuffer == null)
+        {
             try
             {
                 var coverUri = _metadata?.AlbumPic;
                 if (!Uri.IsWellFormedUriString(coverUri, UriKind.Absolute))
                 {
                     RaiseWarn("File does not contain cover link.");
-                    throw;
+                    throw new InvalidDataException();
                 }
                 using var httpClient = new HttpClient();
-                _coverBuffer = httpClient.GetByteArrayAsync(coverUri).Result;
+                _coverBuffer = await httpClient.GetByteArrayAsync(coverUri);
             }
             catch
             {
                 RaiseWarn("Failed to download cover image.");
             }
         }
-        _coverType = _coverBuffer?.SniffImageType() ?? ImageTypes.Undefined;
-        if (_coverType == ImageTypes.Undefined) _coverBuffer = null;
 
-        // Set offset
-        _buffer.Origin = _buffer.Position;
-    }
-
-    protected override bool ProcessMetadataOverride(Tag tag)
-    {
-        if (tag == null) return false;
-
-        bool modified = false;
-
-        if (_coverType != ImageTypes.Undefined)
+        var coverType = _coverBuffer?.SniffImageType() ?? ImageTypes.Undefined;
+        if (coverType == ImageTypes.Undefined) _coverBuffer = null;
+        else
         {
             if (tag.Pictures.Length > 0)
             {
@@ -157,10 +158,11 @@ internal sealed partial class Decrypto : DecryptoBase
             }
             else
             {
-                tag.Pictures = new IPicture[] {
+                tag.Pictures = new IPicture[]
+                {
                     new Picture(new ByteVector(_coverBuffer))
                     {
-                        MimeType = _coverType.GetMime(),
+                        MimeType = coverType.GetMime(),
                         Type = PictureType.FrontCover
                     }
                 };
@@ -181,10 +183,6 @@ internal sealed partial class Decrypto : DecryptoBase
             if (_metadata.Artists?.Any() == true)
             {
                 tag.Performers = _metadata.Artists.ToArray();
-                if (tag.AlbumArtists.Length == 0)
-                {
-                    tag.AlbumArtists = new[] { _metadata.Artists.First() };
-                }
                 modified = true;
             }
             if (!string.IsNullOrEmpty(_metadata.Album))
@@ -262,5 +260,5 @@ internal sealed partial class Decrypto : DecryptoBase
     [JsonSerializable(typeof(string))]
     [JsonSerializable(typeof(ulong))]
     [JsonSerializable(typeof(RadioMetadata))]
-    private sealed partial class SerializerContext : JsonSerializerContext { }
+    private sealed partial class NetEaseSerializerContext : JsonSerializerContext { }
 }

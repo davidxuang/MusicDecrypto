@@ -1,26 +1,42 @@
 ﻿using System;
 using System.Buffers.Binary;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Numerics;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using MusicDecrypto.Library.Cryptography;
 using MusicDecrypto.Library.Media;
+using MusicDecrypto.Library.Media.Extensions;
 using MusicDecrypto.Library.Numerics;
 using TagLib;
+using static MusicDecrypto.Library.Vendor.Tencent.ApiClient;
 
 namespace MusicDecrypto.Library.Vendor.Tencent;
 
 internal sealed partial class QmcDecrypto : DecryptoBase
 {
+    [GeneratedRegex("^[0-9A-F]{16,}$")]
+    private static partial Regex HashedFilenameRegex();
+
     private static readonly byte[] _v2Magic = "QQMusic EncV2,Key:"u8.ToArray();
     private static readonly byte[] _v2TeaKey1 = "386ZJY!@#*$%^&)("u8.ToArray();
     private static readonly byte[] _v2TeaKey2 = "**#!(#$%&^a1cZ,T"u8.ToArray();
-    private static readonly Regex _regex = new("^[0-9A-F]{16,}$");
+    private static readonly Regex _regex = HashedFilenameRegex();
+
+    private readonly ulong _id;
 
     protected override IDecryptor Decryptor { get; init; }
 
-    public QmcDecrypto(MarshalMemoryStream buffer, string name, WarnHandler? warn, AudioTypes type) : base(buffer, name, warn, type)
+    public QmcDecrypto(
+        MarshalMemoryStream buffer,
+        string name,
+        WarnHandler? warn,
+        MatchRequestHandler? matchConfirm,
+        AudioTypes type)
+        : base(buffer, name, warn, matchConfirm, type)
     {
         _ = _buffer.Seek(-4, SeekOrigin.End);
         int indicator = _reader.ReadInt32();
@@ -35,7 +51,7 @@ internal sealed partial class QmcDecrypto : DecryptoBase
                 length = _buffer.Length - 8 - chunkLength;
                 var metas = Encoding.ASCII.GetString(_buffer.AsSpan((int)length, chunkLength)).Split(',');
                 key = DecryptKey(metas[0]);
-                // var id = ulong.Parse(metas[1]);
+                _id = ulong.Parse(metas[1]);
                 break;
 
             case 0x67615453: // "STag"
@@ -66,40 +82,8 @@ internal sealed partial class QmcDecrypto : DecryptoBase
                   ? new RC4Cipher(key, 128, 5120)
                   : new MapCipher(key);
     }
-    protected override bool ProcessMetadataOverride(Tag tag)
-    {
-        if (tag == null) return false;
 
-        var baseName = Path.GetFileNameWithoutExtension(_oldName);
-
-        if (_regex.IsMatch(baseName))
-        {
-            if (tag.Title != null && tag.AlbumArtists.Length > 0)
-            {
-                _newBaseName = string.Join(" - ", tag.AlbumArtists[0], tag.Title);
-                RaiseWarn($"New filename “{_newBaseName}”");
-            }
-            else if (tag.Title != null && tag.Performers.Length > 0)
-            {
-                _newBaseName = string.Join(" - ", tag.Performers[0], tag.Title);
-                RaiseWarn($"New filename “{_newBaseName}”");
-            }
-            else RaiseWarn("Detected hashed filename but failed to determine new name.");
-        }
-
-        if (tag.Pictures.Length > 0)
-        {
-            if (tag.Pictures[0].Type != PictureType.FrontCover)
-            {
-                tag.Pictures[0].Type = PictureType.FrontCover;
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    public static byte[] DecryptKey(string value)
+    internal static byte[] DecryptKey(string value)
     {
         var key = Convert.FromBase64String(value.TrimEnd('\0')).AsSpan();
         int length = key.Length;
@@ -190,5 +174,152 @@ internal sealed partial class QmcDecrypto : DecryptoBase
         data.CopyTo(buffer);
 
         length = data.Length;
+    }
+
+    protected override async ValueTask<bool> ProcessMetadataOverrideAsync(Tag tag)
+    {
+        var modified = false;
+
+        if (tag == null) return modified;
+
+        var baseName = Path.GetFileNameWithoutExtension(_oldName);
+
+        if (_regex.IsMatch(baseName))
+        {
+            if (!string.IsNullOrEmpty(tag.Title) && tag.AlbumArtists.Length > 0)
+            {
+                _newBaseName = string.Join(" - ", tag.AlbumArtists[0], tag.Title);
+                RaiseWarn($"New filename “{_newBaseName}”");
+            }
+            else if (!string.IsNullOrEmpty(tag.Title) && tag.Performers.Length > 0)
+            {
+                _newBaseName = string.Join(" - ", tag.Performers[0], tag.Title);
+                RaiseWarn($"New filename “{_newBaseName}”");
+            }
+            else RaiseWarn("Detected hashed filename but failed to determine new name.");
+        }
+
+        var _client = new ApiClient();
+
+        Track? meta = null;
+        if (_id != 0)
+        {
+            try { meta = (await _client.GetTracksInfoAsync(_id))?[0]; }
+            catch { RaiseWarn("Failed to retrieve metadata regarding the ID."); }
+        }
+        else if (!(string.IsNullOrEmpty(tag.Performers[0]) && string.IsNullOrEmpty(tag.Album) || string.IsNullOrEmpty(tag.Title)))
+        {
+            try
+            {
+                var results = await _client.SearchAsync(string.Join(' ',
+                    tag.Title,
+                    string.Join(' ', tag.Performers),
+                    tag.Album));
+
+                meta = await FindMatchedTrackAsync(tag, results);
+            }
+            catch { }
+            finally { if (meta == null) RaiseWarn("Failed to match tracks online."); }
+        }
+
+        if (meta != null)
+        {
+            var album = meta.Album;
+            var albumId = album.Id;
+            var albumMediaId = string.IsNullOrEmpty(album.Pmid) ? album.Mid : album.Pmid;
+
+            try
+            {
+                byte[]? coverBuffer = null;
+                string[]? performers = null;
+                if (!string.IsNullOrEmpty(albumMediaId))
+                {
+                    var coverTask = _client.GetAlbumCoverByMediaIdAsync(albumMediaId);
+                    var performerTask = _client.GetAlbumInfoAsync(albumMediaId);
+                    Task.WaitAll(coverTask, performerTask);
+
+                    coverBuffer = coverTask.Result;
+                    performers = performerTask.Result?.Singer?.SingerList?.Select(p => p.Name)?.ToArray();
+                }
+                else if (albumId != 0)
+                {
+                    coverBuffer = await _client.GetAlbumCoverByIdAsync(albumId);
+                }
+
+                if (coverBuffer?.Length > 0)
+                {
+                    tag.Pictures = new IPicture[]
+                    {
+                        new Picture(new ByteVector(coverBuffer))
+                        {
+                            MimeType = coverBuffer.SniffImageType().GetMime(),
+                            Type = PictureType.FrontCover,
+                        }
+                    };
+                    modified = true;
+                }
+
+                if (performers?.Length > 0)
+                {
+                    tag.Performers = performers;
+                    modified = true;
+                }
+            }
+            catch
+            {
+                RaiseWarn("Failed to fetch album cover.");
+            }
+        }
+
+        if (modified == false && tag.Pictures.Length > 0)
+        {
+            if (tag.Pictures[0].Type != PictureType.FrontCover)
+            {
+                tag.Pictures[0].Type = PictureType.FrontCover;
+                modified = true;
+            }
+        }
+
+        return modified;
+    }
+
+    private async ValueTask<Track?> FindMatchedTrackAsync(Tag tag, IEnumerable<Track> tracks)
+    {
+        ushort confidence = 100;
+        var matchTitles = tracks.Where(t => t.Title == tag.Title);
+        if (!matchTitles.Any())
+        {
+            matchTitles = tracks.Where(t => t.Name == tag.Title);
+            confidence -= 40;
+            if (!matchTitles.Any()) return null;
+        }
+
+        var matchPerformers = matchTitles
+            .Where(t => t.Singer
+                .Where(p => p.Title == tag.Performers[0] || p.Name == tag.Performers[0])
+                .Any());
+        if (!matchPerformers.Any()) return null;
+
+        var matchAlbums = matchPerformers.Where(t => t.Album.Title == tag.Album);
+        if (!matchAlbums.Any())
+        {
+            matchAlbums = matchPerformers.Where(t =>
+                t.Album.Title.Contains(tag.Album, StringComparison.InvariantCultureIgnoreCase) ||
+                tag.Album.Contains(t.Album.Title, StringComparison.InvariantCultureIgnoreCase));
+            confidence -= 20;
+            if (!matchAlbums.Any()) return null;
+        }
+
+        var match = matchAlbums.FirstOrDefault()!;
+        if (matchAlbums.Count() > 1 || confidence < 100)
+        {
+            var confirm = await RequestMatchAsync(
+                (tag.Title,   string.Join("; ", tag.Performers),                    tag.Album        ),
+                (match.Title, string.Join("; ", match.Singer.Select(p => p.Title)), match.Album.Title));
+
+            if (!confirm) return null;
+        }
+
+        return match;
     }
 }

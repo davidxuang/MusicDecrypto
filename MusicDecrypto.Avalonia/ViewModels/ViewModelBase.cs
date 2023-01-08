@@ -1,14 +1,13 @@
 using System.ComponentModel;
 
-namespace MusicDecrypto.Avalonia.ViewModels
-{
-    public abstract class ViewModelBase : INotifyPropertyChanged
-    {
-        public event PropertyChangedEventHandler? PropertyChanged;
+namespace MusicDecrypto.Avalonia.ViewModels;
 
-        protected void PropertyHasChanged(string propName)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propName));
-        }
+public abstract class ViewModelBase : INotifyPropertyChanged
+{
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    protected void PropertyHasChanged(string propName)
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propName));
     }
 }

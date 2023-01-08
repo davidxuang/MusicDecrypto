@@ -40,7 +40,7 @@ internal sealed partial class Decrypto : DecryptoBase
     protected override IDecryptor Decryptor { get; init; }
 
     public Decrypto(MarshalMemoryStream buffer, string name, WarnHandler? warn, AudioTypes type = AudioTypes.Undefined)
-        : base(buffer, name, warn, type)
+        : base(buffer, name, warn, null, type)
     {
         Decryptor = Path.GetExtension(name) switch
         {

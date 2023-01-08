@@ -2,20 +2,19 @@ using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
 using MusicDecrypto.Avalonia.ViewModels;
 
-namespace MusicDecrypto.Avalonia.Pages
+namespace MusicDecrypto.Avalonia.Pages;
+
+public partial class SettingsPage : UserControl
 {
-    public partial class SettingsPage : UserControl
+    public SettingsPage()
     {
-        public SettingsPage()
-        {
-            DataContext = new SettingsViewModel();
+        DataContext = new SettingsViewModel();
 
-            InitializeComponent();
-        }
+        InitializeComponent();
+    }
 
-        private void InitializeComponent()
-        {
-            AvaloniaXamlLoader.Load(this);
-        }
+    private void InitializeComponent()
+    {
+        AvaloniaXamlLoader.Load(this);
     }
 }

@@ -7,7 +7,8 @@ internal sealed class TmDecrypto : DecryptoBase
 {
     protected override IDecryptor Decryptor { get; init; } = new Cipher();
 
-    public TmDecrypto(MarshalMemoryStream buffer, string name, WarnHandler? warn, AudioTypes type) : base(buffer, name, warn, type) { }
+    public TmDecrypto(MarshalMemoryStream buffer, string name, WarnHandler? warn, AudioTypes type)
+        : base(buffer, name, warn, null, type) { }
 
     private sealed class Cipher : IDecryptor
     {

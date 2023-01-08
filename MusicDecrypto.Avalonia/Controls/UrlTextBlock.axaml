@@ -1,29 +1,29 @@
 <Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:ic="using:FluentIcons.Avalonia"
+        xmlns:ic="using:FluentIcons.FluentAvalonia"
         xmlns:local="using:MusicDecrypto.Avalonia.Controls">
 
-	<Design.PreviewWith>
-		<local:UrlTextBlock Text="External link" />
-	</Design.PreviewWith>
+    <Design.PreviewWith>
+        <local:UrlTextBlock Text="External link" />
+    </Design.PreviewWith>
 
-	<Style Selector="local|UrlTextBlock">
-		<Setter Property="Foreground" Value="{DynamicResource AccentTextFillColorPrimaryBrush}" />
-		<Setter Property="Template">
-			<ControlTemplate>
-				<StackPanel Name="LayoutRoot" Orientation="Horizontal" Spacing="2">
-					<TextBlock Classes="BodyStrongTextBlockStyle" Text="{TemplateBinding Text}" />
-					<ic:SymbolIcon Symbol="Open" FontSize="14" VerticalAlignment="Center" />
-				</StackPanel>
-			</ControlTemplate>
-		</Setter>
-	</Style>
+    <Style Selector="local|UrlTextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource AccentTextFillColorPrimaryBrush}" />
+        <Setter Property="Template">
+            <ControlTemplate>
+                <StackPanel Name="LayoutRoot" Orientation="Horizontal" Spacing="2">
+                    <TextBlock Classes="BodyStrongTextBlockStyle" Text="{TemplateBinding Text}" />
+                    <ic:SymbolIcon VerticalAlignment="Center" FontSize="14" Symbol="Open" />
+                </StackPanel>
+            </ControlTemplate>
+        </Setter>
+    </Style>
 
-	<Style Selector="local|UrlTextBlock /template/ StackPanel#LayoutRoot:pointerover TextBlock">
-		<Setter Property="Foreground" Value="{DynamicResource AccentTextFillColorTertiaryBrush}" />
-	</Style>
-	<Style Selector="local|UrlTextBlock:pressed /template/ StackPanel#LayoutRoot:pointerover TextBlock">
-		<Setter Property="Foreground" Value="{DynamicResource AccentTextFillColorSecondaryBrush}" />
-	</Style>
-	
+    <Style Selector="local|UrlTextBlock /template/ StackPanel#LayoutRoot:pointerover TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource AccentTextFillColorTertiaryBrush}" />
+    </Style>
+    <Style Selector="local|UrlTextBlock:pressed /template/ StackPanel#LayoutRoot:pointerover TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource AccentTextFillColorSecondaryBrush}" />
+    </Style>
+
 </Styles>

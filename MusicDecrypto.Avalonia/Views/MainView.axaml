@@ -1,56 +1,64 @@
-<UserControl xmlns="https://github.com/avaloniaui"
+<UserControl x:Class="MusicDecrypto.Avalonia.Views.MainView"
+             xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:ic="using:FluentIcons.FluentAvalonia"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:ui="using:FluentAvalonia.UI.Controls"
-			 xmlns:ic="using:FluentIcons.Avalonia"
-             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
-             x:Class="MusicDecrypto.Avalonia.Views.MainView">
+             mc:Ignorable="d" d:DesignHeight="450" d:DesignWidth="800">
 
-	<Grid RowDefinitions="48,*">
-		<Grid Name="TitleBarHost" ColumnDefinitions="Auto,Auto,*,Auto" Background="Transparent">			
-			<Image IsHitTestVisible="False" Source="/Assets/logo.ico"
-				   Width="20" Height="20" Margin="14"
-				   IsVisible="{Binding !#FrameView.CanGoBack}"/>
-			
-			<ui:Button Classes="AppBarButton" Command="{Binding #FrameView.GoBack}"
-					   IsEnabled="{Binding #FrameView.CanGoBack}"
-					   IsVisible="{Binding #FrameView.CanGoBack}"
-					   Margin="6" Padding="8">
-				<Button.Content>
-					<ic:SymbolIcon FontSize="20" Symbol="ArrowLeft" />
-				</Button.Content>
-				<ToolTip.Tip>Back</ToolTip.Tip>
-			</ui:Button>
+    <Grid RowDefinitions="48,*">
+        <Grid Name="TitleBarHost" Background="Transparent" ColumnDefinitions="Auto,Auto,*,Auto">
+            <Image Width="20" Height="20"
+                   Margin="14"
+                   IsHitTestVisible="False" IsVisible="{Binding !#FrameView.CanGoBack}"
+                   Source="/Assets/logo.ico" />
 
-			<TextBlock Grid.Column="1" IsHitTestVisible="False"
-					   Text="MusicDecrypto"
-					   FontSize="12" VerticalAlignment="Center"/>
+            <ui:Button Margin="6" Padding="8"
+                       Classes="AppBarButton" Command="{Binding #FrameView.GoBack}"
+                       IsEnabled="{Binding #FrameView.CanGoBack}"
+                       IsVisible="{Binding #FrameView.CanGoBack}">
+                <Button.Content>
+                    <ic:SymbolIcon FontSize="20" Symbol="ArrowLeft" />
+                </Button.Content>
+                <ToolTip.Tip>Back</ToolTip.Tip>
+            </ui:Button>
 
-			<StackPanel Grid.Column="3" Orientation="Horizontal" Margin="6" Spacing="6">
-				<ui:Button Name="OpenFilesButton" Classes="AppBarButton"
-						   Padding="8" VerticalAlignment="Center">
-					<Button.Content>
-						<ic:SymbolIcon FontSize="20" Symbol="DocumentAdd" />
-					</Button.Content>
-					<ToolTip.Tip>Open files</ToolTip.Tip>
-				</ui:Button>
+            <TextBlock Grid.Column="1"
+                       VerticalAlignment="Center"
+                       FontSize="12"
+                       IsHitTestVisible="False" Text="MusicDecrypto" />
 
-				<ui:Button Name="SettingsButton" Classes="AppBarButton"
-						   Padding="8" VerticalAlignment="Center">
-					<Button.Content>
-						<ic:SymbolIcon FontSize="20" Symbol="Settings" />
-					</Button.Content>
-					<ToolTip.Tip>Settings</ToolTip.Tip>
-				</ui:Button>
-			</StackPanel>
-		</Grid>
+            <StackPanel Grid.Column="3"
+                        Margin="6"
+                        Orientation="Horizontal" Spacing="6">
+                <ui:Button Name="OpenFilesButton"
+                           Padding="8" VerticalAlignment="Center"
+                           Classes="AppBarButton">
+                    <Button.Content>
+                        <ic:SymbolIcon FontSize="20" Symbol="DocumentAdd" />
+                    </Button.Content>
+                    <ToolTip.Tip>Open files</ToolTip.Tip>
+                </ui:Button>
 
-		<Border Grid.Row="1" Grid.ColumnSpan="3" CornerRadius="8 8 0 0"
-				BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="0,1,0,0"
-				Background="{DynamicResource LayerFillColorDefaultBrush}">
-			<ui:Frame Name="FrameView" />
-		</Border>
-	</Grid>
+                <ui:Button Name="SettingsButton"
+                           Padding="8" VerticalAlignment="Center"
+                           Classes="AppBarButton">
+                    <Button.Content>
+                        <ic:SymbolIcon FontSize="20" Symbol="Settings" />
+                    </Button.Content>
+                    <ToolTip.Tip>Settings</ToolTip.Tip>
+                </ui:Button>
+            </StackPanel>
+        </Grid>
+
+        <Border Grid.Row="1" Grid.ColumnSpan="3"
+                Background="{DynamicResource LayerFillColorDefaultBrush}"
+                BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
+                BorderThickness="0,1,0,0"
+                CornerRadius="8 8 0 0">
+            <ui:Frame Name="FrameView" />
+        </Border>
+    </Grid>
 
 </UserControl>

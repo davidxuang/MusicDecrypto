@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.IO;
+using System.Threading.Tasks;
 using MusicDecrypto.Library.Media;
 using MusicDecrypto.Library.Media.Extensions;
 using TagLib;
@@ -16,12 +19,18 @@ public abstract class DecryptoBase : IDisposable
     protected long _startOffset = 0;
     protected bool _decrypted;
 
-    protected DecryptoBase(MarshalMemoryStream buffer, string name, WarnHandler? warn, AudioTypes type = AudioTypes.Undefined)
+    protected DecryptoBase(
+        MarshalMemoryStream buffer,
+        string name,
+        WarnHandler? warn,
+        MatchRequestHandler? matchConfirm = null,
+        AudioTypes type = AudioTypes.Undefined)
     {
         _buffer = buffer;
         _reader = new(buffer);
         _oldName = name;
-        if (warn != null) Warn += warn;
+        if (warn != null) OnWarn += warn;
+        if (matchConfirm != null) OnRequestMatch += matchConfirm;
         _audioType = type;
         _buffer.ResetPosition();
     }
@@ -36,7 +45,7 @@ public abstract class DecryptoBase : IDisposable
         GC.SuppressFinalize(this);
     }
 
-    public Info Decrypt()
+    public async ValueTask<Info> DecryptAsync()
     {
         if (!_decrypted)
         {
@@ -44,16 +53,15 @@ public abstract class DecryptoBase : IDisposable
             var offset = _startOffset;
             while (offset < _buffer.Length)
             {
-                var block = _buffer.AsPaddedSpan(offset);
-                offset += Decryptor.Decrypt(block, offset);
+                offset += Decryptor.Decrypt(_buffer.AsPaddedSpan(offset), offset);
             }
             _decrypted = true;
-            return GetMetadata();
+            return await GetMetadataAsync();
         }
-        return GetMetadata(false);
+        return await GetMetadataAsync(false);
     }
 
-    private Info GetMetadata(bool firstRun = true)
+    private async ValueTask<Info> GetMetadataAsync(bool firstRun = true)
     {
         if (_audioType == AudioTypes.Undefined) _audioType = _buffer.SniffAudioType();
         _buffer.Name = "buffer" + _audioType.GetExtension();
@@ -66,7 +74,7 @@ public abstract class DecryptoBase : IDisposable
 
             if (firstRun)
             {
-                var modified = ProcessMetadataOverride(tag);
+                var modified = await ProcessMetadataOverrideAsync(tag);
                 if (_audioType == AudioTypes.Flac)
                 {
                     if (file.TagTypes.HasFlag(TagTypes.Id3v1) || file.TagTypes.HasFlag(TagTypes.Id3v2))
@@ -93,7 +101,7 @@ public abstract class DecryptoBase : IDisposable
             return new Info(
                 (_newBaseName ?? Path.GetFileNameWithoutExtension(_oldName)) + _audioType.GetExtension(),
                 tag.Title,
-                tag.Performers.Length > 0 ? tag.Performers[0] : null,
+                string.Join("; ", tag.Performers),
                 tag.Album,
                 tag.Pictures.Length > 0 ? tag.Pictures[0].Data.Data : null);
         }
@@ -101,16 +109,32 @@ public abstract class DecryptoBase : IDisposable
 
         return new Info((_newBaseName ?? Path.GetFileNameWithoutExtension(_oldName)) + _audioType.GetExtension());
     }
-    protected virtual bool ProcessMetadataOverride(Tag tag) { return false; } // return whether metadata is modified
+    protected virtual ValueTask<bool> ProcessMetadataOverrideAsync(Tag tag)
+        => ValueTask.FromResult(false); // return whether metadata is modified
 
     public delegate void WarnHandler(string message);
-    public event WarnHandler? Warn;
-    public void RaiseWarn(string message) => Warn?.Invoke(message);
+    private event WarnHandler? OnWarn;
+    public void RaiseWarn(string message) => OnWarn?.Invoke(message);
+
+    public delegate ValueTask<bool> MatchRequestHandler(string message, IEnumerable<MatchInfo> properties);
+    private readonly MatchRequestHandler? OnRequestMatch;
+    public async ValueTask<bool> RequestMatchAsync((string, string, string) local, (string, string, string) online)
+        => OnRequestMatch != null && await OnRequestMatch.Invoke(
+            "Metadata matching confirmation",
+            ImmutableArray.Create<MatchInfo>(
+                new("Local",  local.Item1,  local.Item2,  local.Item3),
+                new("Online", online.Item1, online.Item2, online.Item3)));
 
     public record class Info(
         string NewName,
         string? Title = null,
-        string? Artist = null,
+        string? Performers = null,
         string? Album = null,
         byte[]? Cover = null);
+
+    public record class MatchInfo(
+        string Key,
+        string Title,
+        string Performers,
+        string Album);
 }
