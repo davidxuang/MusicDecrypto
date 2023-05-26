@@ -20,7 +20,7 @@ public static class DecryptoFactory
         Ximalaya   = 0x60,
     }
 
-    private static readonly Dictionary<string, ValueTuple<Vendors, AudioTypes>> _extensionMap = new()
+    private static readonly Dictionary<string, (Vendors, AudioTypes)> _extensionMap = new()
     {
         { ".ncm",      (Vendors.NetEase,    AudioTypes.Undefined) },
         { ".tm2",      (Vendors.TencentTm,  AudioTypes.XM4a)      },

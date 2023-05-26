@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.IO;
@@ -252,7 +252,7 @@ internal sealed partial class QmcDecrypto : DecryptoBase
                     {
                         new Picture(new ByteVector(coverBuffer))
                         {
-                            MimeType = coverBuffer.SniffImageType().GetMime(),
+                            MimeType = ((ReadOnlySpan<byte>)coverBuffer.AsSpan()).SniffImageType().GetMime(),
                             Type = PictureType.FrontCover,
                         }
                     };

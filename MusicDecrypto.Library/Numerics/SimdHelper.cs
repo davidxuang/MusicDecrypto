@@ -73,18 +73,4 @@ internal static class SimdHelper
             }
         }
     }
-
-    public static Span<byte> GetBlockSpan(this MarshalMemoryStream stream, long offset)
-    {
-        var ahead = stream.Length - offset;
-
-        if (ahead <= 0)
-            throw new ArgumentOutOfRangeException(nameof(offset));
-
-        var alignedLength = (((ahead - 1) / LaneCount) + 1) * LaneCount;
-
-        return alignedLength < int.MaxValue
-            ? stream.AsSpan(offset, (int)alignedLength)
-            : stream.AsSpan(offset, int.MaxValue / LaneCount * LaneCount);
-    }
 }

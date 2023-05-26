@@ -20,9 +20,9 @@ internal static class MediaExtensions
         _ => throw new InvalidDataException("Undefined music type."),
     };
 
-    internal static AudioTypes SniffAudioType(this MarshalMemoryStream data)
+    internal static AudioTypes SniffAudioType(this ReadOnlySpan<byte> data)
     {
-        return data.AsSpan() switch
+        return data switch
         {
             [0xff, 0xf1, ..]
                 => AudioTypes.Aac,
@@ -66,9 +66,9 @@ internal static class MediaExtensions
         _ => throw new InvalidDataException("Undefined image type."),
     };
 
-    internal static ImageTypes SniffImageType(this byte[] data)
+    internal static ImageTypes SniffImageType(this ReadOnlySpan<byte> data)
     {
-        return data.AsSpan() switch
+        return data switch
         {
             // G     I     F     8
             [0x47, 0x49, 0x46, 0x38, ..]

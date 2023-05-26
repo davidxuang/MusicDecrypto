@@ -39,9 +39,12 @@ internal sealed partial class Decrypto : DecryptoBase
         try
         {
             // Read key
-            var keyChunk = (stackalloc byte[_reader.ReadInt32()]);
+            var chunkLength = _reader.ReadInt32();
+            var keyChunk = (stackalloc byte[chunkLength]);
             ReadChunk(keyChunk, 0x64);
-            var key = keyChunk.ToArray().AesEcbDecrypt(_root).AsSpan(0x11);
+            var keyBuffer = (stackalloc byte[chunkLength]);
+            var decryptLength = ((ReadOnlySpan<byte>)keyChunk).AesEcbDecrypt(_root, keyBuffer);
+            var key = keyBuffer[0x11..decryptLength];
             var keyLength = key.Length;
 
             // Build key box
@@ -83,14 +86,18 @@ internal sealed partial class Decrypto : DecryptoBase
             }
 
             // Resolve metadata
-            string meta = Encoding.UTF8.GetString(
-                Convert.FromBase64String(
-                    Encoding.ASCII.GetString(
-                        metaChunk[skipCount..]))
-                .AesEcbDecrypt(_rootMeta)[6..]);
-            _metadata = JsonSerializer.Deserialize(meta, NetEaseSerializerContext.Default.Metadata);
+            var metaString = Encoding.ASCII.GetString(metaChunk[skipCount..]);
+            var metaCipher = (stackalloc byte[metaString.Length / 4 * 3 + 2]);
+            if (!Convert.TryFromBase64String(metaString, metaCipher, out var cipherLength))
+            {
+                throw new InvalidDataException();
+            }
+            var metaBuffer = (stackalloc byte[cipherLength]);
+            var metaLength = ((ReadOnlySpan<byte>)metaCipher[..cipherLength]).AesEcbDecrypt(_rootMeta, metaBuffer);
+            string meta = Encoding.UTF8.GetString(metaBuffer[..metaLength]);
+            _metadata = JsonSerializer.Deserialize(meta[6..], NetEaseSerializerContext.Default.Metadata);
             if (_metadata?.MusicName == null)
-                _metadata = JsonSerializer.Deserialize(meta, NetEaseSerializerContext.Default.RadioMetadata)?.MainMusic;
+                _metadata = JsonSerializer.Deserialize(meta[6..], NetEaseSerializerContext.Default.RadioMetadata)?.MainMusic;
         }
         catch (NullFileChunkException)
         {
@@ -144,7 +151,7 @@ internal sealed partial class Decrypto : DecryptoBase
             }
         }
 
-        var coverType = _coverBuffer?.SniffImageType() ?? ImageTypes.Undefined;
+        var coverType = _coverBuffer is null ? ImageTypes.Undefined : ((ReadOnlySpan<byte>)_coverBuffer.AsSpan()).SniffImageType();
         if (coverType == ImageTypes.Undefined) _coverBuffer = null;
         else
         {
