@@ -9,7 +9,7 @@ using MusicDecrypto.Library.Json;
 
 namespace MusicDecrypto.Library.Vendor.Tencent;
 
-internal sealed partial class ApiClient
+internal sealed partial class ApiClient : IDisposable
 {
     private readonly HttpClient _httpClient = new();
     private readonly HttpClient _fcgiClient = new()
@@ -25,6 +25,12 @@ internal sealed partial class ApiClient
         _fcgiClient.DefaultRequestHeaders.Accept.Add(new("*/*"));
         _httpClient.DefaultRequestHeaders.AcceptLanguage.Add(new("zh-CN"));
         _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; WOW64; Trident/5.0)");
+    }
+
+    public void Dispose()
+    {
+        _httpClient?.Dispose();
+        _fcgiClient?.Dispose();
     }
 
     private record class FastCgiRequests<T>(FastCgiRequest<T> Req);

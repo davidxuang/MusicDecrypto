@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.IO;
@@ -199,7 +199,7 @@ internal sealed partial class QmcDecrypto : DecryptoBase
             else RaiseWarn("Detected hashed filename but failed to determine new name.");
         }
 
-        var _client = new ApiClient();
+        using var _client = new ApiClient();
 
         Track? meta = null;
         if (_id != 0)
