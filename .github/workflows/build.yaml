@@ -14,7 +14,7 @@ concurrency:
 jobs:
   linux:
     runs-on: ubuntu-latest
-    container: mcr.microsoft.com/dotnet-buildtools/prereqs:ubuntu-18.04-cross-arm64-staging # https://github.com/dotnet/versions/blob/main/build-info/docker/image-info.dotnet-dotnet-buildtools-prereqs-docker-main.json
+    container: mcr.microsoft.com/dotnet-buildtools/prereqs:ubuntu-18.04-cross-arm64 # https://github.com/dotnet/versions/blob/main/build-info/docker/image-info.dotnet-dotnet-buildtools-prereqs-docker-main.json
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -26,8 +26,8 @@ jobs:
         run: |
           dotnet publish MusicDecrypto.Commandline/MusicDecrypto.Commandline.csproj -c Release -o ./generic
           dotnet publish MusicDecrypto.Avalonia/MusicDecrypto.Avalonia.csproj -c Release -o ./generic
-          dotnet publish MusicDecrypto.Avalonia/MusicDecrypto.Avalonia.csproj -c Release -r linux-x64 --sc -p:PublishSingleFile=true -p:PublishTrimmed=true -p:TrimMode=copyused -o ./gui-x64
-          dotnet publish MusicDecrypto.Avalonia/MusicDecrypto.Avalonia.csproj -c Release -r linux-arm64 --sc -p:PublishSingleFile=true -p:PublishTrimmed=true -p:TrimMode=copyused -o ./gui-arm64
+          dotnet publish MusicDecrypto.Avalonia/MusicDecrypto.Avalonia.csproj -c Release -r linux-x64 --sc -p:PublishSingleFile=true -p:PublishTrimmed=true -p:TrimMode=partial -o ./gui-x64
+          dotnet publish MusicDecrypto.Avalonia/MusicDecrypto.Avalonia.csproj -c Release -r linux-arm64 --sc -p:PublishSingleFile=true -p:PublishTrimmed=true -p:TrimMode=partial -o ./gui-arm64
       - name: Publish CLI
         run: |
           dotnet publish MusicDecrypto.Commandline/MusicDecrypto.Commandline.csproj -c Release -r linux-x64 -p:CppCompilerAndLinker=clang-9 -o ./cli-x64
@@ -76,8 +76,8 @@ jobs:
         run: dotnet pack MusicDecrypto.Library/MusicDecrypto.Library.csproj -c Release -o .
       - name: Publish Avalonia
         run: |
-          dotnet publish MusicDecrypto.Avalonia/MusicDecrypto.Avalonia.csproj -c Release -r win-x64 --sc -p:PublishSingleFile=true -p:PublishTrimmed=true -p:TrimMode=copyused -o ./gui-x64
-          dotnet publish MusicDecrypto.Avalonia/MusicDecrypto.Avalonia.csproj -c Release -r win-arm64 --sc -p:PublishSingleFile=true -p:PublishTrimmed=true -p:TrimMode=copyused -o ./gui-arm64
+          dotnet publish MusicDecrypto.Avalonia/MusicDecrypto.Avalonia.csproj -c Release -r win-x64 --sc -p:PublishSingleFile=true -p:PublishTrimmed=true -p:TrimMode=partial -o ./gui-x64
+          dotnet publish MusicDecrypto.Avalonia/MusicDecrypto.Avalonia.csproj -c Release -r win-arm64 --sc -p:PublishSingleFile=true -p:PublishTrimmed=true -p:TrimMode=partial -o ./gui-arm64
       - name: Publish CLI
         run: |
           dotnet publish MusicDecrypto.Commandline/MusicDecrypto.Commandline.csproj -c Release -r win-x64 -o ./cli-x64

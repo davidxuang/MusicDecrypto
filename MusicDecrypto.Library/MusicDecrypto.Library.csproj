@@ -5,7 +5,7 @@
     <AssemblyName>libmusicdecrypto</AssemblyName>
     <Nullable>enable</Nullable>
     <PackageId>$(MSBuildProjectName.Replace(" ", "_"))</PackageId>
-    <Version>2.2.0</Version>
+    <Version>2.2.1</Version>
     <Description>Music de-obfuscation on .NET</Description>
     <Authors>davidxuang</Authors>
     <PackageLicenseExpression>LGPL-3.0-or-later</PackageLicenseExpression>

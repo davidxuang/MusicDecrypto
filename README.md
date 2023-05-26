@@ -5,7 +5,7 @@
 [![GitHub release](https://img.shields.io/github/release/davidxuang/musicdecrypto.svg)](https://GitHub.com/davidxuang/musicdecrypto/releases/)
 [![GitHub license](https://img.shields.io/github/license/davidxuang/musicdecrypto.svg)](https://github.com/davidxuang/musicdecrypto/blob/master/LICENSE)
 
-This project implements music de-obfuscation on [.NET](https://dotnet.microsoft.com/), and accelerates the process with [SIMD](https://docs.microsoft.com/en-us/dotnet/standard/simd). The CLI program also uses experimental [Native AOT](https://github.com/dotnet/runtimelab/tree/feature/NativeAOT) feature.
+This project implements music de-obfuscation on [.NET](https://dotnet.microsoft.com/), and accelerates the process with [SIMD](https://docs.microsoft.com/en-us/dotnet/standard/simd). The CLI program also uses [Native AOT](https://learn.microsoft.com/en-us/dotnet/core/deploying/native-aot/) feature.
 
 ## Licensing
 
