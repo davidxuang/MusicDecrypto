@@ -1,8 +1,0 @@
-{
-  "profiles": {
-    "MusicDecrypto.Commandline": {
-      "commandName": "Project",
-      "commandLineArgs": "C:\\Users\\nalch\\Downloads -f"
-    }
-  }
-}
