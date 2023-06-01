@@ -150,7 +150,7 @@ internal sealed class DecryptoCommand : AsyncCommand<DecryptoCommand.Settings>
             } while (!jobs.IsCompleted);
             await jobs;
 
-            Log($"Program complete with {files.Count} files processed. [[ {saved} saved / {skipped} skipped / {failed} failed ]]", LogLevel.Info);
+            Log($"Program complete with {files.Count} files processed. [ {saved} saved / {skipped} skipped / {failed} failed ]", LogLevel.Info);
             return 0;
         }
         catch (Exception e)
@@ -204,6 +204,6 @@ internal sealed class DecryptoCommand : AsyncCommand<DecryptoCommand.Settings>
             _              => "white",
         };
 
-        AnsiConsole.Markup($"[{color}]{DateTimeOffset.UtcNow:yyyy-MM-ddTHH:mm:ss.fffZ}|{level.ToString()}|{message}[/]\n");
+        AnsiConsole.Markup($"[{color}]{DateTimeOffset.UtcNow:yyyy-MM-ddTHH:mm:ss.fffZ}|{level}|{message.EscapeMarkup()}[/]\n");
     }
 }
