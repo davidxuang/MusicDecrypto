@@ -41,6 +41,8 @@ jobs:
         run: |
           tar cavf musicdecrypto-all-$GIT_TAG_NAME-net7.0-noarch.tar.xz -C ./generic/ $(cd ./generic/ && echo *)
           sha256sum musicdecrypto-all-$GIT_TAG_NAME-net7.0-noarch.tar.xz > musicdecrypto-all-$GIT_TAG_NAME-net7.0-noarch.tar.xz.sha256
+          strip ./cli-x64/musicdecrypto
+          aarch64-linux-gnu-strip ./cli-arm64/musicdecrypto
           tar cavf musicdecrypto-gui-$GIT_TAG_NAME-linux-x64.tar.xz -C ./gui-x64/ $(cd ./gui-x64/ && echo *)
           tar cavf musicdecrypto-gui-$GIT_TAG_NAME-linux-arm64.tar.xz -C ./gui-arm64/ $(cd ./gui-arm64/ && echo *)
           tar cavf musicdecrypto-cli-$GIT_TAG_NAME-linux-x64.tar.xz -C ./cli-x64/ musicdecrypto
