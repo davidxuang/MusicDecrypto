@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -96,7 +96,7 @@ internal sealed partial class Decrypto : DecryptoBase
             var metaLength = ((ReadOnlySpan<byte>)metaCipher[..cipherLength]).AesEcbDecrypt(_rootMeta, metaBuffer);
             string meta = Encoding.UTF8.GetString(metaBuffer[..metaLength]);
             _metadata = JsonSerializer.Deserialize(meta[6..], NetEaseSerializerContext.Default.Metadata);
-            if (_metadata?.MusicName == null)
+            if (_metadata?.MusicName is null)
                 _metadata = JsonSerializer.Deserialize(meta[6..], NetEaseSerializerContext.Default.RadioMetadata)?.MainMusic;
         }
         catch (NullFileChunkException)
@@ -181,7 +181,7 @@ internal sealed partial class Decrypto : DecryptoBase
             }
         }
 
-        if (_metadata != null)
+        if (_metadata is not null)
         {
             if (!string.IsNullOrEmpty(_metadata.MusicName))
             {

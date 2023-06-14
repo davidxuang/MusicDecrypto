@@ -53,7 +53,7 @@ internal sealed class DecryptoCommand : AsyncCommand<DecryptoCommand.Settings>
     {
         try
         {
-            if (settings.Output != null && !Directory.Exists(settings.Output))
+            if (settings.Output is not null && !Directory.Exists(settings.Output))
             {
                 Log($"Ignoring output directory which does not exist. ({settings.Output})", LogLevel.Error);
                 settings.Output = null;

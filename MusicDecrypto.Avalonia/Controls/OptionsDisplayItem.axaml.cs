@@ -152,7 +152,7 @@ public class OptionsDisplayItem : TemplatedControl
         }
         else if (change.Property == IconProperty)
         {
-            PseudoClasses.Set(":icon", change.NewValue.GetValueOrDefault() != null);
+            PseudoClasses.Set(":icon", change.NewValue.GetValueOrDefault() is not null);
         }
     }
 

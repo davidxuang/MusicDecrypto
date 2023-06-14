@@ -180,7 +180,7 @@ internal sealed partial class QmcDecrypto : DecryptoBase
     {
         var modified = false;
 
-        if (tag == null) return modified;
+        if (tag is null) return modified;
 
         var baseName = Path.GetFileNameWithoutExtension(_oldName);
 
@@ -219,10 +219,10 @@ internal sealed partial class QmcDecrypto : DecryptoBase
                 meta = await FindMatchedTrackAsync(tag, results);
             }
             catch { }
-            finally { if (meta == null) RaiseWarn("Failed to match tracks online."); }
+            finally { if (meta is null) RaiseWarn("Failed to match tracks online."); }
         }
 
-        if (meta != null)
+        if (meta is not null)
         {
             var album = meta.Album;
             var albumId = album.Id;

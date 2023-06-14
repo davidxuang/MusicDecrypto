@@ -29,8 +29,8 @@ public abstract class DecryptoBase : IDisposable
         _buffer = buffer;
         _reader = new(buffer);
         _oldName = name;
-        if (warn != null) OnWarn += warn;
-        if (matchConfirm != null) OnRequestMatch += matchConfirm;
+        if (warn is not null) OnWarn += warn;
+        if (matchConfirm is not null) OnRequestMatch += matchConfirm;
         _audioType = type;
         _buffer.ResetPosition();
     }
@@ -119,7 +119,7 @@ public abstract class DecryptoBase : IDisposable
     public delegate ValueTask<bool> MatchRequestHandler(string message, IEnumerable<MatchInfo> properties);
     private readonly MatchRequestHandler? OnRequestMatch;
     public async ValueTask<bool> RequestMatchAsync((string, string, string) local, (string, string, string) online)
-        => OnRequestMatch != null && await OnRequestMatch.Invoke(
+        => OnRequestMatch is not null && await OnRequestMatch.Invoke(
             "Metadata matching confirmation",
             ImmutableArray.Create<MatchInfo>(
                 new("Local",  local.Item1,  local.Item2,  local.Item3),

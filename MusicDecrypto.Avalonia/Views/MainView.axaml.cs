@@ -52,7 +52,7 @@ public partial class MainView : UserControl
         if (sender is CoreWindow cw)
         {
             var titleBar = cw.TitleBar;
-            if (titleBar != null)
+            if (titleBar is not null)
             {
                 titleBar.ExtendViewIntoTitleBar = true;
                 titleBar.LayoutMetricsChanged += OnApplicationTitleBarLayoutMetricsChanged;
@@ -82,7 +82,7 @@ public partial class MainView : UserControl
             Directory = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
         };
         var paths = await dialog.ShowAsync(_parent!);
-        if (paths != null && DataContext is MainViewModel vm)
+        if (paths is not null && DataContext is MainViewModel vm)
         {
             foreach (var path in paths)
                 vm.AddFile(path);

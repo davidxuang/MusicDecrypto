@@ -62,7 +62,7 @@ internal sealed partial class ApiClient : IDisposable
             TencentSerializerContext.Instance.GetTypeInfo<FastCgiRequests<T>>());
         var content = await response.Content.ReadFromJsonAsync(TencentSerializerContext.Instance.GetTypeInfo<FastCgiResponses<R>>());
 
-        if (content?.Traceid == null)
+        if (content?.Traceid is null)
             throw new HttpRequestException($"FastCGI call returned no content.");
         else if (content.Code != 0)
             throw new HttpRequestException($"FastCGI call failed with code {content.Code}.");

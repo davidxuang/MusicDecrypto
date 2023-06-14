@@ -79,7 +79,7 @@ public partial class MainViewModel : ViewModelBase
             item.Performers = info.Performers ?? item.Performers;
             item.Album = info.Album ?? item.Album;
             outPath = Path.Combine(Path.GetDirectoryName(item.FilePath)!, info.NewName);
-            if (info.Cover != null)
+            if (info.Cover is not null)
             {
                 using var stream = new MemoryStream(info.Cover);
                 item.Cover = Bitmap.DecodeToWidth(stream, 256);
