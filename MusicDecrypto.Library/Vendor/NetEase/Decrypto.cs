@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -119,6 +119,7 @@ internal sealed partial class Decrypto : DecryptoBase
         }
         catch (NullFileChunkException)
         {
+            _coverBuffer = null;
             RaiseWarn("File does not contain cover image. Will try to get from server.");
         }
 
@@ -128,11 +129,11 @@ internal sealed partial class Decrypto : DecryptoBase
 
     protected override async ValueTask<bool> ProcessMetadataOverrideAsync(Tag tag)
     {
-        if (tag == null) return false;
+        if (tag is null) return false;
 
         bool modified = false;
 
-        if (_coverBuffer == null)
+        if (_coverBuffer is null)
         {
             try
             {
@@ -152,7 +153,10 @@ internal sealed partial class Decrypto : DecryptoBase
         }
 
         var coverType = _coverBuffer is null ? ImageTypes.Undefined : ((ReadOnlySpan<byte>)_coverBuffer.AsSpan()).SniffImageType();
-        if (coverType == ImageTypes.Undefined) _coverBuffer = null;
+        if (coverType == ImageTypes.Undefined)
+        {
+            _coverBuffer = null;
+        }
         else
         {
             if (tag.Pictures.Length > 0)
