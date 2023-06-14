@@ -4,7 +4,7 @@
     <TargetFramework>net7.0</TargetFramework>
     <AssemblyName>musicdecrypto-avalonia</AssemblyName>
     <OutputType>WinExe</OutputType>
-    <VersionPrefix>2.2.2</VersionPrefix>
+    <VersionPrefix>2.2.3</VersionPrefix>
     <Nullable>enable</Nullable>
     <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
   </PropertyGroup>
