@@ -1,6 +1,6 @@
-﻿using MusicDecrypto.Library.Numerics;
+﻿using System;
 using System.Numerics;
-using System;
+using MusicDecrypto.Library.Numerics;
 
 namespace MusicDecrypto.Library.Vendor.Xiami;
 

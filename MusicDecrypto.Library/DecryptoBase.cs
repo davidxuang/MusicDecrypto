@@ -29,7 +29,7 @@ public abstract class DecryptoBase : IDisposable
         _buffer = buffer;
         _reader = new(buffer);
         _oldName = name;
-        if (warn is not null) OnWarn += warn;
+        if (warn is not null) Warn += warn;
         if (matchConfirm is not null) OnRequestMatch += matchConfirm;
         _audioType = type;
         _buffer.ResetPosition();
@@ -85,13 +85,13 @@ public abstract class DecryptoBase : IDisposable
                             file.GetTag(TagTypes.Id3v1).CopyTo(file.GetTag(TagTypes.FlacMetadata), false);
                         file.RemoveTags(TagTypes.Id3v1 | TagTypes.Id3v2);
                         modified = true;
-                        RaiseWarn("Detected and converted non-standard ID3 tags.");
+                        OnWarn("Detected and converted non-standard ID3 tags.");
                     }
 
                     if (file.GetTag(TagTypes.Xiph) is TagLib.Ogg.XiphComment meta)
                     {
                         var mqa = meta.GetField("MQAENCODER");
-                        if (mqa.Length > 0) RaiseWarn("Detected MQA-encoded FLAC stream.");
+                        if (mqa.Length > 0) OnWarn("Detected MQA-encoded FLAC stream.");
                     }
                 }
 
@@ -105,7 +105,7 @@ public abstract class DecryptoBase : IDisposable
                 tag.Album,
                 tag.Pictures.Length > 0 ? tag.Pictures[0].Data.Data : null);
         }
-        else RaiseWarn("Reading tags from DFF files is not supported.");
+        else OnWarn("Reading tags from DFF files is not supported.");
 
         return new Info((_newBaseName ?? Path.GetFileNameWithoutExtension(_oldName)) + _audioType.GetExtension());
     }
@@ -113,12 +113,12 @@ public abstract class DecryptoBase : IDisposable
         => ValueTask.FromResult(false); // return whether metadata is modified
 
     public delegate void WarnHandler(string message);
-    private event WarnHandler? OnWarn;
-    public void RaiseWarn(string message) => OnWarn?.Invoke(message);
+    private event WarnHandler? Warn;
+    protected void OnWarn(string message) => Warn?.Invoke(message);
 
     public delegate ValueTask<bool> MatchRequestHandler(string message, IEnumerable<MatchInfo> properties);
     private readonly MatchRequestHandler? OnRequestMatch;
-    public async ValueTask<bool> RequestMatchAsync((string, string, string) local, (string, string, string) online)
+    protected async ValueTask<bool> RequestMatchAsync((string, string, string) local, (string, string, string) online)
         => OnRequestMatch is not null && await OnRequestMatch.Invoke(
             "Metadata matching confirmation",
             ImmutableArray.Create<MatchInfo>(

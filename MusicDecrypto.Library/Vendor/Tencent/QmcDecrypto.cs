@@ -189,14 +189,14 @@ internal sealed partial class QmcDecrypto : DecryptoBase
             if (!string.IsNullOrEmpty(tag.Title) && tag.AlbumArtists.Length > 0)
             {
                 _newBaseName = string.Join(" - ", tag.AlbumArtists[0], tag.Title);
-                RaiseWarn($"New filename “{_newBaseName}”");
+                OnWarn($"New filename “{_newBaseName}”");
             }
             else if (!string.IsNullOrEmpty(tag.Title) && tag.Performers.Length > 0)
             {
                 _newBaseName = string.Join(" - ", tag.Performers[0], tag.Title);
-                RaiseWarn($"New filename “{_newBaseName}”");
+                OnWarn($"New filename “{_newBaseName}”");
             }
-            else RaiseWarn("Detected hashed filename but failed to determine new name.");
+            else OnWarn("Detected hashed filename but failed to determine new name.");
         }
 
         using var _client = new ApiClient();
@@ -205,7 +205,7 @@ internal sealed partial class QmcDecrypto : DecryptoBase
         if (_id != 0)
         {
             try { meta = (await _client.GetTracksInfoAsync(_id))?[0]; }
-            catch { RaiseWarn("Failed to retrieve metadata regarding the ID."); }
+            catch { OnWarn("Failed to retrieve metadata regarding the ID."); }
         }
         else if (!(string.IsNullOrEmpty(tag.Performers[0]) && string.IsNullOrEmpty(tag.Album) || string.IsNullOrEmpty(tag.Title)))
         {
@@ -219,7 +219,7 @@ internal sealed partial class QmcDecrypto : DecryptoBase
                 meta = await FindMatchedTrackAsync(tag, results);
             }
             catch { }
-            finally { if (meta is null) RaiseWarn("Failed to match tracks online."); }
+            finally { if (meta == null) OnWarn("Failed to match tracks online."); }
         }
 
         if (meta is not null)
@@ -267,7 +267,7 @@ internal sealed partial class QmcDecrypto : DecryptoBase
             }
             catch
             {
-                RaiseWarn("Failed to fetch album cover.");
+                OnWarn("Failed to fetch album cover.");
             }
         }
 

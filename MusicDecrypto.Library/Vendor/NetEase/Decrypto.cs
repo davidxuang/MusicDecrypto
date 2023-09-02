@@ -101,11 +101,11 @@ internal sealed partial class Decrypto : DecryptoBase
         }
         catch (NullFileChunkException)
         {
-            RaiseWarn("File does not contain metadata.");
+            OnWarn("File does not contain metadata.");
         }
         catch
         {
-            RaiseWarn("Metadata seems corrupted.");
+            OnWarn("Metadata seems corrupted.");
         }
 
         // Skip ahead
@@ -120,7 +120,7 @@ internal sealed partial class Decrypto : DecryptoBase
         catch (NullFileChunkException)
         {
             _coverBuffer = null;
-            RaiseWarn("File does not contain cover image. Will try to get from server.");
+            OnWarn("File does not contain cover image. Will try to get from server.");
         }
 
         // Set offset
@@ -140,7 +140,7 @@ internal sealed partial class Decrypto : DecryptoBase
                 var coverUri = _metadata?.AlbumPic;
                 if (!Uri.IsWellFormedUriString(coverUri, UriKind.Absolute))
                 {
-                    RaiseWarn("File does not contain cover link.");
+                    OnWarn("File does not contain cover link.");
                     throw new InvalidDataException();
                 }
                 using var httpClient = new HttpClient();
@@ -148,7 +148,7 @@ internal sealed partial class Decrypto : DecryptoBase
             }
             catch
             {
-                RaiseWarn("Failed to download cover image.");
+                OnWarn("Failed to download cover image.");
             }
         }
 
