@@ -7,9 +7,9 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using Avalonia;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
+using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using ByteSizeLib;
 using FluentAvalonia.UI.Controls;
@@ -31,14 +31,14 @@ public partial class MainViewModel : ViewModelBase
 
     public MainViewModel()
     {
-        Items.CollectionChanged += (s, e) => PropertyHasChanged(nameof(IsEmpty));
+        Items.CollectionChanged += (s, e) => RaisePropertyChanged(nameof(IsEmpty));
     }
 
-    public void AddFile(string path)
+    public void AddFile(IStorageFile file)
     {
-        if (File.Exists(path) && DecryptoFactory.KnownExtensions.Contains(Path.GetExtension(path)))
+        if (file.CanBookmark && DecryptoFactory.KnownExtensions.Contains(Path.GetExtension(file.Name)))
         {
-            var item = new Item(path);
+            var item = new Item(file);
             Items.Add(item);
             Task.Run(async () => await DecryptFileAsync(item));
         }
@@ -49,18 +49,17 @@ public partial class MainViewModel : ViewModelBase
         try
         {
             using var buffer = new MarshalMemoryStream();
-            string outPath;
 
-            var match = _regex.Match(Path.GetFileNameWithoutExtension(item.FilePath));
+            var match = _regex.Match(Path.GetFileNameWithoutExtension(item.File.Name));
             if (match.Success)
             {
                 item.Performers = match.Groups[1].Value;
                 item.Title = match.Groups[2].Value;
             }
-            else item.Title = Path.GetFileNameWithoutExtension(item.FilePath);
+            else item.Title = Path.GetFileNameWithoutExtension(item.File.Name);
 
             item.State = Item.States.Loading;
-            await using (var file = new FileStream(item.FilePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+            await using (var file = await item.File.OpenReadAsync())
             {
                 buffer.SetLengthWithPadding(file.Length);
                 await file.CopyToAsync(buffer);
@@ -69,7 +68,7 @@ public partial class MainViewModel : ViewModelBase
 
             using var decrypto = DecryptoFactory.Create(
                 buffer,
-                Path.GetFileName(item.FilePath),
+                Path.GetFileName(item.File.Name),
                 item.AddMessage,
                 OnRequestMatchAsync);
 
@@ -78,18 +77,15 @@ public partial class MainViewModel : ViewModelBase
             item.Title = info.Title ?? item.Title;
             item.Performers = info.Performers ?? item.Performers;
             item.Album = info.Album ?? item.Album;
-            outPath = Path.Combine(Path.GetDirectoryName(item.FilePath)!, info.NewName);
-            if (info.Cover is not null)
+            
+            var newFile = await (await item.File.GetParentAsync())!.CreateFileAsync(info.NewName);
+            if (info.Cover != null)
             {
                 using var stream = new MemoryStream(info.Cover);
                 item.Cover = Bitmap.DecodeToWidth(stream, 256);
             }
 
-            await using (var file = new FileStream(
-                outPath,
-                FileMode.Create,
-                FileAccess.Write,
-                FileShare.None))
+            await using (var file = await newFile!.OpenWriteAsync())
             {
                 await buffer.CopyToAsync(file);
             }
@@ -136,26 +132,20 @@ public partial class MainViewModel : ViewModelBase
 
     public class Item : INotifyPropertyChanged
     {
+        private static readonly Bitmap _coverFallback = new Bitmap(AssetLoader.Open(new Uri("avares://musicdecrypto-avalonia/Assets/MusicNote.png")));
+
+        public Item(IStorageFile file)
+        {
+            File = file;
+        }
+
         public event PropertyChangedEventHandler? PropertyChanged;
         public void PropertyHasChanged(string propName)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propName));
         }
 
-        static Item()
-        {
-            var assets = AvaloniaLocator.Current.GetService<IAssetLoader>();
-            _coverFallback = new Bitmap(assets!.Open(new Uri("avares://musicdecrypto-avalonia/Assets/MusicNote.png")));
-        }
-
-        public Item(string path)
-        {
-            FilePath = path;
-        }
-
-        public string FilePath { get; init; }
-
-        private static readonly Bitmap _coverFallback;
+        public IStorageFile File { get; init; }
 
         private Bitmap? _cover;
         public Bitmap Cover
@@ -179,13 +169,13 @@ public partial class MainViewModel : ViewModelBase
             }
         }
 
-        private string? _artist;
+        private string? _performers;
         public string Performers
         {
-            get => _artist ?? "N/A";
+            get => _performers ?? "N/A";
             set
             {
-                _artist = value;
+                _performers = value;
                 PropertyHasChanged(nameof(Performers));
             }
         }

@@ -1,54 +1,61 @@
 <UserControl x:Class="MusicDecrypto.Avalonia.Views.MainView"
              xmlns="https://github.com/avaloniaui"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:ic="using:FluentIcons.FluentAvalonia"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:ic="using:FluentIcons.FluentAvalonia"
              xmlns:ui="using:FluentAvalonia.UI.Controls"
-             mc:Ignorable="d" d:DesignHeight="450" d:DesignWidth="800">
+             d:DesignWidth="800" d:DesignHeight="450"
+             mc:Ignorable="d">
 
-    <Grid RowDefinitions="48,*">
-        <Grid Name="TitleBarHost" Background="Transparent" ColumnDefinitions="Auto,Auto,*,Auto">
-            <Image Width="20" Height="20"
-                   Margin="14"
-                   IsHitTestVisible="False" IsVisible="{Binding !#FrameView.CanGoBack}"
-                   Source="/Assets/logo.ico" />
+    <Grid RowDefinitions="Auto,*">
+        <Grid Name="TitleBarHost"
+              Background="Transparent"
+              ColumnDefinitions="Auto,Auto,*,Auto,0">
+            <Grid.Styles>
+                <Style Selector="Button.AppBarButton">
+                    <Setter Property="Padding" Value="8" />
+                    <Setter Property="FontSize" Value="20" />
+                    <Setter Property="BorderThickness" Value="0" />
+                    <Setter Property="Theme" Value="{StaticResource TransparentButton}" />
+                </Style>
+            </Grid.Styles>
 
-            <ui:Button Margin="6" Padding="8"
-                       Classes="AppBarButton" Command="{Binding #FrameView.GoBack}"
-                       IsEnabled="{Binding #FrameView.CanGoBack}"
-                       IsVisible="{Binding #FrameView.CanGoBack}">
+            <Image Width="20" Height="20" Margin="14"
+                   Source="/Assets/logo.ico" IsHitTestVisible="False"
+                   IsVisible="{Binding !#FrameView.CanGoBack}"
+                   RenderOptions.BitmapInterpolationMode="HighQuality" />
+
+            <Button Margin="6"
+                    Classes="AppBarButton" Command="{Binding #FrameView.GoBack}"
+                    IsEnabled="{Binding #FrameView.CanGoBack}"
+                    IsVisible="{Binding #FrameView.CanGoBack}">
                 <Button.Content>
                     <ic:SymbolIcon FontSize="20" Symbol="ArrowLeft" />
                 </Button.Content>
                 <ToolTip.Tip>Back</ToolTip.Tip>
-            </ui:Button>
+            </Button>
 
             <TextBlock Grid.Column="1"
                        VerticalAlignment="Center"
                        FontSize="12"
-                       IsHitTestVisible="False" Text="MusicDecrypto" />
+                       Text="MusicDecrypto" IsHitTestVisible="False" />
 
             <StackPanel Grid.Column="3"
-                        Margin="6"
-                        Orientation="Horizontal" Spacing="6">
-                <ui:Button Name="OpenFilesButton"
-                           Padding="8" VerticalAlignment="Center"
-                           Classes="AppBarButton">
+                        Orientation="Horizontal" Margin="6" Spacing="6">
+                <Button Name="OpenFilesButton" Classes="AppBarButton">
                     <Button.Content>
-                        <ic:SymbolIcon FontSize="20" Symbol="DocumentAdd" />
+                        <ic:SymbolIcon Symbol="DocumentAdd" />
                     </Button.Content>
                     <ToolTip.Tip>Open files</ToolTip.Tip>
-                </ui:Button>
+                </Button>
 
-                <ui:Button Name="SettingsButton"
-                           Padding="8" VerticalAlignment="Center"
-                           Classes="AppBarButton">
+                <Button Name="SettingsButton" Classes="AppBarButton">
                     <Button.Content>
-                        <ic:SymbolIcon FontSize="20" Symbol="Settings" />
+                        <ic:SymbolIcon Symbol="Settings" />
                     </Button.Content>
                     <ToolTip.Tip>Settings</ToolTip.Tip>
-                </ui:Button>
+                </Button>
             </StackPanel>
         </Grid>
 

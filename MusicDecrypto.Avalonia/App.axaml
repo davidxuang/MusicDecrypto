@@ -1,48 +1,64 @@
-﻿<Application xmlns="https://github.com/avaloniaui"
-  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-  xmlns:sty="using:FluentAvalonia.Styling"
-  x:Class="MusicDecrypto.Avalonia.App">
+﻿<Application x:Class="MusicDecrypto.Avalonia.App"
+             xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ic="using:FluentIcons.FluentAvalonia"
+             xmlns:sty="using:FluentAvalonia.Styling">
 
-  <Application.Styles>
-    <sty:FluentAvaloniaTheme />
+    <Application.Resources>
+        <ResourceDictionary>
+            <ic:SymbolIconSource x:Key="BoxMultipleIcon" Symbol="BoxMultiple" />
+            <ic:SymbolIconSource x:Key="CodeIcon" Symbol="Code" />
+            <ic:SymbolIconSource x:Key="DocumentBulletListIcon" Symbol="DocumentBulletList" />
+            <ic:SymbolIconSource x:Key="OpenIcon" Symbol="Open" />
+            <ic:SymbolIconSource x:Key="PaintBrushIcon" Symbol="PaintBrush" />
 
-    <StyleInclude Source="/Controls/OptionsDisplayItem.axaml" />
-    <StyleInclude Source="/Controls/UrlTextBlock.axaml" />
+            <ControlTheme x:Key="FluentBaseTextBlockStyle"
+                          BasedOn="{StaticResource BaseTextBlockStyle}" TargetType="TextBlock">
+                <Setter Property="LineHeight" Value="20" />
+                <Setter Property="ClipToBounds" Value="False" />
+            </ControlTheme>
 
-    <Style Selector="TextBlock.BaseTextBlockStyle">
-      <Setter Property="LineHeight" Value="20" />
-      <Setter Property="ClipToBounds" Value="False" />
-    </Style>
+            <ControlTheme x:Key="FluentCaptionTextBlockStyle"
+                          BasedOn="{StaticResource CaptionTextBlockStyle}" TargetType="TextBlock">
+                <Setter Property="LineHeight" Value="16" />
+                <Setter Property="ClipToBounds" Value="False" />
+            </ControlTheme>
 
-    <Style Selector="TextBlock.CaptionTextBlockStyle">
-      <Setter Property="LineHeight" Value="16" />
-      <Setter Property="ClipToBounds" Value="False" />
-    </Style>
+            <ControlTheme x:Key="FluentBodyTextBlockStyle"
+                          BasedOn="{StaticResource BodyTextBlockStyle}" TargetType="TextBlock">
+                <Setter Property="LineHeight" Value="20" />
+                <Setter Property="ClipToBounds" Value="False" />
+            </ControlTheme>
 
-    <Style Selector="TextBlock.BodyTextBlockStyle">
-      <Setter Property="LineHeight" Value="20" />
-      <Setter Property="ClipToBounds" Value="False" />
-    </Style>
+            <ControlTheme x:Key="FluentBodyStrongTextBlockStyle"
+                          BasedOn="{StaticResource BodyStrongTextBlockStyle}" TargetType="TextBlock">
+                <Setter Property="LineHeight" Value="20" />
+                <Setter Property="ClipToBounds" Value="False" />
+            </ControlTheme>
 
-    <Style Selector="TextBlock.BodyStrongTextBlockStyle">
-      <Setter Property="LineHeight" Value="20" />
-      <Setter Property="ClipToBounds" Value="False" />
-    </Style>
+            <ControlTheme x:Key="FluentSubtitleTextBlockStyle"
+                          BasedOn="{StaticResource SubtitleTextBlockStyle}" TargetType="TextBlock">
+                <Setter Property="LineHeight" Value="28" />
+                <Setter Property="ClipToBounds" Value="False" />
+            </ControlTheme>
 
-    <Style Selector="TextBlock.SubtitleTextBlockStyle">
-      <Setter Property="LineHeight" Value="28" />
-      <Setter Property="ClipToBounds" Value="False" />
-    </Style>
+            <ControlTheme x:Key="FluentTitleTextBlockStyle"
+                          BasedOn="{StaticResource TitleTextBlockStyle}" TargetType="TextBlock">
+                <Setter Property="LineHeight" Value="36" />
+                <Setter Property="ClipToBounds" Value="False" />
+            </ControlTheme>
 
-    <Style Selector="TextBlock.TitleTextBlockStyle">
-      <Setter Property="LineHeight" Value="36" />
-      <Setter Property="ClipToBounds" Value="False" />
-    </Style>
+            <ControlTheme x:Key="FluentDisplayTextBlockStyle"
+                          BasedOn="{StaticResource DisplayTextBlockStyle}" TargetType="TextBlock">
+                <Setter Property="LineHeight" Value="92" />
+                <Setter Property="ClipToBounds" Value="False" />
+            </ControlTheme>
+        </ResourceDictionary>
+    </Application.Resources>
 
-    <Style Selector="TextBlock.DisplayTextBlockStyle">
-      <Setter Property="LineHeight" Value="92" />
-      <Setter Property="ClipToBounds" Value="False" />
-    </Style>
-  </Application.Styles>
+    <Application.Styles>
+        <sty:FluentAvaloniaTheme />
+        <StyleInclude Source="/Controls/UrlTextBlock.axaml" />
+    </Application.Styles>
 
 </Application>

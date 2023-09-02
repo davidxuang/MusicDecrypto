@@ -11,16 +11,15 @@ public partial class UrlTextBlock : TemplatedControl
     private StackPanel? _layoutRoot;
     private bool _isPressed;
 
-    public static readonly StyledProperty<string> TextProperty =
-        AvaloniaProperty.Register<OptionsDisplayItem, string>(nameof(Text));
-    public static readonly StyledProperty<string> HrefProperty =
-        AvaloniaProperty.Register<OptionsDisplayItem, string>(nameof(Href));
+        public static readonly StyledProperty<string> TextProperty =
+            AvaloniaProperty.Register<UrlTextBlock, string>(nameof(Text));
+        public static readonly StyledProperty<string> HrefProperty =
+            AvaloniaProperty.Register<UrlTextBlock, string>(nameof(Href));
 
-    public string _text = string.Empty;
     public string Text
     {
-        get => _text;
-        set => SetAndRaise(TextProperty, ref _text, value);
+        get => GetValue(TextProperty);
+        set => SetValue(TextProperty, value);
     }
 
     public string Href

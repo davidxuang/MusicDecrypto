@@ -1,5 +1,6 @@
 ﻿using System;
 using Avalonia;
+using FluentAvalonia.UI.Windowing;
 
 namespace MusicDecrypto.Avalonia;
 
@@ -12,10 +13,5 @@ public static class Program
     public static AppBuilder BuildAvaloniaApp()
         => AppBuilder.Configure<App>()
             .UsePlatformDetect()
-            .With(new Win32PlatformOptions()
-            {
-                UseWindowsUIComposition = true,
-                EnableMultitouch = true,
-                CompositionBackdropCornerRadius = 8f
-            });
+            .LogToTrace();
 }

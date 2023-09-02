@@ -1,20 +1,16 @@
 using System;
-using System.IO;
-using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using Avalonia;
-using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Markup.Xaml;
-using Avalonia.Media;
-using Avalonia.Media.Immutable;
+using Avalonia.Platform.Storage;
 using FluentAvalonia.Styling;
-using FluentAvalonia.UI.Controls;
-using FluentAvalonia.UI.Media;
+using FluentAvalonia.UI.Windowing;
 using MusicDecrypto.Avalonia.ViewModels;
 
 namespace MusicDecrypto.Avalonia.Views;
 
-public partial class MainWindow : CoreWindow
+public partial class MainWindow : AppWindow
 {
     public MainWindow()
     {
@@ -23,14 +19,16 @@ public partial class MainWindow : CoreWindow
         InitializeComponent();
 
         SetupDnd();
+
 #if DEBUG
         this.AttachDevTools();
 #endif
-    }
 
-    private void InitializeComponent()
-    {
-        AvaloniaXamlLoader.Load(this);
+        // SplashScreen = new MainAppSplashScreen(this);
+        TitleBar.ExtendsContentIntoTitleBar = true;
+        TitleBar.TitleBarHitTestType = TitleBarHitTestType.Complex;
+
+        Application.Current!.ActualThemeVariantChanged += OnActualThemeVariantChanged;
     }
 
     private void SetupDnd()
@@ -39,7 +37,7 @@ public partial class MainWindow : CoreWindow
         {
             e.DragEffects &= DragDropEffects.Copy;
 
-            if (!e.Data.Contains(DataFormats.FileNames))
+            if (!e.Data.Contains(DataFormats.Files))
                 e.DragEffects = DragDropEffects.None;
         }
 
@@ -47,20 +45,23 @@ public partial class MainWindow : CoreWindow
         {
             e.DragEffects &= DragDropEffects.Copy;
 
-            if (e.Data.Contains(DataFormats.FileNames))
+            if (e.Data.Contains(DataFormats.Files) && DataContext is MainViewModel vm)
             {
-                if (DataContext is MainViewModel vm)
+                foreach (var item in e.Data.GetFiles()!)
                 {
-                    foreach (var path in e.Data.GetFileNames()!)
+                    if (item is IStorageFolder folder)
                     {
-                        if (Directory.Exists(path))
+                        foreach (var child in folder.GetItemsAsync().ToBlockingEnumerable())
                         {
-                            Array.ForEach(
-                                Directory.GetFiles(path, "*", SearchOption.AllDirectories),
-                                f => vm.AddFile(f));
+                            if (child is IStorageFile file)
+                            {
+                                vm.AddFile(file);
+                            }
                         }
-                        else if (File.Exists(path))
-                            vm.AddFile(path);
+                    }
+                    else if (item is IStorageFile file)
+                    {
+                        vm.AddFile(file);
                     }
                 }
             }
@@ -75,63 +76,31 @@ public partial class MainWindow : CoreWindow
     {
         base.OnOpened(e);
 
-        if (AvaloniaLocator.Current.GetService<FluentAvaloniaTheme>() is FluentAvaloniaTheme thm)
+        var theme = ActualThemeVariant;
+        if (IsWindows11 && theme != FluentAvaloniaTheme.HighContrastTheme)
         {
-            thm.RequestedThemeChanged += OnRequestedThemeChanged;
-
-            // Enable Mica on Windows 11
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                if (IsWindows11 && thm.RequestedTheme != FluentAvaloniaTheme.HighContrastModeString)
-                {
-                    TransparencyBackgroundFallback = Brushes.Transparent;
-                    TransparencyLevelHint = WindowTransparencyLevel.Mica;
-
-                    TryEnableMicaEffect(thm);
-                }
-            }
-
-            thm.ForceWin32WindowToTheme(this);
+            TryEnableMicaEffect();
         }
     }
 
-    private void OnRequestedThemeChanged(FluentAvaloniaTheme sender, RequestedThemeChangedEventArgs args)
+    private void OnActualThemeVariantChanged(object? sender, EventArgs e)
     {
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        if (IsWindows11)
         {
-            // TODO: add Windows version to CoreWindow
-            if (IsWindows11 && args.NewTheme != FluentAvaloniaTheme.HighContrastModeString)
+            if (ActualThemeVariant != FluentAvaloniaTheme.HighContrastTheme)
             {
-                TryEnableMicaEffect(sender);
+                TryEnableMicaEffect();
             }
-            else if (args.NewTheme == FluentAvaloniaTheme.HighContrastModeString)
+            else
             {
-                // Clear the local value here, and let the normal styles take over for HighContrast theme
-                SetValue(BackgroundProperty, AvaloniaProperty.UnsetValue);
+                ClearValue(BackgroundProperty);
+                ClearValue(TransparencyBackgroundFallbackProperty);
             }
         }
     }
 
-    private void TryEnableMicaEffect(FluentAvaloniaTheme thm)
+    private void TryEnableMicaEffect()
     {
-#pragma warning disable CS8605 // Unboxing possibly null value.
-        if (thm.RequestedTheme == FluentAvaloniaTheme.DarkModeString)
-        {
-            var color = this.TryFindResource("SolidBackgroundFillColorBase", out var value) ? (Color2)(Color)value : new Color2(32, 32, 32);
-
-            color = color.LightenPercent(-0.8f);
-
-            Background = new ImmutableSolidColorBrush(color, 0.78);
-        }
-        else if (thm.RequestedTheme == FluentAvaloniaTheme.LightModeString)
-        {
-            // Similar effect here
-            var color = this.TryFindResource("SolidBackgroundFillColorBase", out var value) ? (Color2)(Color)value : new Color2(243, 243, 243);
-
-            color = color.LightenPercent(0.5f);
-
-            Background = new ImmutableSolidColorBrush(color, 0.9);
-        }
-#pragma warning restore CS8605
+        return; // TODO
     }
 }

@@ -1,5 +1,6 @@
-﻿using System;
+﻿using System.Diagnostics.CodeAnalysis;
 using Avalonia;
+using Avalonia.Styling;
 using FluentAvalonia.Styling;
 using MusicDecrypto.Avalonia.Helpers;
 
@@ -7,54 +8,57 @@ namespace MusicDecrypto.Avalonia.ViewModels;
 
 public class SettingsViewModel : ViewModelBase
 {
+    private readonly FluentAvaloniaTheme _faTheme;
     public SettingsViewModel()
     {
-        if (AvaloniaLocator.Current.GetService<FluentAvaloniaTheme>() is FluentAvaloniaTheme theme)
-        {
-            theme.RequestedThemeChanged += OnAppThemeChanged;
-            _currentAppTheme = theme.RequestedTheme;
-        }
-        else throw new NullReferenceException("Can not access FluentAvaloniaTheme.");
+        _faTheme = (FluentAvaloniaTheme)Application.Current!.Styles[0];
     }
+
+    private string? _currentAppTheme = _systemModeString;
+    public string? CurrentAppTheme
+    {
+        get => _currentAppTheme;
+        set
+        {
+            if (RaiseAndSetIfChanged(ref _currentAppTheme, value))
+            {
+                if (TryGetThemeVariant(value, out var theme))
+                {
+                    Application.Current!.RequestedThemeVariant = theme;
+                    _faTheme.PreferSystemTheme = false;
+                }
+                else
+                {
+                    _faTheme.PreferSystemTheme = true;
+                }
+            }
+        }
+    }
+
+    private static bool TryGetThemeVariant(string? value, [NotNullWhen(true)] out ThemeVariant? theme)
+    {
+        theme = value switch
+        {
+            FluentAvaloniaTheme.LightModeString => ThemeVariant.Light,
+            FluentAvaloniaTheme.DarkModeString  => ThemeVariant.Dark,
+            _                                   => null,
+        };
+        return theme is not null;
+    }
+
+    private static string _systemModeString = "System";
+    public static string[] AppThemes => new[]
+    {
+        _systemModeString,
+        FluentAvaloniaTheme.LightModeString,
+        FluentAvaloniaTheme.DarkModeString,
+        // FluentAvaloniaTheme.HighContrastModeString
+    };
 
     public static string Version => typeof(Program).Assembly.GetName().Version!.ToString();
 
     public static void OpenAvaloniaLink() => UrlHelper.OpenLink("https://avaloniaui.net/");
     public static void OpenFluentAvaloniaLink() => UrlHelper.OpenLink("https://github.com/amwx/FluentAvalonia");
-
-    private string _currentAppTheme;
-    public string CurrentAppTheme
-    {
-        get => _currentAppTheme;
-        set
-        {
-            if (_currentAppTheme != value)
-            {
-                if (AvaloniaLocator.Current.GetService<FluentAvaloniaTheme>() is FluentAvaloniaTheme theme)
-                {
-                    _currentAppTheme = value;
-                    theme.RequestedTheme = value;
-                }
-                PropertyHasChanged(nameof(CurrentAppTheme));
-            }
-        }
-    }
-
-    public static string[] AppThemes => new[]
-    {
-        FluentAvaloniaTheme.LightModeString,
-        FluentAvaloniaTheme.DarkModeString,
-        FluentAvaloniaTheme.HighContrastModeString
-    };
-
-    private void OnAppThemeChanged(FluentAvaloniaTheme sender, RequestedThemeChangedEventArgs args)
-    {
-        if (_currentAppTheme != args.NewTheme)
-        {
-            _currentAppTheme = args.NewTheme;
-            PropertyHasChanged(nameof(CurrentAppTheme));
-        }
-    }
 
     public record class CreditItem(
         string Name,
