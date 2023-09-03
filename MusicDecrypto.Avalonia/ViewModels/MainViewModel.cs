@@ -192,7 +192,7 @@ public partial class MainViewModel : ViewModelBase
         }
 
         public string Info => string.Join(
-            " ¡¤ ",
+            " Â· ",
             new[]
             {
                 Enum.GetName(typeof(States), State),
