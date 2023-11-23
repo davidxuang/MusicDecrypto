@@ -5,15 +5,10 @@ using MusicDecrypto.Library.Numerics;
 
 namespace MusicDecrypto.Library.Vendor.NetEase;
 
-internal sealed class Cipher : IDecryptor, IDisposable
+internal sealed class Cipher(ReadOnlySpan<byte> mask) : IDecryptor, IDisposable
 {
-    private readonly NativeMemoryArray<byte> _mask;
+    private readonly NativeMemoryArray<byte> _mask = SimdHelper.PadCircularly(mask);
     private const int _maskSize = 0x100;
-
-    public Cipher(ReadOnlySpan<byte> mask)
-    {
-        _mask = SimdHelper.PadCircularly(mask);
-    }
 
     public void Dispose()
     {

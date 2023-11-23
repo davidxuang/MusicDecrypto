@@ -51,7 +51,7 @@ partial class ApiClient
         var content = await InvokeFastCgiCallAsync<TrackInfoParams, TrackInfoResponse>(
             "music.trackInfo.UniformRuleCtrl",
             "CgiGetTrackInfo",
-            new(ids, new[] { 0 }));
+            new(ids, [0]));
 
         return content?.Tracks;
     }

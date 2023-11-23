@@ -23,7 +23,7 @@ public static class Program
 
 internal sealed class DecryptoCommand : AsyncCommand<DecryptoCommand.Settings>
 {
-    private static readonly string[] _extensive = new[] { ".mp3", ".m4a", ".wav", ".flac" };
+    private static readonly string[] _extensive = [".mp3", ".m4a", ".wav", ".flac"];
     private static readonly HashSet<string> _extensions = DecryptoFactory.KnownExtensions.Where(e => !_extensive.Contains(e)).ToHashSet();
     private static readonly SemaphoreSlim _stdinLock = new(1);
 
@@ -85,14 +85,14 @@ internal sealed class DecryptoCommand : AsyncCommand<DecryptoCommand.Settings>
             ulong failed = 0, skipped = 0, saved = 0;
             var logQueue = new ConcurrentQueue<(string, LogLevel)>();
 
-            var jobs = Parallel.ForEachAsync(files, async (f, _) => {
+            var jobs = Parallel.ForEachAsync(files, async (f, ct) => {
                 try
                 {
                     using var buffer = new MarshalMemoryStream();
                     await using (var file = new FileStream(f, FileMode.Open, FileAccess.Read, FileShare.Read))
                     {
                         buffer.SetLengthWithPadding(file.Length);
-                        await file.CopyToAsync(buffer);
+                        await file.CopyToAsync(buffer, ct);
                     }
 
                     using var decrypto = DecryptoFactory.Create(
@@ -111,7 +111,7 @@ internal sealed class DecryptoCommand : AsyncCommand<DecryptoCommand.Settings>
                             FileMode.Create,
                             FileAccess.Write,
                             FileShare.None);
-                        await buffer.CopyToAsync(file);
+                        await buffer.CopyToAsync(file, ct);
                         logQueue.Enqueue(($"{f}|File has been decrypted.", LogLevel.Info));
                         saved++;
                     }

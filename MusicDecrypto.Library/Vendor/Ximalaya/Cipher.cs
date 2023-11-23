@@ -5,18 +5,11 @@ using MusicDecrypto.Library.Numerics;
 
 namespace MusicDecrypto.Library.Vendor.Ximalaya;
 
-internal sealed class Cipher : IDecryptor, IDisposable
+internal sealed class Cipher(ReadOnlySpan<byte> key, ushort[] map) : IDecryptor, IDisposable
 {
-    private readonly NativeMemoryArray<byte> _key;
-    private readonly int _keySize;
-    private readonly ushort[] _map;
-
-    public Cipher(ReadOnlySpan<byte> key, ushort[] map)
-    {
-        _key = SimdHelper.PadCircularly(key);
-        _keySize = key.Length;
-        _map = map;
-    }
+    private readonly NativeMemoryArray<byte> _key = SimdHelper.PadCircularly(key);
+    private readonly int _keySize = key.Length;
+    private readonly ushort[] _map = map;
 
     public void Dispose()
     {

@@ -3,12 +3,7 @@ using MusicDecrypto.Library;
 
 namespace MusicDecrypto.Avalonia.ViewModels;
 
-public class MatchViewModel : ViewModelBase
+public class MatchViewModel(IEnumerable<DecryptoBase.MatchInfo> properties) : ViewModelBase
 {
-    public MatchViewModel(IEnumerable<DecryptoBase.MatchInfo> properties)
-    {
-        Properties = properties;
-    }
-
-    public IEnumerable<DecryptoBase.MatchInfo> Properties { get; init; }
+    public IEnumerable<DecryptoBase.MatchInfo> Properties { get; init; } = properties;
 }

@@ -43,24 +43,25 @@
                                 BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1"
                                 CornerRadius="{DynamicResource ControlCornerRadius}">
                             <Grid Margin="8"
-                                  ColumnDefinitions="70,12,*" RowDefinitions="20,16,16,18">
-                                <Border Grid.RowSpan="4"
+                                  ColumnDefinitions="72,12,*" RowDefinitions="1,20,16,16,16,3">
+                                <Border Grid.RowSpan="6"
                                         Background="{DynamicResource SolidBackgroundFillColorSecondaryBrush}"
                                         ClipToBounds="True" CornerRadius="2">
                                     <Image Source="{Binding Cover}" Stretch="UniformToFill" />
                                 </Border>
-                                <TextBlock Grid.Row="0" Grid.Column="2"
+                                <TextBlock Grid.Row="1" Grid.Column="2"
                                            Theme="{StaticResource FluentBaseTextBlockStyle}"
                                            Text="{Binding Title}" />
-                                <TextBlock Grid.Row="1" Grid.Column="2"
-                                           Theme="{StaticResource FluentCaptionTextBlockStyle}"
-                                           Text="{Binding Performers}" />
                                 <TextBlock Grid.Row="2" Grid.Column="2"
                                            Theme="{StaticResource FluentCaptionTextBlockStyle}"
-                                           Text="{Binding Album}" />
+                                           Text="{Binding Performers}" />
                                 <TextBlock Grid.Row="3" Grid.Column="2"
                                            Theme="{StaticResource FluentCaptionTextBlockStyle}"
-                                           Text="{Binding Info}" ToolTip.Tip="{Binding Messages}" />
+                                           Text="{Binding Album}" />
+                                <TextBlock Grid.Row="4" Grid.Column="2"
+                                           Theme="{StaticResource FluentCaptionTextBlockStyle}"
+                                           Text="{Binding Info}"
+                                           ToolTip.Tip="{Binding Messages}" />
                             </Grid>
                         </Border>
                     </DataTemplate>

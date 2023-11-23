@@ -5,16 +5,10 @@ using MusicDecrypto.Library.Numerics;
 
 namespace MusicDecrypto.Library.Vendor.Kugou;
 
-internal sealed class T2Cipher : IDecryptor, IEncryptor, IDisposable
+internal sealed class T2Cipher(ReadOnlySpan<byte> slotKey) : IDecryptor, IEncryptor, IDisposable
 {
-    private readonly NativeMemoryArray<byte> _slotKey;
-    private readonly int _slotKeySize;
-
-    public T2Cipher(ReadOnlySpan<byte> slotKey)
-    {
-        _slotKey = SimdHelper.PadCircularly(slotKey);
-        _slotKeySize = slotKey.Length;
-    }
+    private readonly NativeMemoryArray<byte> _slotKey = SimdHelper.PadCircularly(slotKey);
+    private readonly int _slotKeySize = slotKey.Length;
 
     public void Dispose()
     {

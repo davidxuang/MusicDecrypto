@@ -9,7 +9,7 @@ namespace MusicDecrypto.Library.Vendor.Xiami;
 internal sealed class Decrypto : DecryptoBase
 {
     private static readonly byte[] _magic = "ifmt"u8.ToArray();
-    private static readonly byte[] _separator = { 0xfe, 0xfe, 0xfe, 0xfe };
+    private static readonly byte[] _separator = [0xfe, 0xfe, 0xfe, 0xfe];
 
     protected override IDecryptor Decryptor { get; init; }
 

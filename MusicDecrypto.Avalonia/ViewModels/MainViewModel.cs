@@ -7,6 +7,8 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using Avalonia.Platform.Storage;
@@ -25,12 +27,15 @@ public partial class MainViewModel : ViewModelBase
     private static readonly Regex _regex = NameRegex();
     private static readonly SemaphoreSlim _dialogLock = new(1);
 
-    public ObservableCollection<Item> Items { get; private set; } = new();
+    private readonly double _scaling = 0;
+
+    public ObservableCollection<Item> Items { get; private set; } = [];
 
     public bool IsEmpty => Items.Count == 0;
 
-    public MainViewModel()
+    public MainViewModel(double scaling)
     {
+        _scaling = scaling;
         Items.CollectionChanged += (s, e) => RaisePropertyChanged(nameof(IsEmpty));
     }
 
@@ -44,7 +49,7 @@ public partial class MainViewModel : ViewModelBase
         }
     }
 
-    public static async ValueTask DecryptFileAsync(Item item)
+    public async ValueTask DecryptFileAsync(Item item)
     {
         try
         {
@@ -82,7 +87,7 @@ public partial class MainViewModel : ViewModelBase
             if (info.Cover != null)
             {
                 using var stream = new MemoryStream(info.Cover);
-                item.Cover = Bitmap.DecodeToWidth(stream, 256);
+                item.Cover = Bitmap.DecodeToWidth(stream, (int)(72 * 2 * _scaling));
             }
 
             await using (var file = await newFile!.OpenWriteAsync())
@@ -130,22 +135,17 @@ public partial class MainViewModel : ViewModelBase
         }
     }
 
-    public class Item : INotifyPropertyChanged
+    public class Item(IStorageFile file) : INotifyPropertyChanged
     {
-        private static readonly Bitmap _coverFallback = new Bitmap(AssetLoader.Open(new Uri("avares://musicdecrypto-avalonia/Assets/MusicNote.png")));
+        private static readonly Bitmap _coverFallback = new(AssetLoader.Open(new Uri("avares://musicdecrypto-avalonia/Assets/MusicNote.png")));
 
-        public Item(IStorageFile file)
-        {
-            File = file;
-        }
+        public IStorageFile File { get; init; } = file;
 
         public event PropertyChangedEventHandler? PropertyChanged;
         public void PropertyHasChanged(string propName)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propName));
         }
-
-        public IStorageFile File { get; init; }
 
         private Bitmap? _cover;
         public Bitmap Cover
@@ -223,7 +223,7 @@ public partial class MainViewModel : ViewModelBase
         }
 
         private readonly LinkedList<string> _messages = new();
-        public string? Messages => _messages.Any() ? string.Join('\n', _messages) : null;
+        public string? Messages => _messages.Count > 0 ? string.Join('\n', _messages) : null;
         public void AddMessage(string message)
         {
             _messages.AddLast(message);

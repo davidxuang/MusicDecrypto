@@ -20,18 +20,18 @@ internal struct Tea
         else if (rounds % 1 != 0)
             throw new ArgumentException($"Round count should be even. (got {rounds})", nameof(rounds));
 
-        _key = new uint[]
-        {
+        _key =
+        [
             BinaryPrimitives.ReadUInt32BigEndian(key[..4]),
             BinaryPrimitives.ReadUInt32BigEndian(key[4..8]),
             BinaryPrimitives.ReadUInt32BigEndian(key[8..12]),
             BinaryPrimitives.ReadUInt32BigEndian(key[12..]),
-        };
+        ];
         _rounds = rounds;
     }
 
     /// <exception cref="ArgumentException">Thown when buffer length is insufficient.</exception>
-    internal void DecryptBlock(Span<byte> buffer)
+    internal readonly void DecryptBlock(Span<byte> buffer)
     {
         if (buffer.Length < _sizeBlock)
             throw new ArgumentException($"Decryption buffer size should be {_sizeBlock} at least. (got {buffer.Length})", nameof(buffer));

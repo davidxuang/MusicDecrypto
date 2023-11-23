@@ -258,11 +258,7 @@ internal sealed partial class Decrypto : DecryptoBase
         public Metadata? MainMusic { get; set; }
     }
 
-    public class NullFileChunkException : IOException
-    {
-        public NullFileChunkException(string message)
-            : base(message) { }
-    }
+    public class NullFileChunkException(string message) : IOException(message) { }
 
     [JsonSourceGenerationOptions(
         GenerationMode = JsonSourceGenerationMode.Metadata,

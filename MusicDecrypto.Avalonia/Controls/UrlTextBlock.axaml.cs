@@ -1,3 +1,4 @@
+using System;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
@@ -32,7 +33,7 @@ public partial class UrlTextBlock : TemplatedControl
     {
         base.OnApplyTemplate(e);
 
-        _layoutRoot = e.NameScope.Find<StackPanel>("LayoutRoot");
+        _layoutRoot = e.NameScope.Find<StackPanel>("LayoutRoot") ?? throw new NullReferenceException();
         _layoutRoot.PointerPressed += OnPointerPressed;
         _layoutRoot.PointerReleased += OnPointerReleased;
         _layoutRoot.PointerCaptureLost += OnPointerCaptureLost;

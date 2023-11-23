@@ -5,7 +5,6 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using System.Threading.Tasks;
-using MusicDecrypto.Library.Json;
 
 namespace MusicDecrypto.Library.Vendor.Tencent;
 
@@ -85,12 +84,12 @@ internal sealed partial class ApiClient : IDisposable
         public static TencentSerializerContext Instance = new(
             new JsonSerializerOptions()
             {
-                PropertyNamingPolicy = new SnakeCaseNamingPolicy()
+                PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
             });
 
-        public JsonTypeInfo<T> GetTypeInfo<T> ()
+        public JsonTypeInfo<T> GetTypeInfo<T>()
         {
-            return (JsonTypeInfo<T>)GetTypeInfo(typeof(T));
+            return GetTypeInfo(typeof(T)) as JsonTypeInfo<T> ?? throw new InvalidCastException();
         }
     }
 }

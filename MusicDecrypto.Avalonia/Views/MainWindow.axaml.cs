@@ -2,7 +2,6 @@ using System;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Input;
-using Avalonia.Markup.Xaml;
 using Avalonia.Platform.Storage;
 using FluentAvalonia.Styling;
 using FluentAvalonia.UI.Windowing;
@@ -14,7 +13,7 @@ public partial class MainWindow : AppWindow
 {
     public MainWindow()
     {
-        DataContext = new MainViewModel();
+        DataContext = new MainViewModel(RenderScaling);
 
         InitializeComponent();
 

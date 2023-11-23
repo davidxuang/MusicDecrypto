@@ -2,10 +2,11 @@
 using System.IO;
 using System.Reflection;
 using MusicDecrypto.Library.Media;
+using static MusicDecrypto.Library.DecryptoBase;
 
 namespace MusicDecrypto.Library.Vendor.Ximalaya;
 
-internal sealed partial class Decrypto : DecryptoBase
+internal sealed partial class Decrypto(MarshalMemoryStream buffer, string name, WarnHandler? warn, AudioTypes type = AudioTypes.Undefined) : DecryptoBase(buffer, name, warn, null, type)
 {
     private static readonly byte[] _key2 = "xmly"u8.ToArray();
     private static readonly byte[] _key3 = "3989d111aad5613940f4fc44b639b292"u8.ToArray();
@@ -37,16 +38,10 @@ internal sealed partial class Decrypto : DecryptoBase
         }
     }
 
-    protected override IDecryptor Decryptor { get; init; }
-
-    public Decrypto(MarshalMemoryStream buffer, string name, WarnHandler? warn, AudioTypes type = AudioTypes.Undefined)
-        : base(buffer, name, warn, null, type)
+    protected override IDecryptor Decryptor { get; init; } = Path.GetExtension(name) switch
     {
-        Decryptor = Path.GetExtension(name) switch
-        {
-            ".x2m" => _decryptor2,
-            ".x3m" => _decryptor3,
-            _      => throw new NotSupportedException()
-        };
-    }
+        ".x2m" => _decryptor2,
+        ".x3m" => _decryptor3,
+        _ => throw new NotSupportedException()
+    };
 }

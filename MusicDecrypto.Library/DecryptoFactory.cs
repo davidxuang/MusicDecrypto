@@ -1,7 +1,7 @@
 ﻿using System;
+using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using MusicDecrypto.Library.Media;
 using MusicDecrypto.Library.Vendor.Tencent;
 
@@ -20,7 +20,7 @@ public static class DecryptoFactory
         Ximalaya   = 0x60,
     }
 
-    private static readonly Dictionary<string, (Vendors, AudioTypes)> _extensionMap = new()
+    private static readonly FrozenDictionary<string, (Vendors, AudioTypes)> _extensionMap = new Dictionary<string, (Vendors, AudioTypes)>()
     {
         { ".ncm",      (Vendors.NetEase,    AudioTypes.Undefined) },
         { ".tm2",      (Vendors.TencentTm,  AudioTypes.XM4a)      },
@@ -63,9 +63,9 @@ public static class DecryptoFactory
         { ".flac",     (Vendors.Xiami,      AudioTypes.Flac)      },
         { ".x2m",      (Vendors.Ximalaya,   AudioTypes.Undefined) },
         { ".x3m",      (Vendors.Ximalaya,   AudioTypes.Undefined) },
-    };
+    }.ToFrozenDictionary();
 
-    public static HashSet<string> KnownExtensions => _extensionMap.Keys.ToHashSet();
+    public static IReadOnlySet<string> KnownExtensions { get; } = _extensionMap.Keys.ToFrozenSet();
 
     public static DecryptoBase Create(
         MarshalMemoryStream buffer,

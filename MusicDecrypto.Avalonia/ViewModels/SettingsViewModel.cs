@@ -46,7 +46,7 @@ public class SettingsViewModel : ViewModelBase
         return theme is not null;
     }
 
-    private static string _systemModeString = "System";
+    private static readonly string _systemModeString = "System";
     public static string[] AppThemes => new[]
     {
         _systemModeString,
@@ -65,16 +65,14 @@ public class SettingsViewModel : ViewModelBase
         string License,
         string Url);
 
-    private static readonly CreditItem[] _credits = new[]
-    {
-        new CreditItem(".NET",                  "MIT", "https://dotnet.microsoft.com/"),
-        new CreditItem("AvaloniaUI",            "MIT", "https://avaloniaui.net/"),
-        new CreditItem("FluentAvalonia",        "MIT", "https://github.com/amwx/FluentAvalonia"),
+    public static CreditItem[] Credits { get; } = [
+        new CreditItem(".NET", "MIT", "https://dotnet.microsoft.com/"),
+        new CreditItem("AvaloniaUI", "MIT", "https://avaloniaui.net/"),
+        new CreditItem("FluentAvalonia", "MIT", "https://github.com/amwx/FluentAvalonia"),
         new CreditItem("fluentui-system-icons", "MIT", "https://github.com/microsoft/fluentui-system-icons"),
-        new CreditItem("NativeMemoryArray",     "MIT", "https://github.com/Cysharp/NativeMemoryArray"),
-        new CreditItem("TagLibSharp",      "LGPL-2.1", "https://github.com/mono/taglib-sharp"),
-        new CreditItem("ByteSize",              "MIT", "https://github.com/omar/ByteSize"),
-        new CreditItem("unlock-music",          "MIT", "https://gitlab.com/ix64/unlock-music"),
-    };
-    public static CreditItem[] Credits => _credits;
+        new CreditItem("NativeMemoryArray", "MIT", "https://github.com/Cysharp/NativeMemoryArray"),
+        new CreditItem("TagLibSharp", "LGPL-2.1", "https://github.com/mono/taglib-sharp"),
+        new CreditItem("ByteSize", "MIT", "https://github.com/omar/ByteSize"),
+        new CreditItem("unlock-music", "MIT", "https://gitlab.com/ix64/unlock-music"),
+    ];
 }

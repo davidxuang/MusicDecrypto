@@ -1,6 +1,5 @@
 ﻿using System;
 using Avalonia;
-using FluentAvalonia.UI.Windowing;
 
 namespace MusicDecrypto.Avalonia;
 
