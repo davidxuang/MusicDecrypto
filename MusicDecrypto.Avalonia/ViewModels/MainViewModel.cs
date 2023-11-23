@@ -7,8 +7,6 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using Avalonia;
-using Avalonia.Controls;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using Avalonia.Platform.Storage;
@@ -16,6 +14,7 @@ using Avalonia.Threading;
 using ByteSizeLib;
 using FluentAvalonia.UI.Controls;
 using MusicDecrypto.Avalonia.Controls;
+using MusicDecrypto.Avalonia.Helpers;
 using MusicDecrypto.Library;
 
 namespace MusicDecrypto.Avalonia.ViewModels;
@@ -27,7 +26,8 @@ public partial class MainViewModel : ViewModelBase
     private static readonly Regex _regex = NameRegex();
     private static readonly SemaphoreSlim _dialogLock = new(1);
 
-    private readonly double _scaling = 0;
+    private const int _imageWidth = 72;
+    private readonly int _imageSize;
 
     public ObservableCollection<Item> Items { get; private set; } = [];
 
@@ -35,7 +35,7 @@ public partial class MainViewModel : ViewModelBase
 
     public MainViewModel(double scaling)
     {
-        _scaling = scaling;
+        _imageSize = (int)MathHelper.RoundToEven(_imageWidth * 2 * scaling);
         Items.CollectionChanged += (s, e) => RaisePropertyChanged(nameof(IsEmpty));
     }
 
@@ -46,6 +46,10 @@ public partial class MainViewModel : ViewModelBase
             var item = new Item(file);
             Items.Add(item);
             Task.Run(async () => await DecryptFileAsync(item));
+        }
+        else
+        {
+            file.Dispose();
         }
     }
 
@@ -87,7 +91,21 @@ public partial class MainViewModel : ViewModelBase
             if (info.Cover != null)
             {
                 using var stream = new MemoryStream(info.Cover);
-                item.Cover = Bitmap.DecodeToWidth(stream, (int)(72 * 2 * _scaling));
+                // https://github.com/mono/SkiaSharp/issues/2645
+                // item.Cover = Bitmap.DecodeToWidth(stream, (int)(72 * 2 * _scaling));
+                var bm = new Bitmap(stream);
+                var size = Math.Max(bm.Size.Width, bm.Size.Height);
+                if (size > _imageSize)
+                {
+                    item.Cover = bm.Size.Width > bm.Size.Height
+                        ? bm.CreateScaledBitmap(new(_imageSize, (int)Math.Round(_imageSize * bm.Size.Height / bm.Size.Width)))
+                        : bm.CreateScaledBitmap(new((int)Math.Round(_imageSize * bm.Size.Width / bm.Size.Height), _imageSize));
+                    bm.Dispose();
+                }
+                else
+                {
+                    item.Cover = bm;
+                }
             }
 
             await using (var file = await newFile!.OpenWriteAsync())
@@ -135,9 +153,16 @@ public partial class MainViewModel : ViewModelBase
         }
     }
 
-    public class Item(IStorageFile file) : INotifyPropertyChanged
+    public class Item(IStorageFile file) : INotifyPropertyChanged, IDisposable
     {
         private static readonly Bitmap _coverFallback = new(AssetLoader.Open(new Uri("avares://musicdecrypto-avalonia/Assets/MusicNote.png")));
+
+        public void Dispose()
+        {
+            File.Dispose();
+            _cover?.Dispose();
+            GC.SuppressFinalize(this);
+        }
 
         public IStorageFile File { get; init; } = file;
 
