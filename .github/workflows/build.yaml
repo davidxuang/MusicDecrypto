@@ -39,8 +39,8 @@ jobs:
       - name: Pack
         if: startsWith(github.ref, 'refs/tags/')
         run: |
-          tar cavf musicdecrypto-all-$GIT_TAG_NAME-net7.0-noarch.tar.xz -C ./generic/ $(cd ./generic/ && echo *)
-          sha256sum musicdecrypto-all-$GIT_TAG_NAME-net7.0-noarch.tar.xz > musicdecrypto-all-$GIT_TAG_NAME-net7.0-noarch.tar.xz.sha256
+          tar cavf musicdecrypto-all-$GIT_TAG_NAME-net8.0-noarch.tar.xz -C ./generic/ $(cd ./generic/ && echo *)
+          sha256sum musicdecrypto-all-$GIT_TAG_NAME-net8.0-noarch.tar.xz > musicdecrypto-all-$GIT_TAG_NAME-net7.0-noarch.tar.xz.sha256
           aarch64-linux-gnu-strip ./cli-arm64/musicdecrypto
           tar cavf musicdecrypto-gui-$GIT_TAG_NAME-linux-x64.tar.xz -C ./gui-x64/ $(cd ./gui-x64/ && echo *)
           tar cavf musicdecrypto-gui-$GIT_TAG_NAME-linux-arm64.tar.xz -C ./gui-arm64/ $(cd ./gui-arm64/ && echo *)
@@ -115,9 +115,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Publish library
-        if: startsWith(github.ref, 'refs/tags/')
-        run: dotnet pack MusicDecrypto.Library/MusicDecrypto.Library.csproj -c Release -o .
       - name: Publish Avalonia
         run: |
           dotnet publish MusicDecrypto.Avalonia/MusicDecrypto.Avalonia.csproj -c Release -r win-x64 --sc -p:PublishSingleFile=true -p:PublishTrimmed=true -p:TrimMode=partial -o ./gui-x64
@@ -141,9 +138,6 @@ jobs:
           (Get-FileHash musicdecrypto-gui-$env:GIT_TAG_NAME-win-arm64.7z SHA256).Hash + " musicdecrypto-gui-$env:GIT_TAG_NAME-win-arm64.7z" > musicdecrypto-gui-$env:GIT_TAG_NAME-win-arm64.7z.sha256
           (Get-FileHash musicdecrypto-cli-$env:GIT_TAG_NAME-win-x64.7z SHA256).Hash + " musicdecrypto-cli-$env:GIT_TAG_NAME-win-x64.7z" > musicdecrypto-cli-$env:GIT_TAG_NAME-win-x64.7z.sha256
           (Get-FileHash musicdecrypto-cli-$env:GIT_TAG_NAME-win-arm64.7z SHA256).Hash + " musicdecrypto-cli-$env:GIT_TAG_NAME-win-arm64.7z" > musicdecrypto-cli-$env:GIT_TAG_NAME-win-arm64.7z.sha256
-      - name: NuGet Release
-        if: startsWith(github.ref, 'refs/tags/')
-        run: dotnet nuget push MusicDecrypto.Library*.nupkg -k ${{ secrets.NUGET_API_KEY }} -s https://api.nuget.org/v3/index.json
       - name: GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v1
@@ -160,3 +154,13 @@ jobs:
           body: |-
             - `noarch` variant depends on [.NET Runtime](https://dotnet.microsoft.com/en-us/download);
             - `x64` variant of CLI was built targeting `x86-64-v3` (AVX2).
+  nuget:
+    runs-on: windows-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Publish library
+        run: dotnet pack MusicDecrypto.Library/MusicDecrypto.Library.csproj -c Release -o .
+      - name: NuGet Release
+        run: dotnet nuget push MusicDecrypto.Library*.nupkg -k ${{ secrets.NUGET_API_KEY }} -s https://api.nuget.org/v3/index.json
