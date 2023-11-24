@@ -57,6 +57,12 @@ internal sealed partial class QmcDecrypto : DecryptoBase
             case 0x67615453: // "STag"
                 throw new NotSupportedException("Unsupported new format.");
 
+            case 0x786563: // "musicex "
+                _buffer.Seek(-8, SeekOrigin.End);
+                var prefix = _reader.ReadInt32();
+                if (prefix == 0x6973756d) throw new NotSupportedException("Unsupported new format.");
+                else goto default;
+
             case > 0 and < 0x400:
                 length = _buffer.Length - 4 - indicator;
                 try
@@ -69,6 +75,7 @@ internal sealed partial class QmcDecrypto : DecryptoBase
                     else throw;
                 }
                 break;
+
             default:
                 length = _buffer.Length - 4;
                 break;
