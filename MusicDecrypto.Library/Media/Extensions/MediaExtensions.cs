@@ -20,7 +20,7 @@ internal static class MediaExtensions
         _ => throw new InvalidDataException("Undefined music type."),
     };
 
-    internal static AudioTypes SniffAudioType(this ReadOnlySpan<byte> data)
+    internal static AudioTypes SniffAudioType(this Span<byte> data)
     {
         return data switch
         {
@@ -66,7 +66,7 @@ internal static class MediaExtensions
         _ => throw new InvalidDataException("Undefined image type."),
     };
 
-    internal static ImageTypes SniffImageType(this ReadOnlySpan<byte> data)
+    internal static ImageTypes SniffImageType(this Span<byte> data)
     {
         return data switch
         {

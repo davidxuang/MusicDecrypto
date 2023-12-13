@@ -152,7 +152,7 @@ internal sealed partial class Decrypto : DecryptoBase
             }
         }
 
-        var coverType = _coverBuffer is null ? ImageTypes.Undefined : ((ReadOnlySpan<byte>)_coverBuffer.AsSpan()).SniffImageType();
+        var coverType = _coverBuffer is null ? ImageTypes.Undefined : _coverBuffer.AsSpan().SniffImageType();
         if (coverType == ImageTypes.Undefined)
         {
             _coverBuffer = null;

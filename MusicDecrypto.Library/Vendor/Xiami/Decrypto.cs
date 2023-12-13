@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using MusicDecrypto.Library.Media;
+using MusicDecrypto.Library.Media.Extensions;
 
 namespace MusicDecrypto.Library.Vendor.Xiami;
 
@@ -20,7 +21,7 @@ internal sealed class Decrypto : DecryptoBase
         if (!_reader.ReadBytes(8).AsSpan(0, 4).SequenceEqual(_magic) || !_reader.ReadBytes(4).SequenceEqual(_separator))
         {
             throw new InvalidDataException(
-                Path.GetExtension(_oldName).TrimStart('.') == "xm"
+                buffer.AsSpan().SniffAudioType() == AudioTypes.Undefined
                 ? "File header is unexpected."
                 : "File seems unencrypted.");
         }

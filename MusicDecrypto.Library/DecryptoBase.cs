@@ -63,7 +63,7 @@ public abstract class DecryptoBase : IDisposable
 
     private async ValueTask<Info> GetMetadataAsync(bool firstRun = true)
     {
-        if (_audioType == AudioTypes.Undefined) _audioType = ((ReadOnlySpan<byte>)_buffer.AsSpan()).SniffAudioType();
+        if (_audioType == AudioTypes.Undefined) _audioType = _buffer.AsSpan().SniffAudioType();
         _buffer.Name = "buffer" + _audioType.GetExtension();
         _buffer.ResetPosition();
 

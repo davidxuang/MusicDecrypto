@@ -259,7 +259,7 @@ internal sealed partial class QmcDecrypto : DecryptoBase
                     {
                         new Picture(new ByteVector(coverBuffer))
                         {
-                            MimeType = ((ReadOnlySpan<byte>)coverBuffer.AsSpan()).SniffImageType().GetMime(),
+                            MimeType = coverBuffer.AsSpan().SniffImageType().GetMime(),
                             Type = PictureType.FrontCover,
                         }
                     };
