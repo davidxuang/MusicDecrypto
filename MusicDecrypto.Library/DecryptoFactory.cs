@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Frozen;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using MusicDecrypto.Library.Media;
 using MusicDecrypto.Library.Vendor.Tencent;
@@ -58,7 +59,7 @@ public static class DecryptoFactory
         { ".kwm",      (Vendors.Kuwo,       AudioTypes.Undefined) },
         { ".xm",       (Vendors.Xiami,      AudioTypes.Undefined) },
         { ".mp3",      (Vendors.Xiami,      AudioTypes.Mpeg)      },
-        { ".m4a",      (Vendors.Xiami,      AudioTypes.XM4a)       },
+        { ".m4a",      (Vendors.Xiami,      AudioTypes.XM4a)      },
         { ".wav",      (Vendors.Xiami,      AudioTypes.XWav)      },
         { ".flac",     (Vendors.Xiami,      AudioTypes.Flac)      },
         { ".x2m",      (Vendors.Ximalaya,   AudioTypes.Undefined) },
@@ -73,8 +74,40 @@ public static class DecryptoFactory
         DecryptoBase.WarnHandler? warn = null,
         DecryptoBase.MatchRequestHandler? matchConfirm = null)
     {
-        (var cipher, var format) = _extensionMap[Path.GetExtension(name)];
-        return cipher switch
+        if (TryCreate(buffer, name, out var result, warn, matchConfirm))
+        {
+            return result;
+        }
+        else
+        {
+            throw new NotSupportedException();
+        }
+    }
+
+    private static bool TryCreate(
+        MarshalMemoryStream buffer,
+        string name,
+        [NotNullWhen(true)] out DecryptoBase? decrypto,
+        DecryptoBase.WarnHandler? warn = null,
+        DecryptoBase.MatchRequestHandler? matchConfirm = null)
+    {
+        var ext = Path.GetExtension(name);
+
+        if (string.IsNullOrEmpty(ext))
+        {
+            decrypto = null;
+            return false;
+        }
+
+        // handle nested extension names
+        if (TryCreate(buffer, Path.GetFileNameWithoutExtension(name), out var result, warn, matchConfirm))
+        {
+            decrypto = result;
+            return true;
+        }
+
+        (var vendor, var format) = _extensionMap.GetValueOrDefault(ext);
+        decrypto = vendor switch
         {
             Vendors.NetEase    => new Vendor.NetEase.Decrypto(buffer, name, warn),
             Vendors.TencentTm  => new TmDecrypto(buffer, name, warn, format),
@@ -83,7 +116,8 @@ public static class DecryptoFactory
             Vendors.Kuwo       => new Vendor.Kuwo.Decrypto(buffer, name, warn),
             Vendors.Xiami      => new Vendor.Xiami.Decrypto(buffer, name, warn, format),
             Vendors.Ximalaya   => new Vendor.Ximalaya.Decrypto(buffer, name, warn),
-            _                  => throw new NotSupportedException(),
+            _                  => null,
         };
+        return decrypto is not null;
     }
 }
