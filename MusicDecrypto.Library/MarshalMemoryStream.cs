@@ -48,8 +48,7 @@ public sealed class MarshalMemoryStream : Stream, TagLib.File.IFileAbstraction
         get => _offset;
         set
         {
-            if (value > _length)
-                throw new ArgumentOutOfRangeException(nameof(value));
+            ArgumentOutOfRangeException.ThrowIfGreaterThan(value, _length);
             _offset = value;
             if (_offset > _position) _position = _offset;
         }
@@ -59,14 +58,12 @@ public sealed class MarshalMemoryStream : Stream, TagLib.File.IFileAbstraction
     #region Helpers
     private void AssertNotClosed()
     {
-        if (!_isOpen)
-            throw new ObjectDisposedException(nameof(MarshalMemoryStream));
+        ObjectDisposedException.ThrowIf(!_isOpen, typeof(MarshalMemoryStream));
     }
 
     private bool EnsureCapacity(long value)
     {
-        if (value < 0)
-            throw new ArgumentOutOfRangeException(nameof(value));
+        ArgumentOutOfRangeException.ThrowIfNegative(value);
 
         if (value > _capacity)
         {
@@ -156,8 +153,7 @@ public sealed class MarshalMemoryStream : Stream, TagLib.File.IFileAbstraction
         AssertNotClosed();
         var n = checked(_offset + value);
         _ = EnsureCapacity(n + SimdHelper.LaneCount - 1);
-        if (value < 0)
-            throw new ArgumentOutOfRangeException(nameof(value));
+        ArgumentOutOfRangeException.ThrowIfNegative(value);
         _length = n;
         if (_position > _length) _position = _length;
     }
@@ -166,8 +162,7 @@ public sealed class MarshalMemoryStream : Stream, TagLib.File.IFileAbstraction
         AssertNotClosed();
         var n = checked(_offset + value);
         _ = EnsureCapacity(n + 0x1000); // 4KiB reserved
-        if (value < 0)
-            throw new ArgumentOutOfRangeException(nameof(value));
+        ArgumentOutOfRangeException.ThrowIfNegative(value);
         _length = n;
         if (_position > _length) _position = _length;
     }
@@ -183,8 +178,7 @@ public sealed class MarshalMemoryStream : Stream, TagLib.File.IFileAbstraction
         set
         {
             AssertNotClosed();
-            if (value < 0)
-                throw new ArgumentOutOfRangeException(nameof(value));
+            ArgumentOutOfRangeException.ThrowIfNegative(value);
             _position = checked(_offset + value);
         }
     }
@@ -222,8 +216,7 @@ public sealed class MarshalMemoryStream : Stream, TagLib.File.IFileAbstraction
     {
         AssertNotClosed();
 
-        if (bufferSize <= 0)
-            throw new ArgumentOutOfRangeException(nameof(bufferSize));
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(bufferSize);
         if (!destination.CanWrite)
         {
             if (destination.CanSeek)
