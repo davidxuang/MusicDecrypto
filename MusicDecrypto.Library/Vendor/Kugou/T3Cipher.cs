@@ -55,8 +55,7 @@ internal sealed class T3Cipher : IDecryptor, IEncryptor, IDisposable
             var s = new Vector<byte>(_slotKey.AsSpan(i_s, step));
             var m = new Vector<byte>(mask);
             var x = v ^ f;
-            // blocked by upstream: (x * 0x10) -> (x << 4)
-            (x ^ (x * 0x10) ^ s ^ m).CopyTo(window);
+            (x ^ (x << 4) ^ s ^ m).CopyTo(window);
         }
         return offset + data.Length;
     }
@@ -77,8 +76,7 @@ internal sealed class T3Cipher : IDecryptor, IEncryptor, IDisposable
             var s = new Vector<byte>(_slotKey.AsSpan(i_s, step));
             var m = new Vector<byte>(mask);
             var x = v ^ s ^ m;
-            // blocked by upstream: (x * 0x10) -> (x << 4)
-            (x ^ (x * 0x10) ^ f).CopyTo(window);
+            (x ^ (x << 4) ^ f).CopyTo(window);
         }
         return offset + data.Length;
     }

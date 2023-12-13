@@ -25,8 +25,7 @@ internal sealed class T2Cipher(ReadOnlySpan<byte> slotKey) : IDecryptor, IEncryp
             var window = data[i..(i + step)];
             var v = new Vector<byte>(window);
             var s = new Vector<byte>(_slotKey.AsSpan(i_s, step));
-            // blocked by upstream: (x * 0x10) -> (x << 4)
-            (v ^ (v * 0x10) ^ s).CopyTo(window);
+            (v ^ (v << 4) ^ s).CopyTo(window);
         }
         return offset + data.Length;
     }
@@ -42,8 +41,7 @@ internal sealed class T2Cipher(ReadOnlySpan<byte> slotKey) : IDecryptor, IEncryp
             var v = new Vector<byte>(window);
             var s = new Vector<byte>(_slotKey.AsSpan(i_s, step));
             var x = v * s;
-            // blocked by upstream: (x * 0x10) -> (x << 4)
-            (x ^ (x * 0x10)).CopyTo(window);
+            (x ^ (x << 4)).CopyTo(window);
         }
         return offset + data.Length;
     }
