@@ -27,11 +27,6 @@ public sealed class MarshalMemoryStream : Stream, TagLib.File.IFileAbstraction
         _isOpen = true;
     }
 
-    ~MarshalMemoryStream()
-    {
-        Dispose(false);
-    }
-
     protected override void Dispose(bool disposing)
     {
         if (disposing)

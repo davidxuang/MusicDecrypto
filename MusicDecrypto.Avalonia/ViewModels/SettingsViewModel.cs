@@ -39,21 +39,22 @@ public class SettingsViewModel : ViewModelBase
     {
         theme = value switch
         {
-            FluentAvaloniaTheme.LightModeString => ThemeVariant.Light,
-            FluentAvaloniaTheme.DarkModeString  => ThemeVariant.Dark,
-            _                                   => null,
+            FluentAvaloniaTheme.LightModeString        => ThemeVariant.Light,
+            FluentAvaloniaTheme.DarkModeString         => ThemeVariant.Dark,
+            FluentAvaloniaTheme.HighContrastModeString => FluentAvaloniaTheme.HighContrastTheme,
+                _                                      => null,
         };
         return theme is not null;
     }
 
     private static readonly string _systemModeString = "System";
-    public static string[] AppThemes => new[]
-    {
+    public static string[] AppThemes =>
+    [
         _systemModeString,
         FluentAvaloniaTheme.LightModeString,
         FluentAvaloniaTheme.DarkModeString,
-        // FluentAvaloniaTheme.HighContrastModeString
-    };
+        FluentAvaloniaTheme.HighContrastModeString
+    ];
 
     public static string Version => typeof(Program).Assembly.GetName().Version!.ToString();
 
@@ -70,6 +71,7 @@ public class SettingsViewModel : ViewModelBase
         new CreditItem("AvaloniaUI", "MIT", "https://avaloniaui.net/"),
         new CreditItem("FluentAvalonia", "MIT", "https://github.com/amwx/FluentAvalonia"),
         new CreditItem("fluentui-system-icons", "MIT", "https://github.com/microsoft/fluentui-system-icons"),
+        new CreditItem("FluentIcons", "MIT", "https://github.com/davidxuang/FluentIcons"),
         new CreditItem("NativeMemoryArray", "MIT", "https://github.com/Cysharp/NativeMemoryArray"),
         new CreditItem("TagLibSharp", "LGPL-2.1", "https://github.com/mono/taglib-sharp"),
         new CreditItem("ByteSize", "MIT", "https://github.com/omar/ByteSize"),

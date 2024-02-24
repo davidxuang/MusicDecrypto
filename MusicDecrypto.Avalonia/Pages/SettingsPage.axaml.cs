@@ -1,6 +1,5 @@
 using Avalonia.Controls;
 using Avalonia.Interactivity;
-using Avalonia.Markup.Xaml;
 using MusicDecrypto.Avalonia.Helpers;
 using MusicDecrypto.Avalonia.ViewModels;
 

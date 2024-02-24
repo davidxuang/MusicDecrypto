@@ -1,6 +1,6 @@
 <Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:ic="using:FluentIcons.FluentAvalonia"
+        xmlns:ic="using:FluentIcons.Avalonia.Fluent"
         xmlns:local="using:MusicDecrypto.Avalonia.Controls">
 
     <Design.PreviewWith>
@@ -14,9 +14,14 @@
         <Setter Property="Foreground" Value="{DynamicResource AccentTextFillColorPrimaryBrush}" />
         <Setter Property="Template">
             <ControlTemplate>
-                <StackPanel Name="LayoutRoot" Orientation="Horizontal" Spacing="2">
-                    <TextBlock Theme="{StaticResource FluentBodyStrongTextBlockStyle}" Text="{TemplateBinding Text}" />
-                    <ic:SymbolIcon VerticalAlignment="Center" FontSize="14" Symbol="Open" />
+                <StackPanel Name="LayoutRoot"
+                            Orientation="Horizontal" Spacing="2">
+                    <TextBlock Name="UrlText"
+                               Theme="{StaticResource FluentBodyStrongTextBlockStyle}"
+                               Text="{TemplateBinding Text}" />
+                    <ic:SymbolIcon VerticalAlignment="Center"
+                                   FontSize="{Binding FontSize, ElementName=UrlText}"
+                                   Symbol="Open" />
                 </StackPanel>
             </ControlTemplate>
         </Setter>

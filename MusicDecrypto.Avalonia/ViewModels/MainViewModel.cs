@@ -33,6 +33,8 @@ public partial class MainViewModel : ViewModelBase
 
     public bool IsEmpty => Items.Count == 0;
 
+    public MainViewModel() : this(1) { }
+
     public MainViewModel(double scaling)
     {
         _imageSize = (int)MathHelper.RoundToEven(_imageWidth * 2 * scaling);

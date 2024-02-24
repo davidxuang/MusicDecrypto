@@ -1,10 +1,10 @@
-<UserControl x:Class="MusicDecrypto.Avalonia.Pages.SettingsPage"
+﻿<UserControl x:Class="MusicDecrypto.Avalonia.Pages.SettingsPage"
              xmlns="https://github.com/avaloniaui"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:ctrl="using:MusicDecrypto.Avalonia.Controls"
-             xmlns:ic="using:FluentIcons.FluentAvalonia"
+             xmlns:ic="using:FluentIcons.Avalonia.Fluent"
              xmlns:ui="using:FluentAvalonia.UI.Controls"
              xmlns:vm="using:MusicDecrypto.Avalonia.ViewModels"
              d:DesignWidth="800" d:DesignHeight="450"
@@ -100,7 +100,7 @@
                        Text="About" />
 
             <ui:SettingsExpander Description="Third party open-source projects." Header="Credits"
-                                 IconSource="{StaticResource BoxMultipleIcon}">
+                                 IconSource="{StaticResource BoxIcon}">
                 <ui:SettingsExpanderItem>
                     <ItemsControl ItemsSource="{Binding Credits}">
                         <ItemsControl.Styles>

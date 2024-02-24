@@ -1,12 +1,12 @@
 ﻿<Application x:Class="MusicDecrypto.Avalonia.App"
              xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:ic="using:FluentIcons.FluentAvalonia"
+             xmlns:ic="using:FluentIcons.Avalonia.Fluent"
              xmlns:sty="using:FluentAvalonia.Styling">
 
     <Application.Resources>
         <ResourceDictionary>
-            <ic:SymbolIconSource x:Key="BoxMultipleIcon" Symbol="BoxMultiple" />
+            <ic:SymbolIconSource x:Key="BoxIcon" Symbol="Box" />
             <ic:SymbolIconSource x:Key="CodeIcon" Symbol="Code" />
             <ic:SymbolIconSource x:Key="DocumentBulletListIcon" Symbol="DocumentBulletList" />
             <ic:SymbolIconSource x:Key="OpenIcon" Symbol="Open" />

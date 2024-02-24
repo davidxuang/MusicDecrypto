@@ -1,5 +1,6 @@
 ﻿using System;
 using Avalonia;
+using FluentIcons.Avalonia.Fluent;
 
 namespace MusicDecrypto.Avalonia;
 
@@ -12,5 +13,6 @@ public static class Program
     public static AppBuilder BuildAvaloniaApp()
         => AppBuilder.Configure<App>()
             .UsePlatformDetect()
+            .UseSegoeMetrics()
             .LogToTrace();
 }

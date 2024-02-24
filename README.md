@@ -9,7 +9,7 @@ This project implements music de-obfuscation on [.NET](https://dotnet.microsoft.
 
 ## Licensing
 
-The core library is distributed under [GNU LGPL v3](./MusicDecrypto.Library/LICENSE), while the CLI and GUI applications are both distributed under [GNU AGPL v3](./LICENSE).
+The core library is distributed under [GNU LGPL v2.1](./MusicDecrypto.Library/LICENSE), while the CLI and GUI applications are both distributed under [GNU AGPL v3](./LICENSE).
 
 ## Supported formats
 
