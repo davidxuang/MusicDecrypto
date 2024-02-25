@@ -5,6 +5,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using System.Threading.Tasks;
+using MusicDecrypto.Library.Helpers;
 
 namespace MusicDecrypto.Library.Vendor.Tencent;
 
@@ -61,13 +62,9 @@ internal sealed partial class ApiClient : IDisposable
             TencentSerializerContext.Instance.GetTypeInfo<FastCgiRequests<T>>());
         var content = await response.Content.ReadFromJsonAsync(TencentSerializerContext.Instance.GetTypeInfo<FastCgiResponses<R>>());
 
-        if (content?.Traceid is null)
-            throw new HttpRequestException($"FastCGI call returned no content.");
-        else if (content.Code != 0)
-            throw new HttpRequestException($"FastCGI call failed with code {content.Code}.");
-
-        if (content.Req?.Code != 0)
-            throw new HttpRequestException($"FastCGI request failed with code {content.Req?.Code}.");
+        ThrowInvalidData.IfNull(content?.Traceid, "FastCGI call response");
+        ThrowInvalidData.IfNotEqual(content?.Code ?? -1, 0, "FastCGI call response");
+        ThrowInvalidData.IfNotEqual(content?.Req?.Code ?? -1, 0, "FastCGI call response");
 
         return content.Req.Data;
     }

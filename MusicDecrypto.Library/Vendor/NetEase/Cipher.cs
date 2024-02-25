@@ -1,32 +1,36 @@
 ﻿using System;
 using System.Numerics;
-using Cysharp.Collections;
+using System.Runtime.CompilerServices;
 using MusicDecrypto.Library.Numerics;
 
 namespace MusicDecrypto.Library.Vendor.NetEase;
 
-internal sealed class Cipher(ReadOnlySpan<byte> mask) : IDecryptor, IDisposable
+[InlineArray(MaskSize + NanoByteArray.Size)]
+internal struct Cipher : IDecryptor
 {
-    private readonly NativeMemoryArray<byte> _mask = SimdHelper.PadCircularly(mask);
-    private const int _maskSize = 0x100;
+    internal const int MaskSize = 0x100;
+#pragma warning disable IDE0044,IDE0051
+    private byte _mask;
+#pragma warning restore IDE0044,IDE0051
 
-    public void Dispose()
+    public Cipher(ReadOnlySpan<byte> mask)
     {
-        _mask.Dispose();
+        ArgumentOutOfRangeException.ThrowIfNotEqual(mask.Length, MaskSize, nameof(mask));
+        SimdHelper.Pad(mask, this, PaddingMode.Circular);
     }
 
-    public long Decrypt(Span<byte> data, long offset)
+    public readonly long Decrypt(Span<byte> data, long offset)
     {
         int step = SimdHelper.LaneCount;
-        int i_m;
+        int offset_m;
         for (int i = 0; i < data.Length; i += step)
         {
-            i_m = (int)((offset + i) % _maskSize);
+            offset_m = (int)((offset + i) % MaskSize);
             var window = data[i..(i + step)];
             var v = new Vector<byte>(window);
-            var m = new Vector<byte>(_mask.AsSpan(i_m, step));
+            var m = new Vector<byte>(this[offset_m..(offset_m + step)]);
             (v ^ m).CopyTo(window);
         }
-        return offset + data.Length;
+        return data.Length;
     }
 }

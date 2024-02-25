@@ -8,6 +8,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using MusicDecrypto.Library.Cryptography.Extensions;
+using MusicDecrypto.Library.Helpers;
 using MusicDecrypto.Library.Media;
 using MusicDecrypto.Library.Media.Extensions;
 using TagLib;
@@ -29,13 +30,12 @@ internal sealed partial class Decrypto : DecryptoBase
     public Decrypto(MarshalMemoryStream buffer, string name, WarnHandler? warn) : base(buffer, name, warn)
     {
         // Check file header
-        if (!_reader.ReadBytes(8).SequenceEqual(_magic))
-            throw new InvalidDataException("File header is unexpected.");
+        ThrowInvalidData.If(!MemoryExtensions.SequenceEqual<byte>(_reader.ReadBytes(8), _magic), "File header");
 
         // Skip ahead
         _ = _buffer.Seek(2, SeekOrigin.Current);
 
-        var mask = new byte[0x100];
+        var mask = (stackalloc byte[Cipher.MaskSize]);
         try
         {
             // Read key
@@ -65,7 +65,7 @@ internal sealed partial class Decrypto : DecryptoBase
             }
             Decryptor = new Cipher(mask);
         }
-        catch (NullFileChunkException e)
+        catch (IOException e)
         {
             throw new InvalidDataException("Key chunk is corrupted.", e);
         }
@@ -88,10 +88,7 @@ internal sealed partial class Decrypto : DecryptoBase
             // Resolve metadata
             var metaString = Encoding.ASCII.GetString(metaChunk[skipCount..]);
             var metaCipher = (stackalloc byte[metaString.Length / 4 * 3 + 2]);
-            if (!Convert.TryFromBase64String(metaString, metaCipher, out var cipherLength))
-            {
-                throw new InvalidDataException();
-            }
+            ThrowInvalidData.If(!Convert.TryFromBase64String(metaString, metaCipher, out var cipherLength), "File meta");
             var metaBuffer = (stackalloc byte[cipherLength]);
             var metaLength = ((ReadOnlySpan<byte>)metaCipher[..cipherLength]).AesEcbDecrypt(_rootMeta, metaBuffer);
             string meta = Encoding.UTF8.GetString(metaBuffer[..metaLength]);
@@ -99,13 +96,13 @@ internal sealed partial class Decrypto : DecryptoBase
             if (_metadata?.MusicName is null)
                 _metadata = JsonSerializer.Deserialize(meta[6..], NetEaseSerializerContext.Default.RadioMetadata)?.MainMusic;
         }
-        catch (NullFileChunkException)
+        catch (IOException)
         {
-            OnWarn("File does not contain metadata.");
+            RaiseWarn("File does not contain metadata.");
         }
         catch
         {
-            OnWarn("Metadata seems corrupted.");
+            RaiseWarn("Metadata seems corrupted.");
         }
 
         // Skip ahead
@@ -117,10 +114,10 @@ internal sealed partial class Decrypto : DecryptoBase
             _coverBuffer = new byte[_reader.ReadInt32()];
             ReadChunk(_coverBuffer);
         }
-        catch (NullFileChunkException)
+        catch (IOException)
         {
             _coverBuffer = null;
-            OnWarn("File does not contain cover image. Will try to get from server.");
+            RaiseWarn("File does not contain cover image. Will try to get from server.");
         }
 
         // Set offset
@@ -140,7 +137,7 @@ internal sealed partial class Decrypto : DecryptoBase
                 var coverUri = _metadata?.AlbumPic;
                 if (!Uri.IsWellFormedUriString(coverUri, UriKind.Absolute))
                 {
-                    OnWarn("File does not contain cover link.");
+                    RaiseWarn("File does not contain cover link.");
                     throw new InvalidDataException();
                 }
                 using var httpClient = new HttpClient();
@@ -148,12 +145,12 @@ internal sealed partial class Decrypto : DecryptoBase
             }
             catch
             {
-                OnWarn("Failed to download cover image.");
+                RaiseWarn("Failed to download cover image.");
             }
         }
 
-        var coverType = _coverBuffer is null ? ImageTypes.Undefined : _coverBuffer.AsSpan().SniffImageType();
-        if (coverType == ImageTypes.Undefined)
+        var coverType = _coverBuffer is null ? ImageType.Undefined : _coverBuffer.AsSpan().SniffImageType();
+        if (coverType == ImageType.Undefined)
         {
             _coverBuffer = null;
         }
@@ -169,14 +166,14 @@ internal sealed partial class Decrypto : DecryptoBase
             }
             else
             {
-                tag.Pictures = new IPicture[]
-                {
+                tag.Pictures =
+                [
                     new Picture(new ByteVector(_coverBuffer))
                     {
                         MimeType = coverType.GetMime(),
                         Type = PictureType.FrontCover
                     }
-                };
+                ];
                 modified = true;
             }
         }
@@ -219,7 +216,7 @@ internal sealed partial class Decrypto : DecryptoBase
         }
         else
         {
-            throw new NullFileChunkException("Failed to load file chunk.");
+            throw new IOException();
         }
     }
 
@@ -231,7 +228,7 @@ internal sealed partial class Decrypto : DecryptoBase
         }
         else
         {
-            throw new NullFileChunkException("Failed to load file chunk.");
+            throw new IOException();
         }
     }
 
@@ -257,8 +254,6 @@ internal sealed partial class Decrypto : DecryptoBase
     {
         public Metadata? MainMusic { get; set; }
     }
-
-    public class NullFileChunkException(string message) : IOException(message) { }
 
     [JsonSourceGenerationOptions(
         GenerationMode = JsonSourceGenerationMode.Metadata,

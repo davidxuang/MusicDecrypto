@@ -1,6 +1,6 @@
 ﻿namespace MusicDecrypto.Library.Media;
 
-public enum ImageTypes
+public enum ImageType
 {
     Undefined,
     Gif,

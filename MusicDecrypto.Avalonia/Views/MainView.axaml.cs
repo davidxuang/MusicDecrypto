@@ -1,11 +1,16 @@
+using System.Threading;
+using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
+using Avalonia.Threading;
 using FluentAvalonia.UI.Controls;
 using FluentAvalonia.UI.Windowing;
+using MusicDecrypto.Avalonia.Controls;
 using MusicDecrypto.Avalonia.Pages;
 using MusicDecrypto.Avalonia.ViewModels;
+using MusicDecrypto.Library;
 
 namespace MusicDecrypto.Avalonia.Views;
 
@@ -16,6 +21,13 @@ public partial class MainView : UserControl
     private Frame? _frameView;
     private Button? _openFilesButton;
     private Button? _settingsButton;
+
+    private static readonly SemaphoreSlim _dialogLock = new(1);
+
+    static MainView()
+    {
+        DecryptoBase.OnRequestMatch += OnRequestMatchAsync;
+    }
 
     public MainView()
     {
@@ -67,5 +79,39 @@ public partial class MainView : UserControl
     {
         if (_frameView?.CurrentSourcePageType != typeof(SettingsPage))
             _frameView?.Navigate(typeof(SettingsPage));
+    }
+
+    private static async ValueTask<bool> OnRequestMatchAsync(
+        DecryptoBase sender,
+        string? message,
+        (DecryptoBase.MatchInfo, DecryptoBase.MatchInfo) properties)
+    {
+        await _dialogLock.WaitAsync();
+        try
+        {
+            return await Dispatcher.UIThread.InvokeAsync(async () =>
+            {
+                var dialog = new ContentDialog()
+                {
+                    Title = message,
+                    PrimaryButtonText = "Confirm",
+                    CloseButtonText = "Cancel",
+                    Content = new MatchDialogContent()
+                    {
+                        DataContext = new MatchViewModel(properties.Item1, properties.Item2)
+                    }
+                };
+
+                return (await dialog.ShowAsync()) == ContentDialogResult.Primary;
+            });
+        }
+        catch
+        {
+            return false;
+        }
+        finally
+        {
+            _dialogLock.Release();
+        }
     }
 }

@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Text;
+using MusicDecrypto.Library.Helpers;
 using MusicDecrypto.Library.Media;
 using MusicDecrypto.Library.Media.Extensions;
 
@@ -14,27 +15,27 @@ internal sealed class Decrypto : DecryptoBase
 
     protected override IDecryptor Decryptor { get; init; }
 
-    public Decrypto(MarshalMemoryStream buffer, string name, WarnHandler? warn, AudioTypes type = AudioTypes.Undefined)
-        : base(buffer, name, warn, null, type)
+    public Decrypto(MarshalMemoryStream buffer, string name, WarnHandler? warn, AudioType type = AudioType.Undefined)
+        : base(buffer, name, warn, type)
     {
         // Check file header
         if (!_reader.ReadBytes(8).AsSpan(0, 4).SequenceEqual(_magic) || !_reader.ReadBytes(4).SequenceEqual(_separator))
         {
             throw new InvalidDataException(
-                buffer.AsSpan().SniffAudioType() == AudioTypes.Undefined
+                buffer.AsSpan().SniffAudioType() == AudioType.Undefined
                 ? "File header is unexpected."
                 : "File seems unencrypted.");
         }
 
         _ = _buffer.Seek(4, SeekOrigin.Begin);
         var identifier = Encoding.ASCII.GetString(_reader.ReadBytes(4));
-        if (_audioType == AudioTypes.Undefined) _audioType = identifier switch
+        if (_audioType == AudioType.Undefined) _audioType = identifier switch
         {
-            " A4M" => AudioTypes.XM4a,
-            "FLAC" => AudioTypes.Flac,
-            " MP3" => AudioTypes.Mpeg,
-            " WAV" => AudioTypes.XWav,
-            _ => throw new InvalidDataException("Unable to determine media format."),
+            " A4M" => AudioType.XM4a,
+            "FLAC" => AudioType.Flac,
+            " MP3" => AudioType.Mpeg,
+            " WAV" => AudioType.XWav,
+            _ => ThrowInvalidData.True<AudioType>("Media format"),
         };
 
         _ = _buffer.Seek(12, SeekOrigin.Begin);

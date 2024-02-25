@@ -27,6 +27,11 @@ internal sealed class DecryptoCommand : AsyncCommand<DecryptoCommand.Settings>
     private static readonly HashSet<string> _extensions = DecryptoFactory.KnownExtensions.Where(e => !_extensive.Contains(e)).ToHashSet();
     private static readonly SemaphoreSlim _stdinLock = new(1);
 
+    static DecryptoCommand()
+    {
+        DecryptoBase.OnRequestMatch += OnRequestMatchAsync;
+    }
+
     public sealed class Settings : CommandSettings
     {
 #pragma warning disable CS8618
@@ -98,8 +103,7 @@ internal sealed class DecryptoCommand : AsyncCommand<DecryptoCommand.Settings>
                     using var decrypto = DecryptoFactory.Create(
                         buffer,
                         Path.GetFileName(f),
-                        m => logQueue.Enqueue(($"{f}|{m}", LogLevel.Warn)),
-                        OnRequestMatchAsync);
+                        m => logQueue.Enqueue(($"{f}|{m}", LogLevel.Warn)));
 
                     var outName = (await decrypto.DecryptAsync()).NewName;
                     var outPath = Path.Combine(Path.GetDirectoryName(settings.Output ?? f)!, outName);
@@ -161,20 +165,21 @@ internal sealed class DecryptoCommand : AsyncCommand<DecryptoCommand.Settings>
         }
     }
 
-    private static async ValueTask<bool> OnRequestMatchAsync(string message, IEnumerable<DecryptoBase.MatchInfo> properties)
+    private static async ValueTask<bool> OnRequestMatchAsync(
+        DecryptoBase _,
+        string? message,
+        (DecryptoBase.MatchInfo, DecryptoBase.MatchInfo) properties)
     {
         await _stdinLock.WaitAsync();
         try
         {
             var table = new Table();
             table.AddColumns("Source", "Title", "Performers", "Album");
-            foreach (var item in properties)
-            {
-                table.AddRow(item.Key, item.Title, item.Performers, item.Album);
-            }
+            table.AddRow("Local", properties.Item1.Title, properties.Item1.Performers, properties.Item1.Album);
+            table.AddRow("Online", properties.Item2.Title, properties.Item2.Performers, properties.Item2.Album);
             AnsiConsole.Write(table);
 
-            return AnsiConsole.Confirm(message);
+            return AnsiConsole.Confirm(message ?? string.Empty);
         }
         catch
         {

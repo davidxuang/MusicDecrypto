@@ -1,84 +1,77 @@
 ﻿using System;
 using System.Numerics;
 using System.Security.Cryptography;
-using Cysharp.Collections;
 using MusicDecrypto.Library.Numerics;
 
 namespace MusicDecrypto.Library.Vendor.Kugou;
 
-internal sealed class T3Cipher : IDecryptor, IEncryptor, IDisposable
+internal readonly struct T3Cipher : IDecryptor, IEncryptor
 {
-    private readonly NativeMemoryArray<byte> _slotKey;
-    private const int _slotKeySize = 0x10;
-    private readonly NativeMemoryArray<byte> _fileKey;
-    private const int _fileKeySize = 0x11;
+    private readonly NanoByteArray _slotKey;
+    private const int _slotKeySize = MD5.HashSizeInBytes;
+    private readonly NanoByteArray _fileKey;
+    private const int _fileKeySize = MD5.HashSizeInBytes + 1;
 
     public T3Cipher(ReadOnlySpan<byte> slotKey, ReadOnlySpan<byte> fileKey)
     {
-        _slotKey = SimdHelper.PadCircularly(Hash(slotKey));
-        var key = (stackalloc byte[0x11]);
-        Hash(fileKey).CopyTo(key);
-        key[0x10] = 0x6b;
-        _fileKey = SimdHelper.PadCircularly(key);
+        var digest = (stackalloc byte[MD5.HashSizeInBytes + 1]);
+        Hash(slotKey, digest);
+        _slotKey = new(digest, Numerics.PaddingMode.Circular);
+        Hash(fileKey, digest);
+        digest[MD5.HashSizeInBytes] = 0x6b;
+        _fileKey = new(digest, Numerics.PaddingMode.Circular);
     }
 
-    public void Dispose()
+    private static void Hash(ReadOnlySpan<byte> data, Span<byte> digest)
     {
-        _slotKey.Dispose();
-        _fileKey.Dispose();
-    }
-
-    private static byte[] Hash(ReadOnlySpan<byte> data)
-    {
-        var digest = MD5.HashData(data);
+        MD5.HashData(data, digest);
         for (int i = 0; i < 8; i += 2)
         {
             (digest[i], digest[14 - i]) = (digest[14 - i], digest[i]);
             (digest[i + 1], digest[15 - i]) = (digest[15 - i], digest[i + 1]);
         }
-        return digest;
     }
 
     public long Decrypt(Span<byte> data, long offset)
     {
         var step = SimdHelper.LaneCount;
         var mask = (stackalloc byte[step]);
-        int i_s, i_f;
+        int offset_s, offset_f;
         for (int i = 0; i < data.Length; i += step)
         {
-            i_s = (int)((offset + i) % _slotKeySize);
-            i_f = (int)((offset + i) % _fileKeySize);
+            offset_s = (int)((offset + i) % _slotKeySize);
+            offset_f = (int)((offset + i) % _fileKeySize);
             var window = data[i..(i + step)];
             GetOffsetMask(mask, offset + i);
             var v = new Vector<byte>(window);
-            var f = new Vector<byte>(_fileKey.AsSpan(i_f, step));
-            var s = new Vector<byte>(_slotKey.AsSpan(i_s, step));
+            var f = new Vector<byte>(_fileKey[offset_f..(offset_f + step)]);
+            var s = new Vector<byte>(_slotKey[offset_s..(offset_f + step)]);
             var m = new Vector<byte>(mask);
             var x = v ^ f;
             (x ^ (x << 4) ^ s ^ m).CopyTo(window);
         }
-        return offset + data.Length;
+        return data.Length;
     }
 
     public long Encrypt(Span<byte> data, long offset)
     {
         var step = SimdHelper.LaneCount;
         var mask = (stackalloc byte[step]);
-        int i_s, i_f;
+        int offset_s, offset_f;
         for (int i = 0; i < data.Length; i += step)
         {
-            i_s = (int)((offset + i) % _slotKeySize);
-            i_f = (int)((offset + i) % _fileKeySize);
+            offset_s = (int)((offset + i) % _slotKeySize);
+            offset_f = (int)((offset + i) % _fileKeySize);
             var window = data[i..(i + step)];
             GetOffsetMask(mask, offset + i);
             var v = new Vector<byte>(window);
-            var f = new Vector<byte>(_fileKey.AsSpan(i_f, step));
-            var s = new Vector<byte>(_slotKey.AsSpan(i_s, step));
+            var f = new Vector<byte>(_fileKey[offset_f..(offset_f + step)]);
+            var s = new Vector<byte>(_slotKey[offset_s..(offset_f + step)]);
             var m = new Vector<byte>(mask);
             var x = v ^ s ^ m;
             (x ^ (x << 4) ^ f).CopyTo(window);
         }
-        return offset + data.Length;
+        return data.Length;
     }
 
     private static void GetOffsetMask(Span<byte> mask, long offset)

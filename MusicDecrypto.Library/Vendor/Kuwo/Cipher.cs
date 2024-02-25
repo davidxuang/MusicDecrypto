@@ -1,32 +1,26 @@
 ﻿using System;
 using System.Numerics;
-using Cysharp.Collections;
 using MusicDecrypto.Library.Numerics;
 
 namespace MusicDecrypto.Library.Vendor.Kuwo;
 
-internal sealed class Cipher(ReadOnlySpan<byte> mask) : IDecryptor, IDisposable
+internal readonly struct Cipher(ReadOnlySpan<byte> mask) : IDecryptor
 {
-    private readonly NativeMemoryArray<byte> _mask = SimdHelper.PadCircularly(mask);
-    private const int _maskSize = 0x20;
-
-    public void Dispose()
-    {
-        _mask.Dispose();
-    }
+    internal const int MaskSize = 0x20;
+    private readonly NanoByteArray _mask = new(mask, PaddingMode.Circular);
 
     public long Decrypt(Span<byte> data, long offset)
     {
         int step = SimdHelper.LaneCount;
-        int i_m;
+        int offset_m;
         for (int i = 0; i < data.Length; i += step)
         {
-            i_m = (int)((offset + i) % _maskSize);
+            offset_m = (int)((offset + i) % MaskSize);
             var window = data[i..(i + step)];
             var v = new Vector<byte>(window);
-            var m = new Vector<byte>(_mask.AsSpan(i_m, step));
+            var m = new Vector<byte>(_mask[offset_m..(offset_m + step)]);
             (v ^ m).CopyTo(window);
         }
-        return offset + data.Length;
+        return data.Length;
     }
 }

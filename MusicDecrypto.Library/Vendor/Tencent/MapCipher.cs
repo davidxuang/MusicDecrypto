@@ -1,4 +1,5 @@
 using System;
+using MusicDecrypto.Library.Helpers;
 
 namespace MusicDecrypto.Library.Vendor.Tencent;
 
@@ -9,8 +10,7 @@ internal sealed class MapCipher : MaskCipherBase
 
     public MapCipher(byte[] key)
     {
-        if (key.Length == 0)
-            throw new ArgumentException("Key should not be empty.", nameof(key));
+        ThrowInvalidData.IfZero(key.Length, "Key length");
 
         _box = key;
         _boxSize = key.Length;

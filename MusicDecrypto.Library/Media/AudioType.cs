@@ -1,6 +1,6 @@
 ﻿namespace MusicDecrypto.Library.Media;
 
-public enum AudioTypes
+public enum AudioType
 {
     Undefined,
     Aac,

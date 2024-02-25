@@ -5,15 +5,11 @@ using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
-using System.Threading;
 using System.Threading.Tasks;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using Avalonia.Platform.Storage;
-using Avalonia.Threading;
 using ByteSizeLib;
-using FluentAvalonia.UI.Controls;
-using MusicDecrypto.Avalonia.Controls;
 using MusicDecrypto.Avalonia.Helpers;
 using MusicDecrypto.Library;
 
@@ -24,7 +20,6 @@ public partial class MainViewModel : ViewModelBase
     [GeneratedRegex("^(?:.+ - |\\d+\\. )?(.+) - (.+)$")]
     private static partial Regex NameRegex();
     private static readonly Regex _regex = NameRegex();
-    private static readonly SemaphoreSlim _dialogLock = new(1);
 
     private const int _imageWidth = 72;
     private readonly int _imageSize;
@@ -80,8 +75,7 @@ public partial class MainViewModel : ViewModelBase
             using var decrypto = DecryptoFactory.Create(
                 buffer,
                 Path.GetFileName(item.File.Name),
-                item.AddMessage,
-                OnRequestMatchAsync);
+                item.AddMessage);
 
             item.State = Item.States.Working;
             var info = await decrypto.DecryptAsync();
@@ -121,37 +115,6 @@ public partial class MainViewModel : ViewModelBase
         {
             item.State = Item.States.Error;
             item.AddMessage($"{e.GetType().FullName}\n{e.Message}");
-        }
-    }
-
-    private static async ValueTask<bool> OnRequestMatchAsync(string message, IEnumerable<DecryptoBase.MatchInfo> properties)
-    {
-        await _dialogLock.WaitAsync();
-        try
-        {
-            return await Dispatcher.UIThread.InvokeAsync(async () =>
-            {
-                var dialog = new ContentDialog()
-                {
-                    Title = message,
-                    PrimaryButtonText = "Confirm",
-                    CloseButtonText = "Cancel",
-                    Content = new MatchDialogContent()
-                    {
-                        DataContext = new MatchViewModel(properties)
-                    }
-                };
-
-                return (await dialog.ShowAsync()) == ContentDialogResult.Primary;
-            });
-        }
-        catch
-        {
-            return false;
-        }
-        finally
-        {
-            _dialogLock.Release();
         }
     }
 

@@ -16,6 +16,6 @@ internal sealed class Cipher(byte key) : IDecryptor
             var v = new Vector<byte>(window);
             (~(v - k)).CopyTo(window);
         }
-        return offset + data.Length;
+        return data.Length;
     }
 }

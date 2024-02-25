@@ -105,28 +105,31 @@ public sealed class MarshalMemoryStream : Stream, TagLib.File.IFileAbstraction
     public Span<byte> AsSpan() => _inst.AsSpan(_offset, checked((int)(_length - _offset)));
     public Span<byte> AsSpan(long start)
     {
-        if (start < 0 || _offset + start > _length)
-            throw new ArgumentOutOfRangeException(nameof(start));
+        ArgumentOutOfRangeException.ThrowIfNegative(start);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(start, _length - _offset);
         return _inst.AsSpan(_offset + start, checked((int)(_length - _offset - start)));
     }
     public Span<byte> AsSpan(long start, int length)
     {
-        if (start < 0 || _offset + start > _length)
-            throw new ArgumentOutOfRangeException(nameof(start));
-        if (_offset + start + length > _length)
-            throw new ArgumentOutOfRangeException(nameof(length));
+        ArgumentOutOfRangeException.ThrowIfNegative(start);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(start, _length - _offset);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(length, _length - _offset  - start);
         return _inst.AsSpan(_offset + start, length);
     }
     public Span<byte> AsPaddedSpan(long start)
     {
         var ahead = _length - _offset - start;
-        if (ahead <= 0)
-            throw new ArgumentOutOfRangeException(nameof(start));
+        ArgumentOutOfRangeException.ThrowIfNegative(ahead, nameof(start));
         var blockSize = SimdHelper.LaneCount;
         var alignedLength = (((ahead - 1) / blockSize) + 1) * blockSize;
         return alignedLength < int.MaxValue
             ? _inst.AsSpan(_offset + start, (int)alignedLength)
             : _inst.AsSpan(_offset + start, int.MaxValue / blockSize * blockSize);
+    }
+
+    public ref byte this[long index]
+    {
+        get => ref _inst[index + _offset];
     }
     #endregion
 

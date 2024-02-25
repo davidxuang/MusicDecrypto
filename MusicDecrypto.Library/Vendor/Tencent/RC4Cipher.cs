@@ -69,7 +69,7 @@ internal sealed class RC4Cipher : IDecryptor, IEncryptor
             int size = Math.Min(_headerSize - (int)offset, ahead);
             DecryptHeader(data[..size], offset);
             if (UpdateStats(size))
-                return offset + behind;
+                return behind;
         }
 
         if ((offset + behind) % _blockSize != 0)
@@ -77,7 +77,7 @@ internal sealed class RC4Cipher : IDecryptor, IEncryptor
             int size = Math.Min(_blockSize - (int)((offset + behind) % _blockSize), ahead);
             DecryptBlock(data[behind..(behind + size)], offset + behind);
             if (UpdateStats(size))
-                return offset + behind;
+                return behind;
         }
 
         while (ahead >= _blockSize)
@@ -88,13 +88,13 @@ internal sealed class RC4Cipher : IDecryptor, IEncryptor
 
         if (ahead == 0 || data.Length > int.MaxValue / 2)
         {
-            return offset + behind;
+            return behind;
         }
         else
         {
             DecryptBlock(data[behind..], offset + behind);
             UpdateStats(ahead);
-            return offset + behind;
+            return behind;
         }
     }
 

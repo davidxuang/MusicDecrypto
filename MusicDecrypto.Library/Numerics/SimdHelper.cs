@@ -1,9 +1,14 @@
 ﻿using System;
 using System.Numerics;
 using System.Runtime.CompilerServices;
-using Cysharp.Collections;
 
 namespace MusicDecrypto.Library.Numerics;
+
+internal enum PaddingMode : byte
+{
+    Zero,
+    Circular,
+}
 
 internal static class SimdHelper
 {
@@ -15,10 +20,8 @@ internal static class SimdHelper
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static int GetCommonDivisor(int a, int b)
     {
-        if (a < 0)
-            throw new ArgumentOutOfRangeException(nameof(a));
-        else if (b < 0)
-            throw new ArgumentOutOfRangeException(nameof(b));
+        ArgumentOutOfRangeException.ThrowIfNegative(a);
+        ArgumentOutOfRangeException.ThrowIfNegative(b);
         while (a != 0 && b != 0)
         {
             if (a > b) a %= b;
@@ -27,43 +30,13 @@ internal static class SimdHelper
         return a | b;
     }
 
-    public static byte[] Pad(ReadOnlySpan<byte> data)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void Pad(ReadOnlySpan<byte> data, Span<byte> buffer, PaddingMode mode)
     {
-        var length = GetPaddedLength(data.Length);
-        var array = new byte[length];
-        data.CopyTo(array);
-
-        return array;
-    }
-
-    public static NativeMemoryArray<byte> PadCircularly(ReadOnlySpan<byte> data)
-    {
-        var length = GetPaddedLength(data.Length);
-        var array = new NativeMemoryArray<byte>(length);
-
-        data.CopyTo(array.AsSpan());
-
-        if (data.Length < length)
-        {
-            var copied = data.Length;
-            while (length > copied)
-            {
-                data[..Math.Min(data.Length, length - copied)].CopyTo(array.AsSpan(copied));
-                copied += data.Length;
-            }
-        }
-
-        return array;
-    }
-
-    public static void PadCircularly(ReadOnlySpan<byte> data, Span<byte> buffer)
-    {
-        if (data.Length > buffer.Length)
-            throw new ArgumentException("Output buffer has smaller size than data.", nameof(buffer));
-
+        ArgumentOutOfRangeException.ThrowIfLessThan(buffer.Length, data.Length, nameof(buffer));
         data.CopyTo(buffer);
 
-        if (data.Length < buffer.Length)
+        if (mode == PaddingMode.Circular)
         {
             var copied = data.Length;
             while (buffer.Length > copied)
@@ -71,6 +44,20 @@ internal static class SimdHelper
                 data[..Math.Min(data.Length, buffer.Length - copied)].CopyTo(buffer[copied..]);
                 copied += data.Length;
             }
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void Pad(Span<byte> buffer, int dataSize, PaddingMode mode = PaddingMode.Circular)
+    {
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(dataSize, buffer.Length);
+        if (mode != PaddingMode.Circular) throw new NotSupportedException();
+
+        var copied = dataSize;
+        while (copied < buffer.Length)
+        {
+            buffer[..Math.Min(dataSize, buffer.Length - copied)].CopyTo(buffer[copied..]);
+            copied += dataSize;
         }
     }
 }

@@ -8,6 +8,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using MusicDecrypto.Library.Cryptography;
+using MusicDecrypto.Library.Helpers;
 using MusicDecrypto.Library.Media;
 using MusicDecrypto.Library.Media.Extensions;
 using MusicDecrypto.Library.Numerics;
@@ -34,9 +35,8 @@ internal sealed partial class QmcDecrypto : DecryptoBase
         MarshalMemoryStream buffer,
         string name,
         WarnHandler? warn,
-        MatchRequestHandler? matchConfirm,
-        AudioTypes type)
-        : base(buffer, name, warn, matchConfirm, type)
+        AudioType type)
+        : base(buffer, name, warn, type)
     {
         _ = _buffer.Seek(-4, SeekOrigin.End);
         int indicator = _reader.ReadInt32();
@@ -95,8 +95,7 @@ internal sealed partial class QmcDecrypto : DecryptoBase
         var key = Convert.FromBase64String(value.TrimEnd('\0')).AsSpan();
         int length = key.Length;
 
-        if (length < 24)
-            throw new InvalidDataException($"Key length should be 24 at least. (got {length})");
+        ThrowInvalidData.IfLessThan(length, 24, "Key length");
 
         if (key[..18].SequenceEqual(_v2Magic))
         {
@@ -108,12 +107,10 @@ internal sealed partial class QmcDecrypto : DecryptoBase
             key = Convert.FromBase64String(Encoding.ASCII.GetString(key[..length])).AsSpan();
             length = key.Length;
 
-            if (length < 8)
-                throw new InvalidDataException($"Key length should be 8 at least. (got {length})");
+            ThrowInvalidData.IfLessThan(length, 8, "Key length");
         }
 
-        if (length % 8 != 0)
-            throw new InvalidDataException($"Key length should be a multiple of 8. (got {length})");
+        ThrowInvalidData.IfNotEqual(length % 8, 0, "Key length");
 
         var teaKey = (stackalloc byte[16]);
         for (int i = 0; i < 8; i++)
@@ -133,8 +130,7 @@ internal sealed partial class QmcDecrypto : DecryptoBase
         var step = SimdHelper.LaneCount;
 
         length = buffer.Length;
-        if (length % 8 != 0)
-            throw new InvalidDataException($"Cipher text length should be a multiple of 8. (got {length})");
+        ThrowInvalidData.IfNotEqual(length % 8, 0, "Key length");
 
         var raw = (stackalloc byte[SimdHelper.GetPaddedLength(length)]);
         var res = (stackalloc byte[Math.Max(SimdHelper.GetPaddedLength(length), length + SimdHelper.LaneCount - 8)]);
@@ -173,8 +169,7 @@ internal sealed partial class QmcDecrypto : DecryptoBase
 
         foreach (var b in res[(length - zeroLength)..length])
         {
-            if (b != 0x00)
-                throw new InvalidDataException("Zero check failed.");
+            ThrowInvalidData.IfNotEqual(b, 0, "Zero check result");
         }
 
         var data = res[(1 + padLength + saltLength)..(length - zeroLength)];
@@ -189,30 +184,13 @@ internal sealed partial class QmcDecrypto : DecryptoBase
 
         if (tag is null) return modified;
 
-        var baseName = Path.GetFileNameWithoutExtension(_oldName);
-
-        if (_regex.IsMatch(baseName))
-        {
-            if (!string.IsNullOrEmpty(tag.Title) && tag.AlbumArtists.Length > 0)
-            {
-                _newBaseName = string.Join(" - ", tag.AlbumArtists[0], tag.Title);
-                OnWarn($"New filename “{_newBaseName}”");
-            }
-            else if (!string.IsNullOrEmpty(tag.Title) && tag.Performers.Length > 0)
-            {
-                _newBaseName = string.Join(" - ", tag.Performers[0], tag.Title);
-                OnWarn($"New filename “{_newBaseName}”");
-            }
-            else OnWarn("Detected hashed filename but failed to determine new name.");
-        }
-
         using var _client = new ApiClient();
 
         Track? meta = null;
         if (_id != 0)
         {
             try { meta = (await _client.GetTracksInfoAsync(_id))?[0]; }
-            catch { OnWarn("Failed to retrieve metadata regarding the ID."); }
+            catch { RaiseWarn("Failed to retrieve metadata regarding the ID."); }
         }
         else if (!(string.IsNullOrEmpty(tag.Performers[0]) && string.IsNullOrEmpty(tag.Album) || string.IsNullOrEmpty(tag.Title)))
         {
@@ -226,7 +204,7 @@ internal sealed partial class QmcDecrypto : DecryptoBase
                 meta = await FindMatchedTrackAsync(tag, results);
             }
             catch { }
-            finally { if (meta == null) OnWarn("Failed to match tracks online."); }
+            finally { if (meta == null) RaiseWarn("Failed to match metadata online."); }
         }
 
         if (meta is not null)
@@ -255,14 +233,14 @@ internal sealed partial class QmcDecrypto : DecryptoBase
 
                 if (coverBuffer?.Length > 0)
                 {
-                    tag.Pictures = new IPicture[]
-                    {
+                    tag.Pictures =
+                    [
                         new Picture(new ByteVector(coverBuffer))
                         {
                             MimeType = coverBuffer.AsSpan().SniffImageType().GetMime(),
                             Type = PictureType.FrontCover,
                         }
-                    };
+                    ];
                     modified = true;
                 }
 
@@ -274,7 +252,7 @@ internal sealed partial class QmcDecrypto : DecryptoBase
             }
             catch
             {
-                OnWarn("Failed to fetch album cover.");
+                RaiseWarn("Failed to fetch album cover.");
             }
         }
 
@@ -287,10 +265,27 @@ internal sealed partial class QmcDecrypto : DecryptoBase
             }
         }
 
+        var baseName = Path.GetFileNameWithoutExtension(_oldName);
+
+        if (_regex.IsMatch(baseName))
+        {
+            if (!string.IsNullOrEmpty(tag.Title) && tag.AlbumArtists.Length > 0)
+            {
+                _newBaseName = string.Join(" - ", tag.AlbumArtists[0], tag.Title);
+                RaiseWarn($"New filename “{_newBaseName}”");
+            }
+            else if (!string.IsNullOrEmpty(tag.Title) && tag.Performers.Length > 0)
+            {
+                _newBaseName = string.Join(" - ", tag.Performers[0], tag.Title);
+                RaiseWarn($"New filename “{_newBaseName}”");
+            }
+            else RaiseWarn("Detected hashed filename but failed to determine new name.");
+        }
+
         return modified;
     }
 
-    private async ValueTask<Track?> FindMatchedTrackAsync(Tag tag, IEnumerable<Track> tracks)
+    private async ValueTask<Track?> FindMatchedTrackAsync(TagLib.Tag tag, IEnumerable<Track> tracks)
     {
         ushort confidence = 100;
         var matchTitles = tracks.Where(t => t.Title == tag.Title);
@@ -321,8 +316,8 @@ internal sealed partial class QmcDecrypto : DecryptoBase
         if (matchAlbums.Count() > 1 || confidence < 100)
         {
             var confirm = await RequestMatchAsync(
-                (tag.Title,   string.Join("; ", tag.Performers),                    tag.Album        ),
-                (match.Title, string.Join("; ", match.Singer.Select(p => p.Title)), match.Album.Title));
+                new(tag.Title,   string.Join("; ", tag.Performers),                    tag.Album        ),
+                new(match.Title, string.Join("; ", match.Singer.Select(p => p.Title)), match.Album.Title));
 
             if (!confirm) return null;
         }

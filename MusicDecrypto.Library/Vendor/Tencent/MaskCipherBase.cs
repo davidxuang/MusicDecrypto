@@ -18,7 +18,7 @@ internal abstract class MaskCipherBase : IDecryptor
             var m = new Vector<byte>(mask);
             (m ^ v).CopyTo(window);
         }
-        return offset + data.Length;
+        return data.Length;
     }
 
     protected abstract void GetMask(Span<byte> buffer, long offset);

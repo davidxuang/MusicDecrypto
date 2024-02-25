@@ -3,7 +3,7 @@ using System.Buffers.Binary;
 
 namespace MusicDecrypto.Library.Cryptography;
 
-internal struct Tea
+internal readonly struct Tea
 {
     private const int _sizeBlock = 8;
     private const int _sizeKey = 16;

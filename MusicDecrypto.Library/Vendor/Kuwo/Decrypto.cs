@@ -1,7 +1,7 @@
 using System;
 using System.IO;
-using System.Linq;
 using System.Text;
+using MusicDecrypto.Library.Helpers;
 using MusicDecrypto.Library.Numerics;
 
 namespace MusicDecrypto.Library.Vendor.Kuwo;
@@ -16,18 +16,20 @@ internal sealed class Decrypto : DecryptoBase
 
     public Decrypto(MarshalMemoryStream buffer, string name, WarnHandler? warn) : base(buffer, name, warn)
     {
-        if (_buffer.Length < 1024)
-            throw new InvalidDataException("File is too small.");
-        if (!_reader.ReadBytes(16)[..12].SequenceEqual(_magic))
-            throw new InvalidDataException("File header is unexpected.");
+        ThrowInvalidData.IfLessThan(_buffer.Length, 1024, "File");
+
+        var cache = (stackalloc byte[0x10]);
+        _reader.Read(cache);
+        ThrowInvalidData.If(!MemoryExtensions.SequenceEqual(cache[.._magic.Length], _magic), "File header");
 
         _ = _buffer.Seek(8, SeekOrigin.Current);
 
-        var mask = (stackalloc byte[0x20]);
-        var seed = Encoding.ASCII.GetBytes(_reader.ReadUInt32().ToString());
-        SimdHelper.PadCircularly(seed.AsSpan(0, Math.Min(0x20, seed.Length)), mask);
+        var mask = (stackalloc byte[Cipher.MaskSize]);
+        var seed = _reader.ReadUInt32().ToString();
+        var seedLength = Encoding.ASCII.GetBytes(seed.AsSpan(0, Math.Min(Cipher.MaskSize, seed.Length)), mask);
+        SimdHelper.Pad(mask, seedLength);
 
-        for (int i = 0; i < 0x20; i++)
+        for (int i = 0; i < Cipher.MaskSize; i++)
         {
             mask[i] ^= _root[i];
         }
