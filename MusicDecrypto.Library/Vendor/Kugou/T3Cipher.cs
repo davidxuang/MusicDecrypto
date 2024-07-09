@@ -16,9 +16,9 @@ internal readonly struct T3Cipher : IDecryptor, IEncryptor
     {
         var digest = (stackalloc byte[MD5.HashSizeInBytes + 1]);
         Hash(slotKey, digest);
-        _slotKey = new(digest, Numerics.PaddingMode.Circular);
+        _slotKey = new(digest[..MD5.HashSizeInBytes], Numerics.PaddingMode.Circular);
         Hash(fileKey, digest);
-        digest[MD5.HashSizeInBytes] = 0x6b;
+        digest[^1] = 0x6b;
         _fileKey = new(digest, Numerics.PaddingMode.Circular);
     }
 
@@ -45,7 +45,7 @@ internal readonly struct T3Cipher : IDecryptor, IEncryptor
             GetOffsetMask(mask, offset + i);
             var v = new Vector<byte>(window);
             var f = new Vector<byte>(_fileKey[offset_f..(offset_f + step)]);
-            var s = new Vector<byte>(_slotKey[offset_s..(offset_f + step)]);
+            var s = new Vector<byte>(_slotKey[offset_s..(offset_s + step)]);
             var m = new Vector<byte>(mask);
             var x = v ^ f;
             (x ^ (x << 4) ^ s ^ m).CopyTo(window);
