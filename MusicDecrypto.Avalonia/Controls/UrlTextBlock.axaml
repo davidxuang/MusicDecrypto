@@ -6,9 +6,6 @@
     <Design.PreviewWith>
         <local:UrlTextBlock Text="External link" />
     </Design.PreviewWith>
-    <Design.PreviewWith>
-        <local:UrlTextBlock Text="External link" />
-    </Design.PreviewWith>
 
     <Style Selector="local|UrlTextBlock">
         <Setter Property="Foreground" Value="{DynamicResource AccentTextFillColorPrimaryBrush}" />

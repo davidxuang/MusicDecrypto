@@ -66,7 +66,7 @@ internal sealed partial class ApiClient : IDisposable
         ThrowInvalidData.IfNotEqual(content?.Code ?? -1, 0, "FastCGI call response");
         ThrowInvalidData.IfNotEqual(content?.Req?.Code ?? -1, 0, "FastCGI call response");
 
-        return content.Req.Data;
+        return content!.Req.Data;
     }
 
     [JsonSourceGenerationOptions(GenerationMode = JsonSourceGenerationMode.Metadata)]

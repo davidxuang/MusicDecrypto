@@ -8,18 +8,21 @@ namespace MusicDecrypto.Library.Helpers;
 internal static class ThrowInvalidData
 {
     [DoesNotReturn]
+    public static void True(string subject) => throw new InvalidDataException($"{subject} is invalid.");
+    [DoesNotReturn]
     public static T True<T>(string subject) => throw new InvalidDataException($"{subject} is invalid.");
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void If([DoesNotReturnIf(true)] bool condition, string subject)
     {
         if (condition)
         {
-            True<nuint>(subject);
+            True(subject);
         }
     }
 
     [DoesNotReturn]
     private static void Null(string subject) => throw new InvalidDataException($"{subject} should not be null.");
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void IfNull<T>(T? value, string subject)
         where T : notnull
     {
@@ -31,6 +34,7 @@ internal static class ThrowInvalidData
 
     [DoesNotReturn]
     private static void Zero(string subject) => throw new InvalidDataException($"{subject} should not be zero.");
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void IfZero<T>(T? value, string subject)
         where T : INumber<T>
     {
