@@ -10,7 +10,6 @@ using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using Avalonia.Platform.Storage;
 using ByteSizeLib;
-using MusicDecrypto.Avalonia.Helpers;
 using MusicDecrypto.Library;
 
 namespace MusicDecrypto.Avalonia.ViewModels;
@@ -21,8 +20,7 @@ public partial class MainViewModel : ViewModelBase
     private static partial Regex NameRegex();
     private static readonly Regex _regex = NameRegex();
 
-    private const int _imageWidth = 72;
-    private readonly int _imageSize;
+    private readonly double _scaling = 0;
 
     public ObservableCollection<Item> Items { get; private set; } = [];
 
@@ -32,7 +30,7 @@ public partial class MainViewModel : ViewModelBase
 
     public MainViewModel(double scaling)
     {
-        _imageSize = (int)MathHelper.RoundToEven(_imageWidth * 2 * scaling);
+        _scaling = scaling;
         Items.CollectionChanged += (s, e) => RaisePropertyChanged(nameof(IsEmpty));
     }
 
@@ -43,10 +41,6 @@ public partial class MainViewModel : ViewModelBase
             var item = new Item(file);
             Items.Add(item);
             Task.Run(async () => await DecryptFileAsync(item));
-        }
-        else
-        {
-            file.Dispose();
         }
     }
 
@@ -87,21 +81,7 @@ public partial class MainViewModel : ViewModelBase
             if (info.Cover != null)
             {
                 using var stream = new MemoryStream(info.Cover);
-                // https://github.com/mono/SkiaSharp/issues/2645
-                // item.Cover = Bitmap.DecodeToWidth(stream, (int)(72 * 2 * _scaling));
-                var bm = new Bitmap(stream);
-                var size = Math.Max(bm.Size.Width, bm.Size.Height);
-                if (size > _imageSize)
-                {
-                    item.Cover = bm.Size.Width > bm.Size.Height
-                        ? bm.CreateScaledBitmap(new(_imageSize, (int)Math.Round(_imageSize * bm.Size.Height / bm.Size.Width)))
-                        : bm.CreateScaledBitmap(new((int)Math.Round(_imageSize * bm.Size.Width / bm.Size.Height), _imageSize));
-                    bm.Dispose();
-                }
-                else
-                {
-                    item.Cover = bm;
-                }
+                item.Cover = Bitmap.DecodeToWidth(stream, (int)(72 * 2 * _scaling));
             }
 
             await using (var file = await newFile!.OpenWriteAsync())
