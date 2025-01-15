@@ -271,12 +271,12 @@ internal sealed partial class QmcDecrypto : DecryptoBase
         {
             if (!string.IsNullOrEmpty(tag.Title) && tag.AlbumArtists.Length > 0)
             {
-                _newBaseName = string.Join(" - ", tag.AlbumArtists[0], tag.Title);
+                _newBaseName = string.Join(" - ", tag.AlbumArtists[0], tag.Title).SantizeBaseName();
                 RaiseWarn($"New filename “{_newBaseName}”");
             }
             else if (!string.IsNullOrEmpty(tag.Title) && tag.Performers.Length > 0)
             {
-                _newBaseName = string.Join(" - ", tag.Performers[0], tag.Title);
+                _newBaseName = string.Join(" - ", tag.Performers[0], tag.Title).SantizeBaseName();
                 RaiseWarn($"New filename “{_newBaseName}”");
             }
             else RaiseWarn("Detected hashed filename but failed to determine new name.");
