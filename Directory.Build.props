@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
-    <Version>2.4.1</Version>
+    <Version>2.4.2</Version>
     <Authors>davidxuang</Authors>
     <RepositoryUrl>https://github.com/davidxuang/MusicDecrypto</RepositoryUrl>
   </PropertyGroup>
